@@ -12,7 +12,7 @@ docs/
 └── functional-specs/
     ├── README.md                 # Index et suivi des spécifications
     ├── SF-01.md                  # Préparation et lancement
-    ├── SF-02.md                  # Carte et forces
+    ├── SF-02.md                  # Carte et déplacements
     ├── SF-03.md                  # Cycles et commandes
     ├── SF-04.md                  # Détection et contacts
     ├── SF-05.md                  # Combats
@@ -27,7 +27,7 @@ docs/
 | Référence | Périmètre | État |
 |---|---|---|
 | [SF-01](SF-01.md) | Préparation et lancement | **Validée** — arbitrages Q1 à Q22 consolidés |
-| [SF-02](SF-02.md) | Carte et forces | À suivre |
+| [SF-02](SF-02.md) | Carte et déplacements | **Validée** — SF-02.1 à SF-02.18, revue C1–C3 conforme |
 | [SF-03](SF-03.md) | Cycles et commandes | À suivre |
 | [SF-04](SF-04.md) | Détection et contacts | À suivre |
 | [SF-05](SF-05.md) | Combats | À suivre |
@@ -53,3 +53,7 @@ La préparation de mission comprend le choix de la mission et de la difficulté,
 Les quatre contraintes V1 sont **Moyens limités** (budget initial ramené de 100 à 70 points), **Stocks de munitions limités** (−30 %), **Capteurs dégradés** (−20 % de portée) et **Météo défavorable** (déplacement plafonné à 2 hexagones). Elles sont disponibles dans les deux missions, compatibles entre elles, avec un maximum de deux contraintes simultanées. Les réductions de munitions et de portée sont arrondies à l'entier inférieur ; les valeurs initiales sont paramétrables.
 
 Les dotations et portées de référence restent à définir dans les spécifications concernées, sans rouvrir les décisions déjà validées pour SF-01.
+
+## SF-02 — Points consolidés
+
+Carte hexagonale procédurale de 50 × 50 cases par défaut, six terrains et navigabilité selon les unités. Placement initial automatique, terrain entièrement visible mais unités ennemies soumises au brouillard de guerre. En escorte, connectivité A→B et itinéraires alternatifs ; le joueur peut désigner un point de passage au porte-avions, dont la navigation reste automatique en fin de cycle. Les déplacements des autres unités sont choisis par le joueur, calculés sur le chemin valide le plus court, prévisualisés puis confirmés. Les obstacles ennemis non détectés interrompent un déplacement confirmé sans révélation automatique. Revue de cohérence C1–C3 validée. Voir [SF-02](SF-02.md).
