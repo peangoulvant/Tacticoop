@@ -28,7 +28,7 @@ docs/
 |---|---|---|
 | [SF-01](SF-01.md) | Préparation et lancement | **Validée** — arbitrages Q1 à Q22 consolidés |
 | [SF-02](SF-02.md) | Carte et déplacements | **Validée** — SF-02.1 à SF-02.18, revue C1–C3 conforme |
-| [SF-03](SF-03.md) | Cycles et commandes | À suivre |
+| [SF-03](SF-03.md) | Cycles et commandes | **Validée** — SF-03.1 à SF-03.16, revue C1–C3 conforme (C3=B) |
 | [SF-04](SF-04.md) | Détection et contacts | À suivre |
 | [SF-05](SF-05.md) | Combats | À suivre |
 | [SF-06](SF-06.md) | IA ennemie | À suivre |
@@ -57,3 +57,7 @@ Les dotations et portées de référence restent à définir dans les spécifica
 ## SF-02 — Points consolidés
 
 Carte hexagonale procédurale de 50 × 50 cases par défaut, six terrains et navigabilité selon les unités. Placement initial automatique, terrain entièrement visible mais unités ennemies soumises au brouillard de guerre. En escorte, connectivité A→B et itinéraires alternatifs ; le joueur peut désigner un point de passage au porte-avions, dont la navigation reste automatique en fin de cycle. Les déplacements des autres unités sont choisis par le joueur, calculés sur le chemin valide le plus court, prévisualisés puis confirmés. Les obstacles ennemis non détectés interrompent un déplacement confirmé sans révélation automatique. Revue de cohérence C1–C3 validée. Voir [SF-02](SF-02.md).
+
+## SF-03 — Points consolidés
+
+Activation explicite des unités alliées (un déplacement et une action spéciale facultative, dans l'ordre libre), réaction ennemie après clôture de chaque activation et possibilité de fin anticipée avec confirmation si des activations restent inutilisées. Panneau des forces et sélection synchronisée avec la carte ; consultation libre des unités, commandes indisponibles visibles et désactivées, validation explicite des actions spéciales. Clôture et ouverture du cycle suivant automatiques, y compris en l'absence d'unité alliée activable si la mission continue. En escorte, un ordre de navigation du porte-avions au maximum par cycle, confirmé explicitement ; **après la dernière réaction ennemie, une dernière possibilité d'ordre reste ouverte avant la clôture automatique (revue C3=B)**. Revue C1–C3 validée. Voir [SF-03](SF-03.md).
