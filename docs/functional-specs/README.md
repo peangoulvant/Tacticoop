@@ -72,6 +72,13 @@ Les cinq spécifications suivantes ont été rédigées en **propositions**, à 
 - [SF-07](SF-07.md) : journal hybride, historique, confidentialité et bilans de cycle.
 - [SF-08](SF-08.md) : conditions de fin, bilan factuel et débriefing collectif.
 
-**Gouvernance :** le statut « Proposition pour revue » ne signifie **pas** que les nouveaux choix fonctionnels ont été validés. Dans chaque document, les décisions **PROPOSÉ — SF-0X.Pn** doivent être approuvées ou amendées lors de la relecture. Les points **À DÉFINIR** du Game Design restent ouverts, même si une proposition fonctionnelle les évoque. Aucune modification des règles G-01 à G-13, ni des SF-01 à SF-03, n'est impliquée par ce lot.
+**Gouvernance :** le statut « Proposition pour revue » ne signifie **pas** que les nouveaux choix fonctionnels ont été validés. Dans chaque document, les décisions **PROPOSÉ — SF-0X.Pn** doivent être approuvées ou amendées lors de la relecture. Les points **À DÉFINIR** du Game Design restent ouverts, même si une proposition fonctionnelle les évoque. **Exception approuvée lors de la revue du 25 octobre 2026 :** G-08 est précisé pour les zones passives de géométrie variable ; G-06 et G-09 sont révisés pour faire progresser les projectiles après chaque séquence alliée/ennemie ; SF-03 est mise en cohérence et SF-04, SF-05 et SF-08 reflètent ces arbitrages. Les modalités de progression hors séquences alliées/ennemies restent ouvertes.
 
 **Ordre de relecture recommandé :** SF-04 → SF-05 → SF-06 → SF-07 → SF-08, puis cohérence transversale G-06/G-08/G-09/G-12/G-13. Les paramètres numériques et cas limites non validés doivent être instruits avant une implémentation qui en dépend.
+
+## Révisions validées pendant la revue — 25 octobre 2026
+
+1. **Détection passive (G-08 / SF-04) :** zone approximative contiguë de géométrie variable, d'au plus sept hexagones, contenant la cible à l'instant de la détection, sans l'imposer au centre. L'algorithme de génération reste à définir.
+2. **Projectiles (G-06 / G-09 / SF-03 / SF-05 / SF-08) :** progression après chaque séquence complète alliée/réaction ennemie, avant restitution de la main. La progression après les activations ennemies restantes et la navigation du porte-avions doit encore être arbitrée pour éviter les doubles déplacements et préciser AB-01/AB-02.
+
+Ces deux arbitrages sont approuvés par le concepteur. Les autres propositions Pn restent soumises à revue. Les changements sont consignés sur la branche de la PR #3 et non sur `main`.
