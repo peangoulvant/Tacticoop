@@ -29,11 +29,11 @@ docs/
 | [SF-01](SF-01.md) | Préparation et lancement | **Validée** — arbitrages Q1 à Q22 consolidés |
 | [SF-02](SF-02.md) | Carte et déplacements | **Validée** — SF-02.1 à SF-02.18, revue C1–C3 conforme |
 | [SF-03](SF-03.md) | Cycles et commandes | **Validée** — SF-03.1 à SF-03.16, revue C1–C3 conforme (C3=B) |
-| [SF-04](SF-04.md) | Détection et contacts | À suivre |
-| [SF-05](SF-05.md) | Combats | À suivre |
-| [SF-06](SF-06.md) | IA ennemie | À suivre |
-| [SF-07](SF-07.md) | Journal et historique | À suivre |
-| [SF-08](SF-08.md) | Fin de mission et débriefing | À suivre |
+| [SF-04](SF-04.md) | Détection et contacts | **Proposition pour revue** — socle GDD repris, choix P* à confirmer |
+| [SF-05](SF-05.md) | Combats | **Proposition pour revue** — socle GDD repris, choix P* à confirmer |
+| [SF-06](SF-06.md) | IA ennemie | **Proposition pour revue** — socle GDD repris, choix P* à confirmer |
+| [SF-07](SF-07.md) | Journal et historique | **Proposition pour revue** — socle GDD repris, choix P* à confirmer |
+| [SF-08](SF-08.md) | Fin de mission et débriefing | **Proposition pour revue** — socle GDD repris, choix P* à confirmer |
 | [DECISIONS](DECISIONS.md) | Arbitrages fonctionnels ouverts | À maintenir |
 
 > « À suivre » signifie que le présent index ne certifie pas encore l'état de validation documentaire de la spécification concernée.
@@ -61,3 +61,17 @@ Carte hexagonale procédurale de 50 × 50 cases par défaut, six terrains et nav
 ## SF-03 — Points consolidés
 
 Activation explicite des unités alliées (un déplacement et une action spéciale facultative, dans l'ordre libre), réaction ennemie après clôture de chaque activation et possibilité de fin anticipée avec confirmation si des activations restent inutilisées. Panneau des forces et sélection synchronisée avec la carte ; consultation libre des unités, commandes indisponibles visibles et désactivées, validation explicite des actions spéciales. Clôture et ouverture du cycle suivant automatiques, y compris en l'absence d'unité alliée activable si la mission continue. En escorte, un ordre de navigation du porte-avions au maximum par cycle, confirmé explicitement ; **après la dernière réaction ennemie, une dernière possibilité d'ordre reste ouverte avant la clôture automatique (revue C3=B)**. Revue C1–C3 validée. Voir [SF-03](SF-03.md).
+
+## SF-04 à SF-08 — Lot proposé pour revue
+
+Les cinq spécifications suivantes ont été rédigées en **propositions**, à partir des règles déjà validées du Game Design :
+
+- [SF-04](SF-04.md) : détection passive et active, affichage des contacts, actualisation et expiration.
+- [SF-05](SF-05.md) : engagements, projectiles persistants, leurres, défense active, dommages et réparations.
+- [SF-06](SF-06.md) : comportement tactique de l'IA, limites de renseignement et difficulté.
+- [SF-07](SF-07.md) : journal hybride, historique, confidentialité et bilans de cycle.
+- [SF-08](SF-08.md) : conditions de fin, bilan factuel et débriefing collectif.
+
+**Gouvernance :** le statut « Proposition pour revue » ne signifie **pas** que les nouveaux choix fonctionnels ont été validés. Dans chaque document, les décisions **PROPOSÉ — SF-0X.Pn** doivent être approuvées ou amendées lors de la relecture. Les points **À DÉFINIR** du Game Design restent ouverts, même si une proposition fonctionnelle les évoque. Aucune modification des règles G-01 à G-13, ni des SF-01 à SF-03, n'est impliquée par ce lot.
+
+**Ordre de relecture recommandé :** SF-04 → SF-05 → SF-06 → SF-07 → SF-08, puis cohérence transversale G-06/G-08/G-09/G-12/G-13. Les paramètres numériques et cas limites non validés doivent être instruits avant une implémentation qui en dépend.
