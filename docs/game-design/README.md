@@ -1,61 +1,45 @@
-# Game Design Document — Wargame naval
+# Game Design — Tacticoop V1
 
-**Périmètre : G-01 à G-13.** Cycle d’arbitrage du Game Design V1 clôturé. Les sujets `PROPOSÉ` et `À DÉFINIR` demeurent ouverts et ne constituent pas des exigences validées.
+## Objet
 
-## Convention
+Les chapitres G-01 à G-13 définissent les **règles du jeu et les mécaniques tactiques**. Ils constituent le référentiel de conception de la V1. Les [spécifications fonctionnelles](../functional-specs/README.md) traduisent ces règles en comportements attendus du logiciel ; le manuel de jeu destiné aux joueurs sera rédigé séparément.
 
-- **VALIDÉ** : décision explicitement prise.
-- **PROPOSÉ** : hypothèse, pas une règle définitive.
-- **À DÉFINIR** : sujet ouvert.
+Les chapitres décrivent les règles retenues, sans détailler le déroulement des anciennes revues. Les décisions non tranchées sont regroupées dans [DECISIONS.md](DECISIONS.md). Les identifiants G-XX et AB-XX sont conservés pour la traçabilité.
 
 ## Chapitres
 
-- [G-01 — Concept général](G-01.md)
-- [G-02 — Conditions de victoire et de défaite](G-02.md)
-- [G-03 — Scénarios](G-03.md)
-- [G-04 — Carte et coordonnées](G-04.md)
-- [G-05 — Forces et unités](G-05.md)
-- [G-06 — Cycles tactiques et activations](G-06.md)
-- [G-07 — Actions des unités](G-07.md)
-- [G-08 — Détection et brouillard de guerre](G-08.md)
-- [G-09 — Système de combat naval](G-09.md)
-- [G-10 — Intelligence artificielle ennemie](G-10.md)
-- [G-11 — Contraintes initiales](G-11.md)
-- [G-12 — Journal de bord](G-12.md)
-- [G-13 — Fin de partie](G-13.md)
-- [Journal de bord — règle transversale](JOURNAL.md)
+| Référence | Domaine |
+|---|---|
+| [G-01](G-01.md) | Concept général |
+| [G-02](G-02.md) | Conditions de victoire et de défaite |
+| [G-03](G-03.md) | Scénarios |
+| [G-04](G-04.md) | Carte et coordonnées |
+| [G-05](G-05.md) | Forces et unités |
+| [G-06](G-06.md) | Cycles tactiques et activations |
+| [G-07](G-07.md) | Actions des unités |
+| [G-08](G-08.md) | Détection et brouillard de guerre |
+| [G-09](G-09.md) | Système de combat naval |
+| [G-10](G-10.md) | Intelligence artificielle ennemie |
+| [G-11](G-11.md) | Contraintes initiales |
+| [G-12](G-12.md) | Journal de bord |
+| [G-13](G-13.md) | Fin de mission et débriefing |
+| [DECISIONS](DECISIONS.md) | Décisions ouvertes et règles transversales acquises |
 
-## Consignes aux futurs agents
+## Conventions de lecture
 
-1. Lire les fichiers G-XX pertinents avant de coder une mécanique.
-2. Ne jamais convertir une règle PROPOSÉE en VALIDÉE sans accord.
-3. En cas d'ambiguïté, demander un arbitrage et garder la question ouverte.
-4. Consulter G-13 pour les décisions de fin de partie ; ne jamais transformer les sujets ouverts en règles validées.
-5. Respecter le brouillard de guerre, y compris dans les logs visibles du joueur.
-6. Conserver les décisions fonctionnelles indépendantes des choix React, Zustand, Flask ou autres.
+- Les règles approuvées figurent dans les chapitres et leurs précisions SF correspondantes.
+- Les mentions historiques `PROPOSÉ` ou `À DÉFINIR` encore présentes dans un chapitre **ne sont pas des exigences à implémenter**. Elles sont regroupées par thème dans le registre des décisions et doivent être arbitrées avant codage.
+- Les décisions SF-01 à SF-03 et les révisions explicites de G-06, G-08 et G-09 précisent certaines formulations historiques du GDD. Il ne faut pas implémenter deux variantes contradictoires.
+- Les décisions AB-01 à AB-04, autrefois consignées dans un document séparé, sont reprises dans les chapitres concernés et récapitulées dans le registre.
 
-## Registre des décisions restant ouvertes
+## Navigation et responsabilités
 
-- G-02/G-03 : porte-avions immobilisé définitivement ; limites éventuelles de cycles. La défaite si toutes les escortes sont détruites est désormais VALIDÉE (AB-03.2).
-- G-04 : convention interne des coordonnées, taille de carte et génération de chemins navigables.
-- G-05 : fiches de navires, états et malus initiaux.
-- G-06 : cas limites de résolution et stratégie d'activation ennemie.
-- G-07 : préconditions et effets des actions hors recherche active.
-- G-08 : suivi d'un contact identifié, contacts multiples, émission active et discrétion ; paramètres de base déjà validés.
+Lire d'abord le chapitre G-XX de la mécanique concernée, puis sa SF, puis les décisions ouvertes correspondantes. Les exemples illustrent les règles mais n'ajoutent pas de mécanisme.
 
-- G-09 : paramètres et cas particuliers explicitement reportés dans [G-09](G-09.md).
-- G-10 : modalités d’activation (G-06), suivi du renseignement (G-08), navigabilité (G-04), cas de mission (G-02/G-03) et détails de difficulté/prise de décision, voir [G-10](G-10.md).
+La conception technique (React, TypeScript, Zustand, serveur éventuel, algorithmes et données) sera traitée dans l'architecture. Les documents G-XX et SF-XX restent indépendants des choix d'implémentation.
 
-- G-11 : nombre effectif sous un maximum choisi, composition minimale, valeurs de réduction, réparabilité des avaries, compatibilités et traitement des tirages incompatibles, évaluation de difficulté ; voir [G-11](G-11.md).
+## Historique documentaire
 
-- G-12 : liste des événements, critères de significativité, modalités de restitution, formats, historique technique et débriefing détaillé ; voir [G-12](G-12.md). **Attention :** pendant la partie, respect du brouillard de guerre (G-12.4) ; après la mission, le débriefing peut révéler les événements auparavant inconnus (G-12.10 C4=B), sans réécriture des entrées historiques (C3=A). La proposition « une entrée par activation » de [JOURNAL.md](JOURNAL.md) reste non validée.
+Les anciens fichiers `ARBITRAGES-BLOQUANTS-V1.md`, `REVUE-COHERENCE-V1.md` et `JOURNAL.md` sont consolidés dans le présent index, le registre [DECISIONS.md](DECISIONS.md) et les chapitres G-02/G-03/G-09/G-12/G-13. Leur historique demeure consultable dans Git.
 
-- G-13 : fin de mission après activation, consultation finale, victoire/défaite et bilan factuel validés ; aucun score. **Résolus :** arrivée du porte-avions en fin de cycle et projectiles encore en vol (AB-01/AB-02). **À DÉFINIR :** indicateurs et calculs du bilan ; voir [G-13](G-13.md).
-
-## Revue transversale de cohérence
-
-Voir [REVUE-COHERENCE-V1.md](REVUE-COHERENCE-V1.md) pour les écarts documentaires repérés et les décisions ouvertes à traiter avant la spécification fonctionnelle détaillée. **La clôture du cycle GDD n’équivaut pas à la validation de tous les paramètres de gameplay.**
-
-## Arbitrages bloquants harmonisés
-
-Voir [ARBITRAGES-BLOQUANTS-V1.md](ARBITRAGES-BLOQUANTS-V1.md) pour AB-01 à AB-04. Ces arbitrages précisent G-02, G-03, G-06, G-09 et G-13 sans annuler les autres points ouverts.
+**Cette réorganisation n'introduit pas de nouvelle règle de gameplay.**
