@@ -6,9 +6,8 @@ Ce registre rassemble les règles de gameplay restant à préciser. Les chapitre
 
 | ID | Chapitres | Décision à prendre | Conséquence |
 |---|---|---|---|
-| GD-01 | G-06, G-09, G-03, G-13 | Progression des missiles et torpilles après les **activations ennemies restantes** et après la navigation automatique du porte-avions. | Évite les doubles déplacements et fixe la chronologie avant une victoire à B. Correspond à [D-01 et D-02](../functional-specs/DECISIONS.md). |
 | GD-02 | G-05, G-07, G-09 | Capacités, coûts, PV, stocks, caractéristiques des navires et armes ; actions spéciales effectivement disponibles. | Nécessaire pour lancer et résoudre les engagements. Correspond à D-03 à D-05. |
-| GD-03 | G-02, G-03, G-13 | Issue de mission lorsque le porte-avions est définitivement immobilisé sans être détruit ; éventuelle limite de cycles. | Empêche les missions sans issue. Correspond à D-06. |
+| GD-03 | G-02, G-03, G-13 | Autres incapacités de mission et éventuelle limite de cycles ; la panne temporaire de propulsion du porte-avions est résolue. | Ne pas créer d'autres conditions terminales implicitement. |
 | GD-04 | G-08 | Génération des zones passives de forme variable, bords de carte, contacts multiples, actualisation et réassociation. | Préserve le brouillard de guerre. Correspond à D-07 et D-09. |
 | GD-05 | G-10 | Comportements distincts des difficultés **Classique** et **Expert**, critères de choix tactique et départage. | Rend les deux difficultés utilisables. Correspond à D-08 et D-13. |
 
@@ -23,6 +22,8 @@ Ce registre rassemble les règles de gameplay restant à préciser. Les chapitre
 | GD-10 | G-01, G-05, G-07 | Précisions de périmètre V1, classes de navires et actions hors recherche active, sans inventer de nouvelles mécaniques. |
 
 ## Décisions acquises — ne pas rouvrir
+
+Les arbitrages D-01 à D-06 et paramètres provisoires sont consolidés dans [le registre SF](../functional-specs/DECISIONS.md).
 
 | Référence | Règle retenue | Source |
 |---|---|---|
