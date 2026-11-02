@@ -1,9 +1,18 @@
 # Tacticoop
 
-## Référentiel — Wargame naval tactique
+Wargame naval tactique web — projet V1 **frontend autonome** en préparation.
 
-- **Game Design (GDD)** : règles G-01 à G-13 dans [docs/game-design/](docs/game-design/README.md).
-- **Spécifications fonctionnelles** : SF-01 à SF-08 et décisions ouvertes dans [docs/functional-specs/](docs/functional-specs/README.md).
-- **Architecture technique V1** : frontend autonome, moteur de jeu, Zustand, IndexedDB et conventions de développement dans [docs/architecture/](docs/architecture/README.md).
+## Référentiel documentaire
 
-Les documents d'architecture n'ajoutent aucune règle de gameplay : les décisions fonctionnelles ouvertes restent à arbitrer avant leur implémentation.
+- [Game Design G-01 à G-13](docs/game-design/README.md) — règles du jeu.
+- [Spécifications fonctionnelles SF-01 à SF-08](docs/functional-specs/README.md) — comportements attendus et décisions ouvertes.
+- [Architecture technique V1](docs/architecture/README.md) — moteur, Zustand, IndexedDB, conventions et qualité.
+
+## Développement avec Claude Code
+
+- [CLAUDE.md](CLAUDE.md) : point d'entrée Claude Code.
+- [AGENTS.md](AGENTS.md) : consignes communes aux agents et contributeurs.
+
+La V1 est prévue avec React, TypeScript, Material UI, Zustand et IndexedDB, **sans backend**. L'application sera initialisée à la racine du dépôt ; les scripts d'installation, de développement et de tests seront documentés lors de cette initialisation.
+
+Les documents d'architecture ne modifient pas les règles du jeu. Les décisions fonctionnelles ouvertes doivent être arbitrées avant leur implémentation.

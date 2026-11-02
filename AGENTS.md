@@ -1,34 +1,20 @@
-# Agents - Tacticoop
+# Consignes communes — Tacticoop
 
-Consignes communes aux contributions dans ce dépôt.
+## Sources de vérité
 
-## Organisation
+Avant d'implémenter, consulter les documents pertinents :
+- [Game Design](docs/game-design/README.md) : règles du jeu.
+- [Spécifications fonctionnelles](docs/functional-specs/README.md) : comportements attendus.
+- [Décisions ouvertes](docs/functional-specs/DECISIONS.md) : points non arbitrés.
+- [Architecture technique](docs/architecture/README.md) : stack, structure, moteur, persistance et qualité.
 
-- `client/` contient le frontend ; suivre aussi `client/AGENTS.md` pour toute
-  modification dans ce dossier.
-- `server/` contient le backend ; suivre aussi `server/AGENTS.md` pour toute
-  modification dans ce dossier.
-- Garder les changements dans le dossier responsable et coordonner les deux
-  côtés lorsqu'un contrat partagé évolue.
+**Ne pas inventer de règle métier ni trancher implicitement une décision ouverte.** Signaler les points bloquants et demander un arbitrage. Les spécifications font autorité sur le gameplay ; les documents d'architecture sur les choix techniques.
 
-## Règles de travail
+## Pratiques de contribution
 
-- Lire les fichiers voisins et la configuration existante avant de modifier le
-  code ; privilégier les patterns déjà établis.
-- Limiter chaque changement au besoin demandé et ne pas réécrire du code sans
-  lien avec celui-ci.
-- Ne pas supposer de langage, framework, outil ou commande : vérifier les
-  manifests et scripts du dossier concerné.
-- Ajouter ou adapter les tests correspondant au comportement modifié, puis
-  exécuter les contrôles pertinents disponibles.
-- Ne pas modifier de fichiers générés ni de dépendances sans nécessité.
-- Ne jamais ajouter de secrets ou de valeurs de variables d'environnement dans
-  le dépôt. Documenter uniquement leurs noms.
-- Mettre à jour la documentation lorsque les commandes, contrats ou décisions
-  d'architecture changent.
-
-## Informations à compléter
-
-La stack, les commandes de développement, les tests, le déploiement et les
-variables d'environnement ne sont pas encore décrits dans le dépôt. Les
-renseigner à partir de la configuration réelle lorsqu'elle sera disponible.
+- Lire les fichiers voisins et les scripts existants avant de modifier le projet.
+- Avancer par changements ciblés et testables ; ne pas élargir le périmètre demandé.
+- Appliquer les conventions de développement et les contrôles définis dans [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md).
+- Ne jamais committer de secrets, de fichiers générés ou de dépendances installées.
+- Adapter les tests et la documentation si le changement le nécessite, sans dupliquer les référentiels.
+- En fin de tâche, indiquer les changements, vérifications réellement exécutées et limites éventuelles.
