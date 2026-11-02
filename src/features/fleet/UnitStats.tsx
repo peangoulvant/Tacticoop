@@ -49,9 +49,9 @@ export function StockLine({ unit }: { unit: Unit }) {
             component="img"
             src={s.icon}
             alt=""
-            sx={{ width: 22, height: 14, objectFit: 'contain' }}
+            sx={{ width: 44, height: 24, objectFit: 'contain' }}
           />
-          <Typography variant="caption">{s.value}</Typography>
+          <Typography variant="body2">{s.value}</Typography>
         </Box>
       ))}
     </Box>

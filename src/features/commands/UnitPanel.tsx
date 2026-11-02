@@ -2,6 +2,7 @@ import { Box, Button, IconButton, Paper, Stack, Typography } from '@mui/material
 import CloseIcon from '@mui/icons-material/Close';
 import { defaultConfig, type Unit } from '../../engine';
 import { HpBar, StockLine } from '../fleet/UnitStats';
+import { shipIcon } from '../../shared/assets';
 import { useSelectionStore } from '../../store/useSelectionStore';
 
 /**
@@ -36,9 +37,19 @@ export function UnitPanel({ units }: { units: Unit[] }) {
               <Typography variant="h6" component="h2">
                 {defaultConfig.ships[unit.shipClass].label}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {defaultConfig.ships[unit.shipClass].description}
-              </Typography>
+              <Box
+                component="img"
+                src={shipIcon[unit.shipClass]}
+                alt=""
+                sx={{
+                  display: 'block',
+                  width: 160,
+                  height: 44,
+                  objectFit: 'contain',
+                  objectPosition: 'left',
+                  mt: 0.5,
+                }}
+              />
             </Box>
             <IconButton aria-label="Fermer" onClick={() => selectUnit(null)}>
               <CloseIcon />
