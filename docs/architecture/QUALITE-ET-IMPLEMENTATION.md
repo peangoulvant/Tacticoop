@@ -1,0 +1,43 @@
+# Qualité et mise en œuvre — Tacticoop V1
+
+## Principes de développement
+
+Le code doit rester **clair, commenté lorsque nécessaire, concis et maintenable** par un développeur autonome d'environ sept ans d'expérience. Éviter les abstractions qui compliquent la lecture sans bénéfice concret.
+
+Appliquer les principes **SOLID** de manière pragmatique :
+- **S — Responsabilité unique :** chaque module ou fonction poursuit un objectif précis.
+- **O — Ouvert/fermé :** privilégier l'ajout de variantes par composition lorsque cela évite de modifier de nombreuses règles existantes ; ne pas créer d'extension artificielle.
+- **L — Substitution :** les implémentations d'un même contrat respectent les mêmes garanties.
+- **I — Ségrégation des interfaces :** contrats ciblés, sans interfaces tentaculaires.
+- **D — Inversion des dépendances :** le moteur dépend de contrats ou de données métier, jamais de React, Zustand ou IndexedDB.
+
+## Conventions et qualimétrie
+
+- TypeScript `strict`, sans `any` injustifié ; types et noms explicites.
+- ESLint et formatage automatique (par exemple Prettier) ; compilation, lint et tests sans erreurs.
+- Fonctions focalisées, imbrication limitée, pas de duplication inutile ni d'effets de bord cachés.
+- Commentaires expliquant **pourquoi** une décision ou une règle est appliquée ; ne pas paraphraser les instructions évidentes.
+- JSDoc ciblé pour les interfaces publiques et les comportements délicats.
+- Pas de limite arbitraire de lignes par fonction/fichier, ni d'outil de qualimétrie lourd imposé à la V1.
+- Ne pas sur-découper : le coût de navigation entre fichiers fait aussi partie de la maintenabilité.
+
+## Tests
+
+Priorité aux tests unitaires du moteur : commandes et erreurs, calculs de déplacement, contacts et observations filtrées, combat, transitions et conditions terminales selon les règles fonctionnelles.
+
+Compléter par des tests de persistance (validation, export/import, reprise) et quelques tests d'intégration des parcours critiques. Les tirages aléatoires doivent être contrôlables dans les tests. Ne pas tester des règles non encore arbitrées.
+
+## Progression de développement
+
+1. **Socle** : React, TypeScript, Material UI, lint, formatage et tests.
+2. **Moteur minimal** : `GameState`, commandes, configuration et store principal.
+3. **Préparation et carte** : génération, affichage et premières interactions.
+4. **Première séquence jouable** : commandes, résolution et sauvegarde.
+5. **Fonctionnalités métier complémentaires** : détection, combat, IA, missions, selon les arbitrages disponibles.
+6. **Fiabilisation** : débriefing, cas limites, export/import et tests d'intégration.
+
+Chaque incrément doit être testable. Les décisions fonctionnelles ouvertes dans [DECISIONS.md](../functional-specs/DECISIONS.md) nécessitent un arbitrage avant l'implémentation concernée.
+
+## Hors périmètre V1
+
+Backend Flask, OpenAPI, MongoDB, synchronisation distante, multijoueur temps réel, event sourcing, rejeu intégral et microservices. Leur éventuelle introduction future dépendra d'un besoin avéré, pas d'une anticipation architecturale.
