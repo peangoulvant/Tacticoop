@@ -9,40 +9,33 @@ import { LogbookPanel } from '../logbook/LogbookPanel';
 import { TacticalMap } from './TacticalMap';
 import { palette } from '../../app/theme';
 
-const GUTTER = 8;
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
-/** Poignée de redimensionnement : met à jour une taille en pixels pendant le glissement. */
-function Splitter({
-  orientation,
-  onDrag,
-  label,
-}: {
-  orientation: 'vertical' | 'horizontal';
-  onDrag: (delta: number) => void;
-  label: string;
-}) {
+/** Largeur de la colonne de droite et hauteur des forces alliées : fixes, non redimensionnables. */
+const SIDE_WIDTH = 'clamp(340px, 28vw, 460px)';
+const FLEET_HEIGHT = 230;
+const MIN_PANEL_HEIGHT = 140;
+
+/** Poignée entre l'unité et le journal : seule zone redimensionnable de l'écran. */
+function Splitter({ onDrag }: { onDrag: (delta: number) => void }) {
   const last = useRef(0);
-  const vertical = orientation === 'vertical';
-  const coordinate = (e: React.PointerEvent) => (vertical ? e.clientX : e.clientY);
   return (
     <Box
       role="separator"
-      aria-label={label}
-      aria-orientation={orientation}
+      aria-label="Redimensionner l’unité et le journal"
+      aria-orientation="horizontal"
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
-        last.current = coordinate(e);
+        last.current = e.clientY;
       }}
       onPointerMove={(e) => {
         if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-        onDrag(coordinate(e) - last.current);
-        last.current = coordinate(e);
+        onDrag(e.clientY - last.current);
+        last.current = e.clientY;
       }}
       sx={{
-        width: '100%',
         height: '100%',
-        cursor: vertical ? 'col-resize' : 'row-resize',
+        cursor: 'row-resize',
         touchAction: 'none',
         '&:hover': { bgcolor: palette.panelBorder },
       }}
@@ -91,48 +84,54 @@ function TopBar({ mission }: { mission: MissionState }) {
   );
 }
 
-/** Interface tactique : cinq zones de la maquette, panneaux redimensionnables. */
+/**
+ * Interface tactique : cinq zones de la maquette. La carte et les forces alliées ont une taille
+ * fixe ; seuls le panneau d'unité et le journal se partagent la colonne de droite.
+ */
 export function TacticalScreen({ mission }: { mission: MissionState }) {
   const events = useGameStore((s) => s.events);
-  const [rightWidth, setRightWidth] = useState(380);
-  const [bottomHeight, setBottomHeight] = useState(230);
-  const dragRight = useCallback((d: number) => setRightWidth((w) => clamp(w - d, 260, 640)), []);
-  const dragBottom = useCallback((d: number) => setBottomHeight((h) => clamp(h - d, 140, 480)), []);
+  const sideRef = useRef<HTMLDivElement>(null);
+  const [unitHeight, setUnitHeight] = useState(420);
+  const dragSplitter = useCallback((delta: number) => {
+    const total = sideRef.current?.clientHeight ?? 0;
+    setUnitHeight((h) =>
+      clamp(h + delta, MIN_PANEL_HEIGHT, Math.max(MIN_PANEL_HEIGHT, total - MIN_PANEL_HEIGHT)),
+    );
+  }, []);
 
   return (
     <Box
       sx={{
         height: '100vh',
         p: 1,
+        gap: 1,
         boxSizing: 'border-box',
         display: 'grid',
-        gap: 0,
-        gridTemplateColumns: `minmax(0, 1fr) ${GUTTER}px ${rightWidth}px`,
-        gridTemplateRows: `auto minmax(0, 1fr) ${GUTTER}px ${bottomHeight}px`,
+        gridTemplateColumns: `minmax(0, 1fr) ${SIDE_WIDTH}`,
+        gridTemplateRows: `auto minmax(0, 1fr) ${FLEET_HEIGHT}px`,
       }}
     >
-      <Box sx={{ gridColumn: '1 / -1', mb: 1 }}>
+      <Box sx={{ gridColumn: '1 / -1' }}>
         <TopBar mission={mission} />
       </Box>
-      <Paper sx={{ overflow: 'hidden' }}>
+      <Paper sx={{ overflow: 'hidden', minHeight: 0 }}>
         <TacticalMap mission={mission} />
       </Paper>
-      <Splitter
-        orientation="vertical"
-        label="Redimensionner le panneau latéral"
-        onDrag={dragRight}
-      />
-      <UnitPanel units={mission.units} />
-      <Box sx={{ gridColumn: '1 / -1', height: '100%' }}>
-        <Splitter
-          orientation="horizontal"
-          label="Redimensionner le panneau inférieur"
-          onDrag={dragBottom}
-        />
+      <Box
+        ref={sideRef}
+        sx={{
+          gridColumn: 2,
+          gridRow: '2 / 4',
+          minHeight: 0,
+          display: 'grid',
+          gridTemplateRows: `${unitHeight}px 8px minmax(0, 1fr)`,
+        }}
+      >
+        <UnitPanel units={mission.units} />
+        <Splitter onDrag={dragSplitter} />
+        <LogbookPanel events={events} />
       </Box>
       <FleetPanel units={mission.units} />
-      <Box />
-      <LogbookPanel events={events} />
     </Box>
   );
 }

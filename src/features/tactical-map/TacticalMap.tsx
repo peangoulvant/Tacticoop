@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -17,9 +17,10 @@ import { terrainLabel } from '../../shared/labels';
 import { useSelectionStore } from '../../store/useSelectionStore';
 import { ShipGlyph, TerrainSymbols, terrainFill } from './glyphs';
 import { HEX_POINTS, hexCenter, mapViewBox } from './hexGeometry';
+import { clampView, initialView, zoomAt, type Size, type View } from './viewTransform';
 
-/** Échelle de repli (avant mesure du conteneur, ou sans ResizeObserver). */
-const FALLBACK_PIXELS_PER_UNIT = 1.2;
+/** Déplacement (px) au-delà duquel un appui devient un glisser et non un clic. */
+const DRAG_THRESHOLD = 4;
 
 /** Terrain statique : mémoïsé car la carte ne change pas pendant la mission (SF-02 §3). */
 const TerrainLayer = memo(function TerrainLayer({ map }: { map: GameMap }) {
@@ -41,7 +42,7 @@ const TerrainLayer = memo(function TerrainLayer({ map }: { map: GameMap }) {
             stroke="#0a1a33"
             strokeWidth="0.6"
           />
-          <use href={`#terrain-${terrain}`} x="-4.5" y="-7.2" width="9" height="5.4" />
+          <use href={`#terrain-${terrain}`} x="-3.5" y="-7.6" width="7" height="4.2" />
         </g>,
       );
     }
@@ -80,29 +81,89 @@ function Waypoint({ hex, label }: { hex: Hex; label: string }) {
   );
 }
 
-/** Carte tactique : rendu SVG 2D simplifié (docs/maquette), zoom et sélection d'hexagone. */
+/**
+ * Carte tactique : rendu SVG 2D simplifié (docs/maquette). Occupe toute la zone (tronquée si
+ * besoin), se déplace par glisser-déposer et se zoome à la molette, comme une carte en ligne.
+ */
 export function TacticalMap({ mission }: { mission: MissionState }) {
   const { map, units, start, goal } = mission;
-  const { selectedUnitId, selectedHex, zoom, selectUnit, selectHex, setZoom } = useSelectionStore();
-  const box = mapViewBox(map);
-  // Zoom 1 = carte entière visible dans le conteneur, quelle que soit la taille des panneaux.
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const [fitScale, setFitScale] = useState(FALLBACK_PIXELS_PER_UNIT);
+  const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
+  const content: Size = mapViewBox(map);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [viewport, setViewport] = useState<Size>({ width: 0, height: 0 });
+  // Vue choisie par le joueur ; tant qu'il n'a rien touché, la vue initiale est recalculée.
+  const [custom, setCustom] = useState<View | null>(null);
+  const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
+
+  // Mesure de la zone ; la vue est recalée à chaque redimensionnement de la fenêtre.
   useEffect(() => {
-    const el = viewportRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => {
-      if (el.clientWidth > 0 && el.clientHeight > 0) {
-        setFitScale(Math.min(el.clientWidth / box.width, el.clientHeight / box.height));
-      }
-    });
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setViewport({ width: el.clientWidth, height: el.clientHeight });
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [box.width, box.height]);
-  const scale = fitScale * zoom;
+  }, []);
 
-  const handleClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    const cell = (event.target as Element).closest('[data-col]');
+  const startY = hexCenter(start).y;
+  const contentWidth = content.width;
+  const contentHeight = content.height;
+  const ready = viewport.width > 0 && viewport.height > 0;
+  const view: View | null = !ready
+    ? null
+    : custom
+      ? clampView(custom, viewport, content)
+      : initialView(viewport, content, startY);
+
+  const zoomBy = useCallback(
+    (factor: number, anchor?: { x: number; y: number }) => {
+      if (!view) return;
+      const center = anchor ?? { x: viewport.width / 2, y: viewport.height / 2 };
+      setCustom(zoomAt(view, factor, center, viewport, content));
+    },
+    // `content` est dérivé de `map` : ses dimensions suffisent comme dépendances.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [view?.k, view?.x, view?.y, viewport, contentWidth, contentHeight],
+  );
+
+  // La molette doit empêcher le défilement de la page : écouteur natif non passif.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      zoomBy(Math.exp(-e.deltaY * 0.0015), { x: e.clientX - rect.left, y: e.clientY - rect.top });
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [zoomBy]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!view || e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { x: e.clientX, y: e.clientY, view, moved: false };
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (!d.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    d.moved = true;
+    setCustom(clampView({ ...d.view, x: d.view.x + dx, y: d.view.y + dy }, viewport, content));
+  };
+
+  // Appui sans glisser = clic. Avec la capture du pointeur, on retrouve la case sous le curseur.
+  const onPointerUp = (e: React.PointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || d.moved) return;
+    const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-col]');
     if (!cell) return;
     const hex = {
       col: Number(cell.getAttribute('data-col')),
@@ -112,39 +173,49 @@ export function TacticalMap({ mission }: { mission: MissionState }) {
     selectUnit(units.find((u) => sameHex(u.position, hex))?.id ?? null);
   };
 
-  const hoveredUnit = selectedHex ? units.find((u) => sameHex(u.position, selectedHex)) : undefined;
+  const hexUnit = selectedHex ? units.find((u) => sameHex(u.position, selectedHex)) : undefined;
+  const selected = selectedHex ? hexCenter(selectedHex) : null;
 
   return (
     <Box sx={{ position: 'relative', height: '100%', minHeight: 0, bgcolor: '#050c19' }}>
       <Box
-        ref={viewportRef}
-        sx={{ position: 'absolute', inset: 0, overflow: 'auto' }}
-        onWheel={(e) => e.ctrlKey && setZoom(zoom * (e.deltaY < 0 ? 1.1 : 0.9))}
+        ref={containerRef}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => (drag.current = null)}
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          overflow: 'hidden',
+          cursor: 'grab',
+          '&:active': { cursor: 'grabbing' },
+          touchAction: 'none',
+        }}
       >
         <svg
           role="img"
           aria-label="Carte tactique"
-          width={box.width * scale}
-          height={box.height * scale}
-          viewBox={`0 0 ${box.width} ${box.height}`}
-          onClick={handleClick}
+          width={viewport.width}
+          height={viewport.height}
           style={{ display: 'block' }}
         >
           <TerrainSymbols />
-          <TerrainLayer map={map} />
-          {selectedHex && (
-            <g
-              transform={`translate(${hexCenter(selectedHex).x} ${hexCenter(selectedHex).y})`}
-              pointerEvents="none"
-            >
-              <polygon points={HEX_POINTS} fill="none" stroke="#5fd3ff" strokeWidth="1.6" />
+          {view && (
+            <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
+              <TerrainLayer map={map} />
+              {selected && (
+                <g transform={`translate(${selected.x} ${selected.y})`} pointerEvents="none">
+                  <polygon points={HEX_POINTS} fill="none" stroke="#5fd3ff" strokeWidth="1.6" />
+                </g>
+              )}
+              <Waypoint hex={start} label="A" />
+              {goal && <Waypoint hex={goal} label="B" />}
+              {units.map((u) => (
+                <UnitToken key={u.id} unit={u} selected={u.id === selectedUnitId} />
+              ))}
             </g>
           )}
-          <Waypoint hex={start} label="A" />
-          {goal && <Waypoint hex={goal} label="B" />}
-          {units.map((u) => (
-            <UnitToken key={u.id} unit={u} selected={u.id === selectedUnitId} />
-          ))}
         </svg>
       </Box>
 
@@ -157,13 +228,13 @@ export function TacticalMap({ mission }: { mission: MissionState }) {
           borderRadius: 1,
         }}
       >
-        <IconButton size="small" aria-label="Zoom avant" onClick={() => setZoom(zoom * 1.25)}>
+        <IconButton size="small" aria-label="Zoom avant" onClick={() => zoomBy(1.25)}>
           <AddIcon />
         </IconButton>
-        <IconButton size="small" aria-label="Zoom arrière" onClick={() => setZoom(zoom / 1.25)}>
+        <IconButton size="small" aria-label="Zoom arrière" onClick={() => zoomBy(0.8)}>
           <RemoveIcon />
         </IconButton>
-        <IconButton size="small" aria-label="Réinitialiser le zoom" onClick={() => setZoom(1)}>
+        <IconButton size="small" aria-label="Réinitialiser la vue" onClick={() => setCustom(null)}>
           <FitScreenIcon />
         </IconButton>
       </Stack>
@@ -182,7 +253,7 @@ export function TacticalMap({ mission }: { mission: MissionState }) {
       >
         {selectedHex
           ? `(${selectedHex.col}, ${selectedHex.row}) — ${terrainLabel[terrainAt(map, selectedHex)]}${
-              hoveredUnit ? ` — ${defaultConfig.ships[hoveredUnit.shipClass].label}` : ''
+              hexUnit ? ` — ${defaultConfig.ships[hexUnit.shipClass].label}` : ''
             }`
           : 'Sélectionnez un hexagone'}
         {` · ${map.width}×${map.height}`}

@@ -2,7 +2,7 @@ import { Box, Paper, Typography } from '@mui/material';
 import { defaultConfig, type Unit } from '../../engine';
 import { palette } from '../../app/theme';
 import { useSelectionStore } from '../../store/useSelectionStore';
-import { ShipGlyph } from '../tactical-map/glyphs';
+import { shipIcon } from '../../shared/assets';
 import { HpBar, StockLine } from './UnitStats';
 
 /** Forces alliées : cartes cliquables, l'état affiché vient du GameState. */
@@ -47,11 +47,12 @@ export function FleetPanel({ units }: { units: Unit[] }) {
               <Typography sx={{ fontWeight: 700 }}>
                 {defaultConfig.ships[unit.shipClass].label}
               </Typography>
-              <svg viewBox="-9 -5 18 10" width="100%" height="36" aria-hidden>
-                <g transform="scale(1.2)">
-                  <ShipGlyph shipClass={unit.shipClass} />
-                </g>
-              </svg>
+              <Box
+                component="img"
+                src={shipIcon[unit.shipClass]}
+                alt=""
+                sx={{ display: 'block', width: '100%', height: 36, objectFit: 'contain', my: 0.5 }}
+              />
               <HpBar unit={unit} />
               <StockLine unit={unit} />
             </Paper>
