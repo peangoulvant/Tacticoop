@@ -1,34 +1,31 @@
-# Agents - Tacticoop
+# Consignes communes — Tacticoop
 
-Consignes communes aux contributions dans ce dépôt.
+## Sources de vérité
 
-## Organisation
+Avant d'implémenter, lire les documents pertinents :
+- [Game Design](docs/game-design/README.md) : règles du jeu.
+- [Spécifications fonctionnelles](docs/functional-specs/README.md) : comportements attendus.
+- [Décisions ouvertes](docs/functional-specs/DECISIONS.md) : points non arbitrés.
+- [Architecture technique](docs/architecture/README.md) : responsabilités et décisions AT-01 à AT-04.
 
-- `client/` contient le frontend ; suivre aussi `client/AGENTS.md` pour toute
-  modification dans ce dossier.
-- `server/` contient le backend ; suivre aussi `server/AGENTS.md` pour toute
-  modification dans ce dossier.
-- Garder les changements dans le dossier responsable et coordonner les deux
-  côtés lorsqu'un contrat partagé évolue.
+**Ne jamais inventer une règle métier absente ou trancher implicitement une décision ouverte.** Signaler le blocage et demander un arbitrage avant d'implémenter le comportement concerné. Les documents fonctionnels prévalent pour le gameplay ; l'architecture prévaut pour les choix techniques.
 
-## Règles de travail
+## Architecture V1
 
-- Lire les fichiers voisins et la configuration existante avant de modifier le
-  code ; privilégier les patterns déjà établis.
-- Limiter chaque changement au besoin demandé et ne pas réécrire du code sans
-  lien avec celui-ci.
-- Ne pas supposer de langage, framework, outil ou commande : vérifier les
-  manifests et scripts du dossier concerné.
-- Ajouter ou adapter les tests correspondant au comportement modifié, puis
-  exécuter les contrôles pertinents disponibles.
-- Ne pas modifier de fichiers générés ni de dépendances sans nécessité.
-- Ne jamais ajouter de secrets ou de valeurs de variables d'environnement dans
-  le dépôt. Documenter uniquement leurs noms.
-- Mettre à jour la documentation lorsque les commandes, contrats ou décisions
-  d'architecture changent.
+- Frontend autonome **React + TypeScript strict + Material UI**, état applicatif **Zustand**, sauvegarde locale **IndexedDB** avec export/import JSON.
+- Pas de backend, serveur, API, MongoDB, authentification ou synchronisation distante en V1.
+- Moteur fonctionnel indépendant de React, Zustand et du stockage ; point d'entrée métier `executeCommand(GameState, GameCommand, GameConfig)`.
+- `GameState` : source de vérité métier unique. Plusieurs stores Zustand sont possibles pour les besoins d'interface, sans dupliquer les données métier.
+- Filtrer les observations visibles pour les camps **Friend** et **Hostile** ; l'IA ne doit pas être omnisciente.
+- Pour les nouveaux identifiants métier en anglais, utiliser **Friend** / **Hostile**, pas Allied / Enemy.
 
-## Informations à compléter
+## Pratiques de contribution
 
-La stack, les commandes de développement, les tests, le déploiement et les
-variables d'environnement ne sont pas encore décrits dans le dépôt. Les
-renseigner à partir de la configuration réelle lorsqu'elle sera disponible.
+- Examiner les fichiers voisins et les scripts existants avant de modifier le projet ; ne pas supposer qu'un socle applicatif est déjà initialisé.
+- Travailler par petites étapes testables ; limiter chaque changement au besoin demandé.
+- Appliquer SOLID **avec pragmatisme** : responsabilités nettes, dépendances maîtrisées, interfaces simples, pas d'abstractions prématurées.
+- TypeScript `strict`, pas de `any` injustifié ; fonctions lisibles et ciblées ; commentaires expliquant les règles et les choix non évidents.
+- Utiliser ESLint, formatage automatique et tests unitaires adaptés à l'implémentation. Vérifier les commandes réellement disponibles avant de les exécuter.
+- Ne jamais committer de secrets, de dépendances générées ou de fichiers temporaires.
+- Mettre à jour les tests et la documentation seulement lorsque le changement le nécessite ; ne pas recopier les spécifications fonctionnelles dans les documents techniques.
+- Expliquer les changements, les vérifications exécutées et les éventuelles limitations en fin de tâche.
