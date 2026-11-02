@@ -11,13 +11,9 @@
 
 ## Contexte essentiel
 
-Tacticoop est un wargame naval tactique web destiné à la réflexion et au débriefing collectif. La V1 est **frontend-only** ; les anciens dossiers `client/` et `server/` sont abandonnés. Le code applicatif sera organisé sous `src/` à la racine du dépôt, selon [STRUCTURE.md](docs/architecture/STRUCTURE.md).
+Tacticoop est un wargame naval tactique web destiné à la réflexion et au débriefing collectif. Le code applicatif sera organisé sous `src/` à la racine du dépôt, selon [STRUCTURE.md](docs/architecture/STRUCTURE.md).
 
-- Moteur : [MOTEUR-ET-ETAT.md](docs/architecture/MOTEUR-ET-ETAT.md)
-- Persistance : [PERSISTANCE.md](docs/architecture/PERSISTANCE.md)
-- Qualité et incréments : [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md)
-
-**Ne pas générer une nouvelle architecture ni ajouter de backend.** Les SF/GDD définissent les règles ; les questions fonctionnelles non résolues nécessitent une décision explicite.
+Les contrats du moteur, la persistance et les exigences de qualité sont documentés dans [docs/architecture/](docs/architecture/README.md). Les SF/GDD définissent les règles ; les questions fonctionnelles non résolues nécessitent une décision explicite.
 
 ## À la fin d'une intervention
 
