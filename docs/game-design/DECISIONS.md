@@ -33,7 +33,7 @@ Les arbitrages D-01 à D-06 et paramètres provisoires sont consolidés dans [le
 | AB-03.2 | Escorte : destruction du porte-avions **ou** de tous les navires d'escorte alliés = défaite. | G-02, G-13 |
 | AB-04 | Mise en cohérence documentaire des chapitres concernés, sans mécanique nouvelle. | Historique Git |
 | SF-01 | Quatre contraintes V1 ; « Moyens limités » réduit le budget à 70 points, sans retirer automatiquement un navire ; 0, 1 ou 2 contraintes distinctes. | G-11, SF-01 |
-| SF-02 | Carte 50 × 50 par défaut, six terrains, navigabilité et itinéraire A→B garanti. | G-04, SF-02 |
+| SF-02 | Carte 35 × 35 par défaut, six terrains, navigabilité et itinéraire A→B garanti. | G-04, SF-02 |
 | SF-03 | Activation volontairement terminée, action facultative, navigation du porte-avions et commandes. | G-06, SF-03 |
 | Révision G-08 | Détection passive : zone contiguë de géométrie variable contenant la cible sans l'imposer au centre. | G-08, SF-04 |
 | Révision G-06/G-09 | Progression des projectiles après chaque séquence complète activation alliée / réaction ennemie. | G-06, G-09, SF-05 |
