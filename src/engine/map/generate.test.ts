@@ -1,0 +1,25 @@
+import { createRng } from '../core/rng';
+import { generateEscortMap, generateTerrain } from './generate';
+import { shortestPath } from './gameMap';
+import { TERRAINS } from './terrain';
+
+describe('génération de carte', () => {
+  it('est déterministe pour une même graine', () => {
+    const a = generateTerrain(20, 20, createRng(42));
+    const b = generateTerrain(20, 20, createRng(42));
+    expect(a.terrain).toEqual(b.terrain);
+  });
+
+  it('produit les six terrains', () => {
+    const { terrain } = generateTerrain(50, 50, createRng(1));
+    expect(terrain).toHaveLength(2500);
+    for (const t of TERRAINS) expect(terrain).toContain(t);
+  });
+
+  it('garantit un trajet navigable A→B pour le porte-avions, quelle que soit la graine', () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const { map, start, goal } = generateEscortMap(50, 50, createRng(seed));
+      expect(shortestPath(map, start, goal, 'carrier')).not.toBeNull();
+    }
+  });
+});
