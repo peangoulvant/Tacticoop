@@ -14,6 +14,11 @@ export default tseslint.config(
     rules: { ...reactHooks.configs.recommended.rules },
   },
   {
+    // Complexité cyclomatique : 5 conseillé, 10 au maximum (QUALITE-ET-IMPLEMENTATION.md).
+    files: ['src/**/*.{ts,tsx}'],
+    rules: { complexity: ['error', 10] },
+  },
+  {
     // Le moteur reste indépendant de React, Zustand, MUI et IndexedDB (STRUCTURE.md).
     files: ['src/engine/**/*.ts'],
     rules: {

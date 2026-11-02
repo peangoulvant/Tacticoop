@@ -1,11 +1,12 @@
 import { Box, LinearProgress, Stack, Typography } from '@mui/material';
-import type { Unit } from '../../engine';
+import { defaultConfig, type Unit } from '../../engine';
 import { palette } from '../../app/theme';
 import { weaponIcon } from '../../shared/assets';
 
 /** Barre de PV : lit l'état de l'unité, sans le copier. */
 export function HpBar({ unit }: { unit: Unit }) {
-  const percent = Math.round((unit.hp / unit.maxHp) * 100);
+  const maxHp = defaultConfig.ships[unit.shipClass].maxHp;
+  const percent = Math.round((unit.hp / maxHp) * 100);
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
       <Typography variant="caption" sx={{ width: 28 }}>
@@ -14,7 +15,7 @@ export function HpBar({ unit }: { unit: Unit }) {
       <LinearProgress
         variant="determinate"
         value={percent}
-        aria-label={`PV ${unit.hp} sur ${unit.maxHp}`}
+        aria-label={`PV ${unit.hp} sur ${maxHp}`}
         sx={{
           flex: 1,
           height: 8,
@@ -23,7 +24,7 @@ export function HpBar({ unit }: { unit: Unit }) {
         }}
       />
       <Typography variant="caption" sx={{ width: 64, textAlign: 'right' }}>
-        {unit.hp}/{unit.maxHp}
+        {unit.hp}/{maxHp}
       </Typography>
     </Stack>
   );

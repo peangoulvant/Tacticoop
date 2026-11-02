@@ -53,3 +53,17 @@ export function initialView(viewport: Size, content: Size, focusY: number): View
   const k = coverScale(viewport, content);
   return clampView({ k, x: 0, y: viewport.height / 2 - focusY * k }, viewport, content);
 }
+
+/**
+ * Vue effective : celle choisie par le joueur (recadrée), sinon la vue initiale.
+ * `null` tant que la zone n'a pas de taille mesurée.
+ */
+export function resolveView(
+  custom: View | null,
+  viewport: Size,
+  content: Size,
+  focusY: number,
+): View | null {
+  if (viewport.width <= 0 || viewport.height <= 0) return null;
+  return custom ? clampView(custom, viewport, content) : initialView(viewport, content, focusY);
+}

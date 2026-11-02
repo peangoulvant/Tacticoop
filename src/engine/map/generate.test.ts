@@ -11,14 +11,14 @@ describe('génération de carte', () => {
   });
 
   it('produit les six terrains', () => {
-    const { terrain } = generateTerrain(50, 50, createRng(1));
-    expect(terrain).toHaveLength(2500);
+    const { terrain } = generateTerrain(35, 35, createRng(1));
+    expect(terrain).toHaveLength(1225);
     for (const t of TERRAINS) expect(terrain).toContain(t);
   });
 
   it('garantit un trajet navigable A→B pour le porte-avions, quelle que soit la graine', () => {
     for (let seed = 0; seed < 30; seed++) {
-      const { map, start, goal } = generateEscortMap(50, 50, createRng(seed));
+      const { map, start, goal } = generateEscortMap(35, 35, createRng(seed));
       expect(shortestPath(map, start, goal, 'carrier')).not.toBeNull();
     }
   });

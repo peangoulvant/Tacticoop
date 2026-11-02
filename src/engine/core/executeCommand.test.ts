@@ -131,7 +131,9 @@ describe('executeCommand — lancement', () => {
     const keys = new Set(state.units.map((u) => `${u.position.col},${u.position.row}`));
     expect(keys.size).toBe(state.units.length);
     for (const u of state.units) {
-      expect(isNavigable(terrainAt(state.map, u.position), u.category)).toBe(true);
+      expect(
+        isNavigable(terrainAt(state.map, u.position), defaultConfig.ships[u.shipClass].category),
+      ).toBe(true);
     }
     expect(sameHex(state.units[0]!.position, state.start)).toBe(true);
   });

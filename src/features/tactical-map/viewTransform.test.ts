@@ -1,4 +1,4 @@
-import { clampView, coverScale, initialView, zoomAt } from './viewTransform';
+import { clampView, coverScale, initialView, resolveView, zoomAt } from './viewTransform';
 
 const viewport = { width: 1000, height: 600 };
 const content = { width: 800, height: 700 };
@@ -30,5 +30,10 @@ describe('viewTransform', () => {
     const next = zoomAt(start, 1.5, anchor, viewport, content);
     const before = (anchor.x - start.x) / start.k;
     expect((anchor.x - next.x) / next.k).toBeCloseTo(before);
+  });
+
+  it("ne calcule aucune vue tant que la zone n'a pas de taille", () => {
+    expect(resolveView(null, { width: 0, height: 0 }, content, 0)).toBeNull();
+    expect(resolveView(null, viewport, content, 350)).toEqual(initialView(viewport, content, 350));
   });
 });

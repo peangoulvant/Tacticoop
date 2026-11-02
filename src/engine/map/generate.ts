@@ -1,6 +1,6 @@
 import type { Rng } from '../core/rng';
-import { type GameMap, indexOf, inBounds, shortestPath, terrainAt } from './gameMap';
-import { type Hex, hexDistance, hexLine, hexNeighbors } from './hex';
+import { type GameMap, indexOf, inBounds, nearestNavigableHex, shortestPath } from './gameMap';
+import { type Hex, hexLine, hexNeighbors } from './hex';
 import { isNavigable, TERRAINS, type Terrain } from './terrain';
 
 /**
@@ -18,68 +18,66 @@ const TERRAIN_SHARES: Record<Terrain, number> = {
 
 const SMOOTHING_PASSES = 9;
 
+/** Carte générée, avec le point de départ allié (A) et, en escorte, le point d'arrivée (B). */
+export interface ScenarioMap {
+  map: GameMap;
+  start: Hex;
+  goal: Hex | null;
+}
+
+export interface EscortMap extends ScenarioMap {
+  goal: Hex;
+}
+
+/** Remplace chaque valeur par la moyenne de la case et de ses voisines : crée des ensembles cohérents. */
+function smooth(field: readonly number[], width: number, height: number): number[] {
+  return field.map((value, i) => {
+    const neighbors = hexNeighbors({ col: i % width, row: Math.floor(i / width) }, width, height);
+    const sum = neighbors.reduce((acc, n) => acc + (field[indexOf({ width }, n)] as number), value);
+    return sum / (neighbors.length + 1);
+  });
+}
+
+/** Découpe le champ lissé par quantiles : la case de rang r reçoit le terrain de sa tranche. */
+function assignTerrains(field: readonly number[]): Terrain[] {
+  const size = field.length;
+  let cumulative = 0;
+  const ends = TERRAINS.map((kind) => Math.round((cumulative += TERRAIN_SHARES[kind]) * size));
+  const ranked = field.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v || a.i - b.i);
+  const terrain = new Array<Terrain>(size);
+  ranked.forEach(({ i }, rank) => {
+    terrain[i] = TERRAINS[ends.findIndex((end) => rank < end)] as Terrain;
+  });
+  return terrain;
+}
+
 /**
  * Génère une carte procédurale : un champ de bruit lissé est découpé par quantiles, ce qui
  * produit des ensembles cohérents (mer profonde → côtes → plage → plaine → montagne)
  * plutôt qu'une dispersion indépendante des hexagones (SF-02 §1).
  */
 export function generateTerrain(width: number, height: number, rng: Rng): GameMap {
-  const size = width * height;
-  let field = Array.from({ length: size }, () => rng());
-
-  for (let pass = 0; pass < SMOOTHING_PASSES; pass++) {
-    const next = new Array<number>(size);
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
-        const i = row * width + col;
-        let sum = field[i] as number;
-        let count = 1;
-        for (const n of hexNeighbors({ col, row }, width, height)) {
-          sum += field[n.row * width + n.col] as number;
-          count++;
-        }
-        next[i] = sum / count;
-      }
-    }
-    field = next;
-  }
-
-  // Rang de chaque case dans le champ lissé → terrain selon sa tranche de quantile.
-  const order = field.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v || a.i - b.i);
-  const terrain = new Array<Terrain>(size);
-  let cumulative = 0;
-  let cursor = 0;
-  for (const kind of TERRAINS) {
-    cumulative += TERRAIN_SHARES[kind];
-    const end = kind === 'mountain' ? size : Math.round(cumulative * size);
-    for (; cursor < end; cursor++) terrain[(order[cursor] as { i: number }).i] = kind;
-  }
-  return { width, height, terrain };
+  let field = Array.from({ length: width * height }, () => rng());
+  for (let pass = 0; pass < SMOOTHING_PASSES; pass++) field = smooth(field, width, height);
+  return { width, height, terrain: assignTerrains(field) };
 }
 
-/** Hexagone navigable pour un porte-avions le plus proche de la cible désirée. */
-function nearestCarrierWater(map: GameMap, target: Hex): Hex {
-  let best: Hex | null = null;
-  let bestDistance = Infinity;
-  for (let row = 0; row < map.height; row++) {
-    for (let col = 0; col < map.width; col++) {
-      const hex = { col, row };
-      if (!isNavigable(terrainAt(map, hex), 'carrier')) continue;
-      const d = hexDistance(hex, target);
-      if (d < bestDistance) {
-        best = hex;
-        bestDistance = d;
-      }
-    }
+/** Creuse un couloir de mer classique le long de la ligne droite entre deux points. */
+function carveCorridor(map: GameMap, from: Hex, to: Hex): GameMap {
+  const terrain = [...map.terrain];
+  for (const hex of hexLine(from, to)) {
+    const blocked =
+      inBounds(map, hex) && !isNavigable(terrain[indexOf(map, hex)] as Terrain, 'carrier');
+    if (blocked) terrain[indexOf(map, hex)] = 'sea';
   }
-  if (!best) throw new Error('Carte sans aucune mer navigable');
-  return best;
+  return { ...map, terrain };
 }
 
-export interface EscortMap {
-  map: GameMap;
-  start: Hex;
-  goal: Hex;
+/** Lutte navale : les alliés partent de l'ouest, au milieu de la carte. */
+export function generateNavalCombatMap(width: number, height: number, rng: Rng): ScenarioMap {
+  const map = generateTerrain(width, height, rng);
+  const start = nearestNavigableHex(map, { col: 2, row: Math.floor(height / 2) }, 'submarine');
+  return { map, start, goal: null };
 }
 
 /**
@@ -89,17 +87,8 @@ export interface EscortMap {
 export function generateEscortMap(width: number, height: number, rng: Rng): EscortMap {
   const generated = generateTerrain(width, height, rng);
   const middle = Math.floor(height / 2);
-  const start = nearestCarrierWater(generated, { col: 2, row: middle });
-  const goal = nearestCarrierWater(generated, { col: width - 3, row: middle });
-
-  if (shortestPath(generated, start, goal, 'carrier')) return { map: generated, start, goal };
-
-  const terrain = [...generated.terrain];
-  for (const hex of hexLine(start, goal)) {
-    if (!inBounds(generated, hex)) continue;
-    if (!isNavigable(terrain[indexOf(generated, hex)] as Terrain, 'carrier')) {
-      terrain[indexOf(generated, hex)] = 'sea';
-    }
-  }
-  return { map: { width, height, terrain }, start, goal };
+  const start = nearestNavigableHex(generated, { col: 2, row: middle }, 'carrier');
+  const goal = nearestNavigableHex(generated, { col: width - 3, row: middle }, 'carrier');
+  const connected = shortestPath(generated, start, goal, 'carrier') !== null;
+  return { map: connected ? generated : carveCorridor(generated, start, goal), start, goal };
 }

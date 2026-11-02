@@ -1,6 +1,5 @@
 import type { ShipClass, Terrain } from '../../engine';
-import { shipIcon, terrainIcon } from '../../shared/assets';
-import { TERRAIN_LIST } from './terrainList';
+import { shipIcon } from '../../shared/assets';
 
 /** Couleurs de fond par terrain (aplats de la maquette, contours conservés). */
 export const terrainFill: Record<Terrain, string> = {
@@ -11,25 +10,6 @@ export const terrainFill: Record<Terrain, string> = {
   plain: '#8cbf64',
   mountain: '#9c7b5a',
 };
-
-/** Symboles réutilisés via `<use>` : une seule définition par terrain pour ~2 500 cases. */
-export function TerrainSymbols() {
-  return (
-    <defs>
-      {TERRAIN_LIST.map((t) => (
-        <symbol key={t} id={`terrain-${t}`} viewBox="0 0 10 6" overflow="visible">
-          <image
-            href={terrainIcon[t]}
-            width="10"
-            height="6"
-            preserveAspectRatio="xMidYMid meet"
-            opacity="0.9"
-          />
-        </symbol>
-      ))}
-    </defs>
-  );
-}
 
 /** Silhouette d'un bâtiment centrée sur (0,0), dans un cadre de 13 × 7. */
 export function ShipGlyph({ shipClass }: { shipClass: ShipClass }) {

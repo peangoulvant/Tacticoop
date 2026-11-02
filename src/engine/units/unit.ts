@@ -1,20 +1,21 @@
 import type { GameConfig, ShipClass } from '../config/gameConfig';
 import type { Hex } from '../map/hex';
-import type { NavalCategory } from '../map/terrain';
 
 export type Side = 'friend' | 'hostile';
 
-/** Unité navale. L'état courant (PV, stocks) est la seule copie : l'UI ne le duplique pas. */
+/**
+ * Unité navale : seulement l'état courant. Les caractéristiques fixes de sa classe (PV maximum,
+ * catégorie de navigation, coût…) restent dans `GameConfig.ships[shipClass]` (`ShipSpec`).
+ */
 export interface Unit {
   id: string;
   side: Side;
   shipClass: ShipClass;
-  category: NavalCategory;
   position: Hex;
   hp: number;
-  maxHp: number;
-  /** Déplacement maximal par activation, en hexagones. */
+  /** Déplacement maximal par activation, en hexagones, contraintes initiales comprises. */
   movement: number;
+  /** Stocks courants, dotation initiale comprise après contraintes. */
   missiles: number;
   torpedoes: number;
   /** Hélicoptères embarqués (un seul utilisable à la fois : règle de D-03, non gérée ici). */
@@ -45,10 +46,8 @@ export function createUnit(
     id,
     side,
     shipClass,
-    category: spec.category,
     position,
     hp: spec.maxHp,
-    maxHp: spec.maxHp,
     movement: capped,
     missiles: Math.floor(spec.missiles * modifiers.ammoFactor),
     torpedoes: Math.floor(spec.torpedoes * modifiers.ammoFactor),

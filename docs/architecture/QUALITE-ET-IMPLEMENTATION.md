@@ -16,6 +16,7 @@ Appliquer les principes **SOLID** de manière pragmatique :
 - TypeScript `strict`, sans `any` injustifié ; types et noms explicites.
 - ESLint et formatage automatique (par exemple Prettier) ; compilation, lint et tests sans erreurs.
 - Fonctions focalisées, imbrication limitée, pas de duplication inutile ni d'effets de bord cachés.
+- Complexité cyclomatique par fonction : **5 conseillé, 10 au maximum** (règle ESLint `complexity`, valable pour tout le code source, composants React compris).
 - Commentaires expliquant **pourquoi** une décision ou une règle est appliquée ; ne pas paraphraser les instructions évidentes.
 - JSDoc ciblé pour les interfaces publiques et les comportements délicats.
 - Pas de limite arbitraire de lignes par fonction/fichier, ni d'outil de qualimétrie lourd imposé à la V1.

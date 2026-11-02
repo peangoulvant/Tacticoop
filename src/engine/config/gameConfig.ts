@@ -43,7 +43,7 @@ export const PURCHASABLE_CLASSES: readonly PurchasableShipClass[] = [
 ];
 
 export const defaultConfig: GameConfig = {
-  map: { width: 50, height: 50 },
+  map: { width: 35, height: 35 },
   budget: { normal: 100, limitedMeans: 70 },
   constraints: { ammoFactor: 0.7, badWeatherMaxMovement: 2 },
   ships: {

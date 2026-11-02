@@ -12,6 +12,15 @@ import {
 import { createRng } from './rng';
 import type { CommandResult, GameCommand, GameError, GameErrorCode, GameState } from './types';
 
+type CommandOf<T extends GameCommand['type']> = Extract<GameCommand, { type: T }>;
+
+/** Traitement d'une commande de préparation : reçoit les choix courants, renvoie le résultat. */
+type Handler<T extends GameCommand['type']> = (
+  setup: MissionSetup,
+  command: CommandOf<T>,
+  config: GameConfig,
+) => CommandResult;
+
 const reject = (
   code: GameErrorCode,
   message: string,
@@ -21,11 +30,80 @@ const reject = (
   error: { code, message, ...extra },
 });
 
-const withSetup = (setup: MissionSetup): CommandResult => ({
+const accept = (setup: MissionSetup): CommandResult => ({
   ok: true,
   state: { status: 'preparation', setup },
   events: [],
 });
+
+const invalidConstraints = (): CommandResult =>
+  reject('INVALID_CONSTRAINTS', `Choisir entre 0 et ${MAX_CONSTRAINTS} contraintes distinctes.`);
+
+/** Changer de mission conserve la difficulté mais réinitialise contraintes et force (SF-01 §2). */
+const selectMission: Handler<'SELECT_MISSION'> = (setup, { mission }) =>
+  accept({ mission, difficulty: setup.difficulty, constraints: [], force: emptyForce() });
+
+const setDifficulty: Handler<'SET_DIFFICULTY'> = (setup, { difficulty }) =>
+  accept({ ...setup, difficulty });
+
+/** Un budget réduit sous le coût de la force n'efface rien : seul le lancement sera bloqué. */
+const setConstraints: Handler<'SET_CONSTRAINTS'> = (setup, { constraints }) =>
+  areConstraintsValid(constraints)
+    ? accept({ ...setup, constraints: [...constraints] })
+    : invalidConstraints();
+
+const drawRandomConstraints: Handler<'DRAW_RANDOM_CONSTRAINTS'> = (setup, { count, seed }) => {
+  const valid = Number.isInteger(count) && count >= 0 && count <= MAX_CONSTRAINTS;
+  return valid
+    ? accept({ ...setup, constraints: drawConstraints(count, createRng(seed)) })
+    : invalidConstraints();
+};
+
+const withShipCount = (
+  setup: MissionSetup,
+  shipClass: keyof MissionSetup['force'],
+  delta: number,
+) => ({
+  ...setup,
+  force: { ...setup.force, [shipClass]: setup.force[shipClass] + delta },
+});
+
+/** On ne peut pas dépasser le budget en ajoutant ; seule une contrainte peut créer un dépassement. */
+const addShip: Handler<'ADD_SHIP'> = (setup, { shipClass }, config) => {
+  const next = withShipCount(setup, shipClass, 1);
+  return computeBudget(next, config).overrun > 0
+    ? reject('BUDGET_EXCEEDED', 'Budget insuffisant pour ce bâtiment.')
+    : accept(next);
+};
+
+const removeShip: Handler<'REMOVE_SHIP'> = (setup, { shipClass }) =>
+  setup.force[shipClass] < 1
+    ? reject('NO_SHIP_TO_REMOVE', 'Aucun bâtiment de cette catégorie à retirer.')
+    : accept(withShipCount(setup, shipClass, -1));
+
+const launch: Handler<'LAUNCH_MISSION'> = (setup, { seed }, config) => {
+  const blockers = launchBlockers(setup, config);
+  if (blockers.length > 0) {
+    return reject('LAUNCH_BLOCKED', 'La composition ne permet pas de lancer la mission.', {
+      blockers,
+    });
+  }
+  return {
+    ok: true,
+    state: { status: 'in_progress', setup, cycle: 1, ...launchMission(setup, config, seed) },
+    events: [{ type: 'MISSION_LAUNCHED', mission: setup.mission, cycle: 1 }],
+  };
+};
+
+const handlers: { [T in GameCommand['type']]: Handler<T> } = {
+  SELECT_MISSION: selectMission,
+  SET_DIFFICULTY: setDifficulty,
+  SET_CONSTRAINTS: setConstraints,
+  DRAW_RANDOM_CONSTRAINTS: drawRandomConstraints,
+  ADD_SHIP: addShip,
+  REMOVE_SHIP: removeShip,
+  LAUNCH_MISSION: launch,
+};
 
 /**
  * Point d'entrée unique du moteur (AT-04). Fonction pure : l'état reçu n'est jamais muté
@@ -39,81 +117,8 @@ export function executeCommand(
   if (state.status !== 'preparation') {
     return reject('WRONG_PHASE', 'Les choix de préparation sont verrouillés après le lancement.');
   }
-  const { setup } = state;
-
-  switch (command.type) {
-    case 'SELECT_MISSION':
-      // Changer de mission conserve la difficulté mais réinitialise contraintes et force (SF-01 §2).
-      return withSetup({
-        mission: command.mission,
-        difficulty: setup.difficulty,
-        constraints: [],
-        force: emptyForce(),
-      });
-
-    case 'SET_DIFFICULTY':
-      return withSetup({ ...setup, difficulty: command.difficulty });
-
-    case 'SET_CONSTRAINTS':
-      // Un budget réduit sous le coût de la force n'efface rien : le lancement sera bloqué.
-      if (!areConstraintsValid(command.constraints)) {
-        return reject(
-          'INVALID_CONSTRAINTS',
-          `Choisir entre 0 et ${MAX_CONSTRAINTS} contraintes distinctes.`,
-        );
-      }
-      return withSetup({ ...setup, constraints: [...command.constraints] });
-
-    case 'DRAW_RANDOM_CONSTRAINTS':
-      if (
-        !Number.isInteger(command.count) ||
-        command.count < 0 ||
-        command.count > MAX_CONSTRAINTS
-      ) {
-        return reject(
-          'INVALID_CONSTRAINTS',
-          `Choisir entre 0 et ${MAX_CONSTRAINTS} contraintes distinctes.`,
-        );
-      }
-      return withSetup({
-        ...setup,
-        constraints: drawConstraints(command.count, createRng(command.seed)),
-      });
-
-    case 'ADD_SHIP': {
-      const next = {
-        ...setup,
-        force: { ...setup.force, [command.shipClass]: setup.force[command.shipClass] + 1 },
-      };
-      // On ne peut pas dépasser le budget en ajoutant ; seule une contrainte peut créer un dépassement.
-      if (computeBudget(next, config).overrun > 0) {
-        return reject('BUDGET_EXCEEDED', 'Budget insuffisant pour ce bâtiment.');
-      }
-      return withSetup(next);
-    }
-
-    case 'REMOVE_SHIP':
-      if (setup.force[command.shipClass] < 1) {
-        return reject('NO_SHIP_TO_REMOVE', 'Aucun bâtiment de cette catégorie à retirer.');
-      }
-      return withSetup({
-        ...setup,
-        force: { ...setup.force, [command.shipClass]: setup.force[command.shipClass] - 1 },
-      });
-
-    case 'LAUNCH_MISSION': {
-      const blockers = launchBlockers(setup, config);
-      if (blockers.length > 0) {
-        return reject('LAUNCH_BLOCKED', 'La composition ne permet pas de lancer la mission.', {
-          blockers,
-        });
-      }
-      const launched = launchMission(setup, config, command.seed);
-      return {
-        ok: true,
-        state: { status: 'in_progress', setup, cycle: 1, ...launched },
-        events: [{ type: 'MISSION_LAUNCHED', mission: setup.mission, cycle: 1 }],
-      };
-    }
-  }
+  // TypeScript ne relie pas le type de la commande à son gestionnaire : le lien est garanti
+  // par le type de `handlers`, qui impose un gestionnaire pour chaque type de commande.
+  const handler = handlers[command.type] as Handler<GameCommand['type']>;
+  return handler(state.setup, command, config);
 }
