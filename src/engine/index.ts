@@ -14,7 +14,6 @@ export type { GameConfig, PurchasableShipClass, ShipClass, ShipSpec } from './co
 export {
   CONSTRAINTS,
   DIFFICULTIES,
-  MAX_CONSTRAINTS,
   MISSIONS,
   computeBudget,
   initialSetup,

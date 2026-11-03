@@ -27,6 +27,8 @@ export interface GameConfig {
   map: { width: number; height: number };
   budget: { normal: number; limitedMeans: number };
   constraints: {
+    /** Nombre maximal de contraintes initiales (0 à ce maximum, SF-01 §4). */
+    maxCount: number;
     /** Dotation conservée avec « Stocks de munitions limités » (arrondi inférieur). */
     ammoFactor: number;
     /** Plafond de déplacement des unités alliées avec « Météo défavorable ». */
@@ -45,7 +47,7 @@ export const PURCHASABLE_CLASSES: readonly PurchasableShipClass[] = [
 export const defaultConfig: GameConfig = {
   map: { width: 35, height: 35 },
   budget: { normal: 100, limitedMeans: 70 },
-  constraints: { ammoFactor: 0.7, badWeatherMaxMovement: 2 },
+  constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2 },
   ships: {
     fremm: {
       label: 'FREMM multimission',
