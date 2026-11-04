@@ -1,4 +1,5 @@
 import type {
+  ActivationStatus,
   Constraint,
   Difficulty,
   GameError,
@@ -58,3 +59,10 @@ export const blockerLabel: Record<LaunchBlocker, string> = {
 };
 
 export const errorMessage = (error: GameError): string => error.message;
+
+/** État d'activation affiché sur les fiches ; le porte-avions n'en a pas (SF-03.6). */
+export const activationLabel: Record<Exclude<ActivationStatus, 'not_activable'>, string> = {
+  available: 'Disponible',
+  in_progress: 'En cours',
+  activated: 'Activée',
+};

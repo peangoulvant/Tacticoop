@@ -1,8 +1,9 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, Stack, Typography } from '@mui/material';
 import { defaultConfig, type Unit } from '../../engine';
 import { palette } from '../../app/theme';
 import { useSelectionStore } from '../../store/useSelectionStore';
 import { shipIcon } from '../../shared/assets';
+import { ActivationBadge } from './ActivationBadge';
 import { HpBar, StockLine } from './UnitStats';
 
 /** Forces alliées : cartes cliquables, l'état affiché vient du GameState. */
@@ -44,9 +45,12 @@ export function FleetPanel({ units }: { units: Unit[] }) {
                 borderWidth: selected ? 2 : 1,
               }}
             >
-              <Typography sx={{ fontWeight: 700 }}>
-                {defaultConfig.ships[unit.shipClass].label}
-              </Typography>
+              <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontWeight: 700 }}>
+                  {defaultConfig.ships[unit.shipClass].label}
+                </Typography>
+                <ActivationBadge status={unit.activation} />
+              </Stack>
               <Box
                 component="img"
                 src={shipIcon[unit.shipClass]}

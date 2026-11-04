@@ -22,7 +22,7 @@ export function LogbookPanel({ events }: { events: GameEvent[] }) {
       </Typography>
       {events.map((event, i) => (
         <Box key={i} sx={{ display: 'flex', gap: 1.5 }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
             Cycle {event.cycle}
           </Typography>
           <Typography variant="body2">{describe(event)}</Typography>

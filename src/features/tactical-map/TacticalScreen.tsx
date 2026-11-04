@@ -1,20 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material';
 import type { MissionState } from '../../engine';
 import { constraintLabel, difficultyLabel, missionLabel } from '../../shared/labels';
 import { useGameStore } from '../../store/useGameStore';
+import { EndCycleButton } from '../commands/EndCycleButton';
+import { MoveBar } from '../commands/MoveBar';
+import { NewGameButton } from '../commands/NewGameButton';
 import { UnitPanel } from '../commands/UnitPanel';
+import { useMovePlan } from '../commands/useMovePlan';
 import { FleetPanel } from '../fleet/FleetPanel';
 import { LogbookPanel } from '../logbook/LogbookPanel';
 import { TacticalMap } from './TacticalMap';
@@ -55,8 +48,6 @@ function Splitter({ onDrag }: { onDrag: (delta: number) => void }) {
 }
 
 function TopBar({ mission }: { mission: MissionState }) {
-  const reset = useGameStore((s) => s.reset);
-  const [confirmingReset, setConfirmingReset] = useState(false);
   const { setup } = mission;
   const weather = setup.constraints.includes('bad_weather')
     ? constraintLabel.bad_weather.name
@@ -89,24 +80,8 @@ function TopBar({ mission }: { mission: MissionState }) {
         </Typography>
         <Typography variant="body2">{difficultyLabel[setup.difficulty]}</Typography>
       </Stack>
-      <Button size="small" variant="outlined" onClick={() => setConfirmingReset(true)}>
-        Nouvelle partie
-      </Button>
-      <Dialog open={confirmingReset} onClose={() => setConfirmingReset(false)}>
-        <DialogTitle>Abandonner la mission ?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            La mission en cours sera perdue et vous reviendrez à la préparation d’une nouvelle
-            partie.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmingReset(false)}>Continuer la mission</Button>
-          <Button color="error" onClick={reset}>
-            Abandonner
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <EndCycleButton mission={mission} />
+      <NewGameButton />
     </Paper>
   );
 }
@@ -117,6 +92,9 @@ function TopBar({ mission }: { mission: MissionState }) {
  */
 export function TacticalScreen({ mission }: { mission: MissionState }) {
   const events = useGameStore((s) => s.events);
+  const lastError = useGameStore((s) => s.lastError);
+  const clearError = useGameStore((s) => s.clearError);
+  const move = useMovePlan(mission);
   const sideRef = useRef<HTMLDivElement>(null);
   const [unitHeight, setUnitHeight] = useState(420);
   const dragSplitter = useCallback((delta: number) => {
@@ -141,8 +119,9 @@ export function TacticalScreen({ mission }: { mission: MissionState }) {
       <Box sx={{ gridColumn: '1 / -1' }}>
         <TopBar mission={mission} />
       </Box>
-      <Paper sx={{ overflow: 'hidden', minHeight: 0 }}>
-        <TacticalMap mission={mission} />
+      <Paper sx={{ position: 'relative', overflow: 'hidden', minHeight: 0 }}>
+        <TacticalMap mission={mission} move={move} />
+        <MoveBar move={move} />
       </Paper>
       <Box
         ref={sideRef}
@@ -154,11 +133,16 @@ export function TacticalScreen({ mission }: { mission: MissionState }) {
           gridTemplateRows: `${unitHeight}px 8px minmax(0, 1fr)`,
         }}
       >
-        <UnitPanel units={mission.units} />
+        <UnitPanel mission={mission} />
         <Splitter onDrag={dragSplitter} />
         <LogbookPanel events={events} />
       </Box>
       <FleetPanel units={mission.units} />
+      <Snackbar open={lastError !== null} autoHideDuration={4000} onClose={clearError}>
+        <Alert severity="warning" onClose={clearError}>
+          {lastError?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
