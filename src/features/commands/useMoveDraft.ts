@@ -9,10 +9,13 @@ import {
   type MissionState,
   type Unit,
 } from '../../engine';
-import { useMovePlanStore } from '../../store/useMovePlanStore';
+import { useMoveDraftStore } from '../../store/useMoveDraftStore';
 
-/** Déplacement en préparation, calculé par le moteur à partir de l'unité et de la destination. */
-export interface MovePreparation {
+/**
+ * Brouillon de déplacement : le déplacement en préparation, pas encore exécuté. Le trajet (`plan`)
+ * est calculé par le moteur à partir de l'unité et de la destination choisie.
+ */
+export interface MoveDraft {
   unit: Unit;
   /** Destinations accessibles à l'unité. */
   reachable: Hex[];
@@ -22,9 +25,9 @@ export interface MovePreparation {
 }
 
 /** Déplacement en cours de préparation, ou `null` s'il n'y en a pas ou s'il n'est plus possible. */
-export function useMovePlan(mission: MissionState): MovePreparation | null {
-  const unitId = useMovePlanStore((s) => s.unitId);
-  const destination = useMovePlanStore((s) => s.destination);
+export function useMoveDraft(mission: MissionState): MoveDraft | null {
+  const unitId = useMoveDraftStore((s) => s.unitId);
+  const destination = useMoveDraftStore((s) => s.destination);
   const unit = mission.units.find((u) => u.id === unitId);
   const possible = unit !== undefined && moveBlocker(mission.units, unit) === null;
 

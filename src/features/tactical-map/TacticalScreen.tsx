@@ -7,7 +7,7 @@ import { EndCycleButton } from '../commands/EndCycleButton';
 import { MoveBar } from '../commands/MoveBar';
 import { NewGameButton } from '../commands/NewGameButton';
 import { UnitPanel } from '../commands/UnitPanel';
-import { useMovePlan } from '../commands/useMovePlan';
+import { useMoveDraft } from '../commands/useMoveDraft';
 import { FleetPanel } from '../fleet/FleetPanel';
 import { LogbookPanel } from '../logbook/LogbookPanel';
 import { TacticalMap } from './TacticalMap';
@@ -91,7 +91,7 @@ export function TacticalScreen({ mission }: { mission: MissionState }) {
   const events = useGameStore((s) => s.events);
   const lastError = useGameStore((s) => s.lastError);
   const clearError = useGameStore((s) => s.clearError);
-  const move = useMovePlan(mission);
+  const move = useMoveDraft(mission);
   const sideRef = useRef<HTMLDivElement>(null);
   const [unitHeight, setUnitHeight] = useState(420);
   const dragSplitter = useCallback((delta: number) => {

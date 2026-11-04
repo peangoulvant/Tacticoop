@@ -15,9 +15,9 @@ import {
 import { palette } from '../../app/theme';
 import { finishFlagIcon } from '../../shared/assets';
 import { terrainLabel } from '../../shared/labels';
-import { useMovePlanStore } from '../../store/useMovePlanStore';
+import { useMoveDraftStore } from '../../store/useMoveDraftStore';
 import { useSelectionStore } from '../../store/useSelectionStore';
-import type { MovePreparation } from '../commands/useMovePlan';
+import type { MoveDraft } from '../commands/useMoveDraft';
 import { ShipGlyph, terrainFill } from './glyphs';
 import { HEX_POINTS, hexCenter, mapViewBox } from './hexGeometry';
 import { MoveOverlay } from './MoveOverlay';
@@ -131,18 +131,12 @@ function HexCaption({ map, hex, unit }: { map: GameMap; hex: Hex | null; unit?: 
  * Carte tactique : rendu SVG 2D simplifié (docs/maquette). Occupe toute la zone (tronquée si
  * besoin), se déplace par glisser-déposer et se zoome à la molette, comme une carte en ligne.
  */
-export function TacticalMap({
-  mission,
-  move,
-}: {
-  mission: MissionState;
-  move: MovePreparation | null;
-}) {
+export function TacticalMap({ mission, move }: { mission: MissionState; move: MoveDraft | null }) {
   const { map, units, start, goal } = mission;
   const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
   const content = mapViewBox(map);
 
-  const previewMove = useMovePlanStore((s) => s.preview);
+  const previewDestination = useMoveDraftStore((s) => s.previewDestination);
 
   // Une unité cliquée est consultée (sa fiche s'affiche). Une case vide choisit la destination du
   // déplacement en préparation ; sans déplacement en préparation, elle désélectionne l'unité.
@@ -150,7 +144,7 @@ export function TacticalMap({
     selectHex(hex);
     const here = units.find((u) => sameHex(u.position, hex));
     if (here) selectUnit(here.id);
-    else if (move) previewMove(hex);
+    else if (move) previewDestination(hex);
     else selectUnit(null);
   };
   const { containerRef, viewport, view, zoomBy, resetView, pointerHandlers } = useMapView(

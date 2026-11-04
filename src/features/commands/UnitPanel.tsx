@@ -9,7 +9,7 @@ import {
   type Unit,
 } from '../../engine';
 import { shipIcon } from '../../shared/assets';
-import { useMovePlanStore } from '../../store/useMovePlanStore';
+import { useMoveDraftStore } from '../../store/useMoveDraftStore';
 import { useSelectionStore } from '../../store/useSelectionStore';
 import { ActivationBadge } from '../fleet/ActivationBadge';
 import { HpBar, StockLine } from '../fleet/UnitStats';
@@ -34,7 +34,7 @@ function unavailabilityReason(mission: MissionState, unit: Unit): string | null 
 }
 
 function CommandButtons({ mission, unit }: { mission: MissionState; unit: Unit }) {
-  const startMove = useMovePlanStore((s) => s.start);
+  const startDraft = useMoveDraftStore((s) => s.startDraft);
   const reason = unavailabilityReason(mission, unit);
   return (
     <>
@@ -42,7 +42,7 @@ function CommandButtons({ mission, unit }: { mission: MissionState; unit: Unit }
         <Button
           variant="outlined"
           disabled={moveBlocker(mission.units, unit) !== null}
-          onClick={() => startMove(unit.id)}
+          onClick={() => startDraft(unit.id)}
         >
           Déplacement
         </Button>
