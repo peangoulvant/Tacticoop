@@ -21,6 +21,15 @@ export interface Battlefield {
 /** Motifs de refus d'un déplacement, présentés au joueur (SF-02 §6). */
 export type MoveRefusal = 'SAME_HEX' | 'NOT_NAVIGABLE' | 'OCCUPIED' | 'OUT_OF_RANGE' | 'NO_PATH';
 
+/** Messages présentés au joueur, communs aux refus du moteur et à l'interface. */
+export const MOVE_REFUSAL_MESSAGES: Record<MoveRefusal, string> = {
+  SAME_HEX: 'La destination est la position actuelle de l’unité.',
+  NOT_NAVIGABLE: 'Terrain infranchissable pour cette unité.',
+  OCCUPIED: 'La destination est occupée par une autre unité.',
+  OUT_OF_RANGE: 'Destination hors de portée de mouvement.',
+  NO_PATH: 'Aucun chemin navigable ne mène à cette destination.',
+};
+
 export type MovePlan = { ok: true; path: Hex[] } | { ok: false; reason: MoveRefusal };
 
 /**
