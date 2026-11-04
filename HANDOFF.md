@@ -2,7 +2,7 @@
 
 Document de passation entre fils de discussion avec Claude Code. Il garde le **contexte de travail** (décisions, préférences, pièges, état d'avancement) que le code et les spécifications ne portent pas. Il ne duplique ni les règles de jeu, ni l'architecture, ni la matrice de traçabilité.
 
-> **Première version.** À compléter et à relire par le propriétaire du dépôt. Elle décrit l'état à la PR #10 fusionnée, avec la PR #11 (revue des ambiguïtés) en attente de fusion.
+> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #13 fusionnée, avec la PR « interface du déplacement et des activations » en attente de fusion.
 
 ## Lecture au démarrage d'un nouveau fil
 
@@ -44,6 +44,9 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - Le moteur ne dépend ni de React, ni de Zustand, ni de MUI, ni d'IndexedDB (règle ESLint). L'UI n'importe que depuis `engine/index.ts`.
 - Valeurs de jeu dans `GameConfig`, jamais en dur dans l'UI. Hasard injecté par graine.
 - Tableaux de `TRACEABILITY.md` : colonne **Code** au format `fichier` → `symbole()`, colonne **Tests** avec le nom du fichier seul, détails en **Remarque**.
+- **Style des fonctions** (inspiré du *Google TypeScript Style Guide*) : déclarations `function` au niveau des modules, fonctions fléchées pour les expressions et les rappels (`map`, `filter`…). Le nouveau code suit cette règle ; le code existant sera harmonisé dans une PR dédiée.
+- **Commentaires et noms** : chaque fonction non triviale a un commentaire qui dit ce qu'elle fait et pourquoi ; les noms sont explicites (`updateUnitInMission`, pas `withUnit`). Le propriétaire a relevé des commentaires confus et des fonctions sans commentaire.
+- Pas de fonction intermédiaire inutile (un simple enrobage d'une autre fonction) et pas de dépendance circulaire entre modules.
 - Éviter l'excès de découpage, mais respecter la complexité : un composant long se scinde en sous-composants ou en hooks.
 
 ## Préférences d'interface exprimées
@@ -53,6 +56,8 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - Panneaux : la carte et les forces alliées sont de taille fixe ; seuls le panneau d'unité et le journal se redimensionnent entre eux.
 - Préparation de mission : stepper vertical MUI (Mission, Briefing, Contraintes, Force navale, Récapitulatif), récapitulatif mis en valeur.
 - Silhouette du bâtiment sous son nom dans le panneau d'unité ; icônes d'équipement (missile, torpille, hélicoptère) assez grandes ; pas de texte de coût dans ce panneau.
+
+- Déplacement : destinations accessibles mises en évidence, trajet prévisualisé en pointillés (vert valide, rouge refusé), confirmation ou annulation dans une barre sur la carte ; « Terminer le cycle » et « Nouvelle partie » demandent confirmation.
 
 ## Décisions prises avec le propriétaire (hors documents de spécification)
 
@@ -64,28 +69,38 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | « Nouvelle partie » | Demande confirmation avant d'abandonner la mission (PR #11) |
 | Tests d'interface | Cypress, à démarrer entre les jalons 5 et 6 ; pas d'autre test d'interface d'ici là |
 | Dépendances de test | `@testing-library/*` et `jsdom`, sans usage, sont retirées **dans la PR qui introduit Cypress** |
+| Porte-avions | Non activable : il n'a pas d'état d'activation, il se pilote par ordres de navigation (à venir) |
+| Cases occupées | Infranchissables en déplacement, pas seulement interdites comme destination |
+| Journal | Minimal et provisoire : déplacement et ouverture d'un cycle (D-11 ouvert) |
+| Réexport de `accept` / `reject` | Refusé : ils restent dans `engine/core/results.ts` |
 | Départ du camp allié | Heuristique provisoire près du bord ouest ; **à valider** avec les zones de départ du scénario |
 | Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
 
 ## État d'avancement
 
-Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte et placement des alliés, affichage tactique statique. **Rien** côté activations, cycles, déplacements, ennemis, détection, combat, IA, fin de mission, persistance.
+Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. **Rien** côté navigation du porte-avions, ennemis, détection, combat, IA, actions spéciales, fin de mission, persistance.
 
 | PR | Contenu | État |
 |---|---|---|
 | #8 | Mise en place du dépôt pour Claude Code (`CLAUDE.md`, `AGENTS.md`) | Fusionnée |
 | #9 | Socle, moteur minimal, préparation, carte, interface tactique | Fusionnée |
 | #10 | `TRACEABILITY.md` | Fusionnée |
-| #11 | Revue des ambiguïtés de la matrice | Ouverte |
+| #11 | Revue des ambiguïtés de la matrice | Fusionnée |
+| #12 | `HANDOFF.md` | Fusionnée |
+| #13 | Moteur : déplacement, activations, cycles | Fusionnée |
+| (suivante) | Interface du déplacement et des activations, mise à jour de ce document et de la matrice | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
-Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md) donnent l'ordre. Les décisions consolidées permettent déjà d'attaquer :
+Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md) donnent l'ordre. Sans dépendre de règles ouvertes :
 
-- **Déplacement et activations sans combat** (SF-02 §6, SF-03.1 à SF-03.5) : première séquence jouable.
-- **Persistance IndexedDB** et export JSON (AT-02) : sans dépendance aux règles ouvertes.
+- **Persistance IndexedDB** et export JSON (AT-02).
+- **Deux passes d'amélioration, en PR dédiées** : harmoniser le style des fonctions (règle ci-dessus) et regrouper les textes du moteur (messages d'erreur, motifs) dans un fichier de libellés sans dépendance au moteur, par exemple `shared/label-core.ts` (le moteur ne doit pas dépendre de `shared/labels.ts`, qui importe ses types).
+- **Tests d'interface avec Cypress**, entre les jalons 5 et 6 ; les dépendances `@testing-library/*` et `jsdom` sont retirées dans cette PR.
 
-Restent bloquants pour le reste (voir les registres `DECISIONS.md`) : composition et zones de départ ennemies, génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments).
+**Navigation du porte-avions** : bloquée par des points `PROPOSÉ` ou `À DÉFINIR` à arbitrer (persistance des ordres G-03.2.10, quota réinitialisé G-06.5.6, route bloquée G-03.2.11) et par l'arrivée en B, qui dépend de SF-08. Tant qu'elle n'existe pas, le porte-avions ne bouge pas à la clôture du cycle.
+
+Restent aussi bloquants (voir les registres `DECISIONS.md`) : composition et zones de départ ennemies, génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
 
 ## Pièges techniques rencontrés
 
@@ -95,6 +110,7 @@ Restent bloquants pour le reste (voir les registres `DECISIONS.md`) : compositio
 - **Prettier** ignore `docs/`, `*.md` et les PNG : ne pas lancer `prettier --write .` en espérant formater les documents (il reformatait `AGENTS.md` avant l'ajout de l'ignore).
 - **Outils de la session** : pas de CLI `gh`, GitHub passe par les outils MCP (`mcp__github__*`), parfois déconnectés quelques instants : les recharger avec la recherche d'outils. Playwright et Chromium sont préinstallés (`require('playwright')`).
 - **Shell** : ne pas tuer Vite avec `pkill -f` dans une commande qui contient aussi le motif (le shell se tue, code 144). Garder le PID avec `$!` puis `kill`.
+- **Ne jamais citer un identifiant de commit avant le push** : dans une réponse de revue, utiliser le hash réel renvoyé par le push (une erreur a obligé à poster des corrections).
 - Fichiers temporaires et captures dans le dossier scratchpad de la session, jamais dans le dépôt.
 
 ## Commandes

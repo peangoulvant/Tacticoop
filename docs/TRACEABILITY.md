@@ -2,7 +2,7 @@
 
 Lien entre les exigences du [Game Design](game-design/README.md) et des [spécifications fonctionnelles](functional-specs/README.md) et le code de `src/`. Document de suivi : il ne définit aucune règle et ne reprend pas le détail des spécifications, qui font autorité.
 
-**État analysé :** `main` au commit `ac29ed1` (après la PR #10), avec les corrections issues de la revue des ambiguïtés. `npm test` donne 41 tests réussis sur 8 fichiers, `npm run lint` et `npm run build` ne signalent rien.
+**État analysé :** `main` au commit `ba39d6d` (après la PR #13), avec la PR « interface du déplacement et des activations ». `npm test` donne 74 tests réussis sur 11 fichiers, `npm run lint` et `npm run build` ne signalent rien.
 
 ## Lecture
 
@@ -21,24 +21,24 @@ Lien entre les exigences du [Game Design](game-design/README.md) et des [spécif
 
 ## Synthèse
 
-Le code actuel couvre **la préparation de mission (SF-01), la génération de carte (SF-02 §1 à §4) et un affichage tactique statique**. Le moteur n'accepte que les commandes de préparation et de lancement (`GameCommand`). Il n'existe encore ni activation, ni cycle, ni unité ennemie, ni détection, ni combat, ni IA, ni fin de mission.
+Le code actuel couvre **la préparation de mission (SF-01), la génération de carte, le déplacement des unités alliées, leurs activations et l'enchaînement des cycles (SF-02 §1 à §6, SF-03.1 à SF-03.8)**, avec l'interface correspondante. Le moteur n'accepte que les commandes de préparation, de lancement, de déplacement et d'activation (`GameCommand`). Il n'existe encore ni unité ennemie, ni détection, ni combat, ni IA, ni action spéciale, ni navigation du porte-avions, ni fin de mission.
 
 ## SF-01 — Préparation et lancement
 
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
-| SF-01 §1, §2 (Q7–Q10, Q14) | Deux missions V1 : lutte navale et escorte | `engine/missions/setup.ts` → `MISSIONS`<br>`engine/core/executeCommand.ts` → `selectMission()`<br>`engine/missions/launch.ts` → `launchMission()` | `executeCommand.test.ts` | Implémenté | |
+| SF-01 §1, §2 (Q7–Q10, Q14) | Deux missions V1 : lutte navale et escorte | `engine/missions/setup.ts` → `MISSIONS`<br>`engine/core/preparationCommands.ts` → `selectMission()`<br>`engine/missions/launch.ts` → `launchMission()` | `executeCommand.test.ts` | Implémenté | |
 | SF-01 §2 | Lutte navale : au moins un bâtiment. Escorte : porte-avions fourni hors budget, au moins un bâtiment d'escorte | `engine/missions/setup.ts` → `launchBlockers()`, `computeBudget()`<br>`engine/missions/launch.ts` → `rosterOf()` | `executeCommand.test.ts` | Implémenté | La règle « au moins un bâtiment » est la même pour les deux missions. Les « catégories autorisées » ne sont pas définies : aucune restriction. |
-| SF-01 §2 | Difficulté Classique (défaut) ou Expert | `engine/missions/setup.ts` → `DIFFICULTIES`, `initialSetup()`<br>`engine/core/executeCommand.ts` → `setDifficulty()` | `executeCommand.test.ts`, `setup.test.ts` | Partiel | Seule la sélection existe, sans effet (pas d'IA). Le défaut « Classique » est testé. |
+| SF-01 §2 | Difficulté Classique (défaut) ou Expert | `engine/missions/setup.ts` → `DIFFICULTIES`, `initialSetup()`<br>`engine/core/preparationCommands.ts` → `setDifficulty()` | `executeCommand.test.ts`, `setup.test.ts` | Partiel | Seule la sélection existe, sans effet (pas d'IA). Le défaut « Classique » est testé. |
 | SF-01 §2 | Briefing : contexte, objectif, victoire/défaite, renseignement initial, catégories disponibles | `shared/labels.ts` → `briefing`<br>`features/mission-setup/SetupSteps.tsx` → `BriefingStep()` | — | Partiel | Les catégories de bâtiments disponibles ne sont pas dans le briefing (elles apparaissent à l'étape « Force navale »). Textes non testés. |
-| SF-01 §2 | Changer de mission : garde la difficulté, réinitialise contraintes et force | `engine/core/executeCommand.ts` → `selectMission()` | `executeCommand.test.ts` | Implémenté | « Actualiser… les catégories recommandées » : voir la ligne « recommandé » ci-dessous. |
+| SF-01 §2 | Changer de mission : garde la difficulté, réinitialise contraintes et force | `engine/core/preparationCommands.ts` → `selectMission()` | `executeCommand.test.ts` | Implémenté | « Actualiser… les catégories recommandées » : voir la ligne « recommandé » ci-dessous. |
 | SF-01 §3 (Q1–Q3, Q5–Q6, Q13) | Budget normal de 100 points, non modifiable par le joueur | `engine/config/gameConfig.ts` → `defaultConfig.budget`<br>`engine/missions/setup.ts` → `computeBudget()` | `executeCommand.test.ts`, `gameConfig.test.ts` | Implémenté | |
 | SF-01 §3 | Catalogue et fiches provisoires (coûts, PV, stocks, mouvement, hélicoptères) | `engine/config/gameConfig.ts` → `defaultConfig.ships` | `gameConfig.test.ts`, `executeCommand.test.ts` | Implémenté | Les cinq fiches (coût, PV, mouvement, dotations, hélicoptères) sont vérifiées. Valeurs provisoires. |
-| SF-01 §3 | Plusieurs bâtiments de même catégorie ; budget en plafond | `engine/core/executeCommand.ts` → `addShip()`, `removeShip()` | `executeCommand.test.ts` | Implémenté | |
+| SF-01 §3 | Plusieurs bâtiments de même catégorie ; budget en plafond | `engine/core/preparationCommands.ts` → `addShip()`, `removeShip()` | `executeCommand.test.ts` | Implémenté | |
 | SF-01 §3 | Mentions « recommandé pour cette mission », informatives | — | — | Non implémenté | |
-| SF-01 §3 | Budget réduit sous le coût de la force : navires conservés, disponible/engagé/dépassement affichés, lancement bloqué | `engine/core/executeCommand.ts` → `setConstraints()`<br>`engine/missions/setup.ts` → `computeBudget()`, `launchBlockers()`<br>`features/mission-setup/BudgetBar.tsx` → `BudgetBar()` | `executeCommand.test.ts` | Implémenté | Règle testée dans le moteur ; l'affichage (`BudgetBar`, `Recap`) n'est pas testé. |
+| SF-01 §3 | Budget réduit sous le coût de la force : navires conservés, disponible/engagé/dépassement affichés, lancement bloqué | `engine/core/preparationCommands.ts` → `setConstraints()`<br>`engine/missions/setup.ts` → `computeBudget()`, `launchBlockers()`<br>`features/mission-setup/BudgetBar.tsx` → `BudgetBar()` | `executeCommand.test.ts` | Implémenté | Règle testée dans le moteur ; l'affichage (`BudgetBar`, `Recap`) n'est pas testé. |
 | SF-01 §4 (Q4, Q11–Q12, Q16–Q22) | Quatre contraintes disponibles dans les deux missions | `engine/missions/setup.ts` → `CONSTRAINTS` | `executeCommand.test.ts` | Implémenté | |
-| SF-01 §4 | 0, 1 ou 2 contraintes distinctes, en manuel ou en aléatoire | `engine/missions/setup.ts` → `areConstraintsValid()`, `drawConstraints()`<br>`engine/core/executeCommand.ts` → `setConstraints()`, `drawRandomConstraints()`<br>`engine/config/gameConfig.ts` → `defaultConfig.constraints.maxCount` | `executeCommand.test.ts`, `setup.test.ts`, `gameConfig.test.ts` | Implémenté | La borne maximale est paramétrable dans `GameConfig`. |
+| SF-01 §4 | 0, 1 ou 2 contraintes distinctes, en manuel ou en aléatoire | `engine/missions/setup.ts` → `areConstraintsValid()`, `drawConstraints()`<br>`engine/core/preparationCommands.ts` → `setConstraints()`, `drawRandomConstraints()`<br>`engine/config/gameConfig.ts` → `defaultConfig.constraints.maxCount` | `executeCommand.test.ts`, `setup.test.ts`, `gameConfig.test.ts` | Implémenté | La borne maximale est paramétrable dans `GameConfig`. |
 | SF-01 §4 | Contraintes dévoilées avant le lancement | `features/mission-setup/SetupSteps.tsx` → `ConstraintsStep()`<br>`features/mission-setup/Recap.tsx` → `Recap()` | — | Non vérifié | |
 | SF-01 §4 | « Moyens limités » : budget de 100 à 70 | `engine/missions/setup.ts` → `computeBudget()` | `executeCommand.test.ts` | Implémenté | Test indirect (dépassement de budget). |
 | SF-01 §4 | « Stocks de munitions limités » : dotations −30 %, arrondi inférieur | `engine/missions/launch.ts` → `modifiersOf()`<br>`engine/units/unit.ts` → `createUnit()` | `executeCommand.test.ts`, `unit.test.ts` | Implémenté | |
@@ -46,7 +46,7 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-01 §4 | « Météo défavorable » : déplacement plafonné à 2, porte-avions inchangé | `engine/missions/launch.ts` → `modifiersOf()`<br>`engine/units/unit.ts` → `createUnit()` | `executeCommand.test.ts`, `unit.test.ts` | Implémenté | L'exemption du porte-avions est testée avec un mouvement de base supérieur au plafond. |
 | SF-01 §4–§5 | Choix modifiables avant lancement, verrouillés après | `engine/core/executeCommand.ts` → `executeCommand()` (garde `WRONG_PHASE`) | `executeCommand.test.ts` | Implémenté | |
 | SF-01 §5 | Récapitulatif avant confirmation (mission, difficulté, contraintes, force, budget) | `features/mission-setup/Recap.tsx` → `Recap()` | — | Non vérifié | |
-| SF-01 §5 | Lancement autorisé seulement si budget et minimum respectés ; mission lancée sur la carte | `engine/missions/setup.ts` → `launchBlockers()`<br>`engine/core/executeCommand.ts` → `launch()`<br>`engine/missions/launch.ts` → `launchMission()` | `executeCommand.test.ts` | Implémenté | |
+| SF-01 §5 | Lancement autorisé seulement si budget et minimum respectés ; mission lancée sur la carte | `engine/missions/setup.ts` → `launchBlockers()`<br>`engine/core/preparationCommands.ts` → `launch()`<br>`engine/missions/launch.ts` → `launchMission()` | `executeCommand.test.ts` | Implémenté | |
 
 ## SF-02 — Carte et déplacements
 
@@ -57,7 +57,7 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-02 §1 | Terrains en ensembles cohérents, non en dispersion indépendante | `engine/map/generate.ts` → `generateTerrain()`, `smooth()`, `assignTerrains()` | `generate.test.ts` | Non vérifié | Le test ne vérifie que le déterminisme et la présence des six terrains, pas la cohérence spatiale. |
 | SF-02 §1 | Zoom sans modifier les dimensions de la carte | `features/tactical-map/useMapView.ts` → `useMapView()`<br>`features/tactical-map/viewTransform.ts` → `zoomAt()`, `clampView()`, `coverScale()` | `viewTransform.test.ts` | Implémenté | Les calculs sont testés ; le câblage molette, glisser et boutons ne l'est pas. |
 | SF-02 §2 (SF-02.3, SF-02.9) | Navigabilité par terrain et par catégorie d'unité | `engine/map/terrain.ts` → `isNavigable()`, `NAVIGABLE` | `gameMap.test.ts`, `executeCommand.test.ts` | Implémenté | Tests indirects (plage interdite à la frégate, unités placées sur des cases valides). La table n'est pas testée directement, par exemple mer côtière interdite au sous-marin. Les unités ennemies n'existent pas. |
-| SF-02 §2 | Une seule unité navale par hexagone, au placement et en déplacement | `engine/missions/launch.ts` → `placeUnits()`<br>`engine/map/gameMap.ts` → `nearestNavigableHex()` | `executeCommand.test.ts`, `gameMap.test.ts` | Partiel | Placement seulement : aucun déplacement. |
+| SF-02 §2 | Une seule unité navale par hexagone, au placement et en déplacement | `engine/missions/launch.ts` → `placeUnits()`<br>`engine/map/gameMap.ts` → `nearestNavigableHex()`<br>`engine/units/movement.ts` → `planMove()`, `reachableHexes()` | `executeCommand.test.ts`, `gameMap.test.ts`, `movement.test.ts` | Implémenté | Une case occupée est infranchissable (hypothèse validée). |
 | SF-02 §3 (SF-02.4, SF-02.17, SF-02.18) | Trajet navigable A→B garanti pour le porte-avions | `engine/map/generate.ts` → `generateEscortMap()`, `carveCorridor()`<br>`engine/map/gameMap.ts` → `shortestPath()` | `generate.test.ts`, `gameMap.test.ts` | Implémenté | Testé sur 30 graines. |
 | SF-02 §3 | Itinéraires alternatifs possibles en escorte | — | — | Non implémenté | Rien ne les garantit ni ne les mesure. |
 | SF-02 §3 | Tous les terrains visibles dès le lancement | `features/tactical-map/TacticalMap.tsx` → `TerrainLayer()` | — | Non vérifié | Aucun ennemi n'existe : la non-divulgation du brouillard n'est pas exercée. |
@@ -65,20 +65,25 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-02 §4 (SF-02.7, SF-02.8) | Alliés placés automatiquement près de leur zone de départ | `engine/missions/launch.ts` → `launchMission()`, `placeUnits()`<br>`engine/map/generate.ts` → `generateEscortMap()`, `generateNavalCombatMap()` | `executeCommand.test.ts`, `gameMap.test.ts` | Partiel | Zones de départ du scénario non spécifiées : heuristique provisoire (ouest, milieu de la carte). |
 | SF-02 §4 | Placement aléatoire des ennemis | — | — | Non implémenté | |
 | SF-02 §5 (SF-02.5, SF-02.6) | Navigation du porte-avions : point de passage, déplacement automatique 0 à 2 | — | — | Non implémenté | |
-| SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : chemin le plus court, destinations accessibles, prévisualisation, confirmation, refus motivé | `engine/map/gameMap.ts` → `shortestPath()` | `gameMap.test.ts` | Partiel | Seul le calcul de chemin existe (BFS à ordre de voisins fixe). Ni capacité de mouvement, ni occupation, ni commande, ni interface. |
+| SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : chemin le plus court déterministe, capacité de mouvement, destinations accessibles, refus motivé | `engine/units/movement.ts` → `planMove()`, `reachableHexes()`<br>`engine/map/gameMap.ts` → `exploreFrom()`, `pathTo()`<br>`engine/core/missionCommands.ts` → `moveUnit()` | `movement.test.ts`, `missionCommands.test.ts` | Implémenté | Motifs de refus : même case, terrain infranchissable, case occupée, hors de portée, aucun chemin. |
+| SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : destinations mises en évidence, trajet prévisualisé, confirmation ou annulation | `features/commands/useMovePlan.ts` → `useMovePlan()`<br>`features/tactical-map/MoveOverlay.tsx` → `MoveOverlay()`<br>`features/commands/MoveBar.tsx` → `MoveBar()`<br>`store/useMovePlanStore.ts` → `useMovePlanStore` | — | Non vérifié | Interface : pointillés verts (trajet valide) ou rouges (refus), annulation sans consommation. Non testée. |
 | SF-02 §7 (SF-02.15, SF-02.16) | Obstacle ennemi non détecté | — | — | Non implémenté | |
 
 ## SF-03 — Cycles et commandes
 
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
-| SF-03.1 à SF-03.5 (§1) | Activations : choix libre, une par cycle, « Terminer l'activation », fin anticipée | — | — | Non implémenté | `Unit` n'a aucun état d'activation ; `GameCommand` ne contient que des commandes de préparation. |
-| SF-03.6 (§2) | Fiche par unité : PV, composants, état Disponible / En cours / Activée | `features/fleet/FleetPanel.tsx` → `FleetPanel()`<br>`features/fleet/UnitStats.tsx` → `HpBar()`, `StockLine()` | — | Partiel | PV et stocks affichés. États d'activation et composants absents. |
+| SF-03.1, SF-03.2 (§1) | Activation terminée par « Terminer l'activation », y compris sans déplacement ni action | `engine/core/missionCommands.ts` → `endActivation()` | `missionCommands.test.ts` | Implémenté | Pas d'action spéciale : seule la clôture explicite existe. |
+| SF-03.3 (§1) | L'activation reste engagée dès qu'un ordre est exécuté | `engine/core/missionCommands.ts` → `moveUnit()`<br>`engine/units/unit.ts` → `Unit.activation` | `missionCommands.test.ts` | Implémenté | L'abandon de sélection avant ordre relève de l'interface (aucune consommation). |
+| SF-03.4 (§1) | Clôture automatique du cycle quand toutes les activations sont achevées | `engine/missions/cycle.ts` → `closeCycleIfDone()` | `missionCommands.test.ts` | Partiel | Réaction ennemie, progression des projectiles et dernière possibilité d'ordre de navigation du porte-avions absentes. |
+| SF-03.5 (§1) | Fin anticipée entre deux séquences, avec confirmation des activations perdues | `engine/core/missionCommands.ts` → `endCycleEarly()`<br>`features/commands/EndCycleButton.tsx` → `EndCycleButton()` | `missionCommands.test.ts` | Implémenté | La règle est testée dans le moteur ; la confirmation d'interface ne l'est pas. Les ennemis restants n'existent pas. |
+| SF-03.6 (§2) | Fiche par unité : PV, composants, état Disponible / En cours / Activée | `features/fleet/FleetPanel.tsx` → `FleetPanel()`<br>`features/fleet/ActivationBadge.tsx` → `ActivationBadge()`<br>`features/fleet/UnitStats.tsx` → `HpBar()`, `StockLine()` | — | Partiel | PV, stocks et état d'activation affichés ; états des composants absents. Le porte-avions n'a pas d'état d'activation. |
 | SF-03.7 (§2) | Sélection sur la carte ou dans la fiche, synchronisée et mise en évidence | `store/useSelectionStore.ts` → `useSelectionStore`<br>`features/tactical-map/TacticalMap.tsx` → `TacticalMap()`, `UnitToken()`<br>`features/fleet/FleetPanel.tsx` → `FleetPanel()` | — | Non vérifié | |
-| SF-03.8 (§2) | Seule l'unité en cours d'activation reçoit des ordres | — | — | Non implémenté | Aucune notion d'unité active. |
-| SF-03.9 (§3) | Commandes indisponibles visibles mais désactivées, avec motif ; « Terminer l'activation » accessible | `features/commands/UnitPanel.tsx` → `UnitPanel()`, `COMMANDS` | — | Partiel | Affichage statique : tous les boutons sont désactivés en dur, avec une info-bulle générique. « Terminer l'activation » n'est pas accessible. |
-| SF-03.10 à SF-03.12 (§3) | Validation, confirmation et annulation des actions spéciales | — | — | Non implémenté | |
-| SF-03.13 (§4) | Fin de cycle, bilan, cycle suivant automatique | `engine/core/types.ts` → `MissionState.cycle` | — | Non implémenté | Le numéro de cycle est affiché (`features/tactical-map/TacticalScreen.tsx` → `TopBar()`) mais reste figé à 1. |
+| SF-03.8 (§2) | Seule l'unité en cours d'activation reçoit des ordres | `engine/missions/activation.ts` → `orderBlocker()`, `moveBlocker()` | `activation.test.ts`, `missionCommands.test.ts` | Implémenté | |
+| SF-03.9 (§3) | Commandes indisponibles visibles mais désactivées, avec motif ; « Terminer l'activation » accessible | `features/commands/UnitPanel.tsx` → `UnitPanel()`, `CommandButtons()`<br>`engine/missions/activation.ts` → `BLOCKER_MESSAGES` | `activation.test.ts` | Partiel | Déplacement et « Terminer l'activation » suivent le moteur, avec motif affiché. Les actions spéciales restent désactivées en dur, avec une info-bulle générique. L'affichage n'est pas testé. |
+| SF-03.10, SF-03.11 (§3) | Validation, confirmation et annulation des actions spéciales | — | — | Non implémenté | Aucune action spéciale. |
+| SF-03.12 (§3) | Déplacement non confirmé : consultation d'autres unités, ordre conservé pour l'unité active | `store/useMovePlanStore.ts` → `useMovePlanStore`<br>`features/tactical-map/TacticalMap.tsx` → `TacticalMap()` | — | Non vérifié | Vérifié visuellement, sans test automatisé. |
+| SF-03.13 (§4) | Fin de cycle, bilan, cycle suivant automatique | `engine/missions/cycle.ts` → `startNextCycle()`<br>`engine/core/types.ts` → `MissionState.cycle` | `missionCommands.test.ts` | Partiel | Le cycle suivant s'ouvre automatiquement, les unités redeviennent disponibles. Pas de bilan de cycle (D-11) ni de renouvellement du quota de navigation. |
 | SF-03.14, SF-03.15 (§5) | Ordres de navigation du porte-avions, un par cycle | — | — | Non implémenté | |
 | SF-03.16 (§4) | Enchaînement automatique sans unité activable | — | — | Non implémenté | |
 
@@ -113,7 +118,7 @@ Les paragraphes de SF-05 n'ont pas d'identifiant par exigence.
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
 | SF-06 §1 à §3, §5 | Décisions et activations de l'IA, brouillard de guerre, restitution | — | — | Non implémenté | Pas de module `engine/ai/`. `Side` contient `'hostile'` mais aucune unité hostile n'est créée. |
-| SF-06 §4 | Difficulté Classique ou Expert choisie à la préparation | `engine/missions/setup.ts` → `Difficulty`<br>`engine/core/executeCommand.ts` → `setDifficulty()` | `executeCommand.test.ts` | Partiel | Sélection et affichage seulement ; aucun effet sur l'IA. |
+| SF-06 §4 | Difficulté Classique ou Expert choisie à la préparation | `engine/missions/setup.ts` → `Difficulty`<br>`engine/core/preparationCommands.ts` → `setDifficulty()` | `executeCommand.test.ts` | Partiel | Sélection et affichage seulement ; aucun effet sur l'IA. |
 
 ## SF-07 — Journal et historique
 
@@ -122,7 +127,7 @@ Les paragraphes de SF-07 n'ont pas d'identifiant par exigence.
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
 | SF-07 §1 | Journal de bord sous le bloc « Force » | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()`<br>`features/tactical-map/TacticalScreen.tsx` → `TacticalScreen()` | — | Non vérifié | SF-07 §1 est aligné sur la maquette : colonne de droite, sous le panneau de l'unité (G-12.1 ne fixe plus d'emplacement). Disposition non testée. |
-| SF-07 §2 | Événements majeurs, synthèse de fin de cycle, ordre chronologique | `engine/core/types.ts` → `GameEvent`<br>`store/useGameStore.ts` → `useGameStore` (`events`) | — | Partiel | Un seul type d'événement (`MISSION_LAUNCHED`). Pas de synthèse. Catalogue ouvert (D-11). |
+| SF-07 §2 | Événements majeurs, synthèse de fin de cycle, ordre chronologique | `engine/core/types.ts` → `GameEvent`<br>`store/useGameStore.ts` → `useGameStore` (`events`) | — | Partiel | Trois événements (`MISSION_LAUNCHED`, `UNIT_MOVED`, `CYCLE_STARTED`), provisoires. Pas de synthèse. Catalogue ouvert (D-11). |
 | SF-07 §3 | Confidentialité tactique | — | — | Non implémenté | Aucun événement caché n'existe. |
 | SF-07 §4 | Consultation de tout l'historique, accès direct à un cycle | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()` | — | Partiel | Liste complète des événements du store ; pas de navigation par cycle. |
 | SF-07 §5 | Articulation avec le débriefing | — | — | Non implémenté | |
@@ -143,7 +148,7 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 |---|---|---|---|---|---|
 | G-01.1 | Wargame naval tactique 2D sur grille hexagonale | `features/tactical-map/TacticalMap.tsx` → `TacticalMap()`<br>`features/tactical-map/hexGeometry.ts` → `hexCenter()` | — | Non vérifié | |
 | G-01.2 | Carte procédurale et aléatoire | `engine/map/generate.ts` → `generateTerrain()` | `generate.test.ts` | Implémenté | |
-| G-01.3 | Le joueur commande une force | `engine/core/executeCommand.ts` → `addShip()` | `executeCommand.test.ts` | Partiel | Composition seulement, aucune commande tactique. |
+| G-01.3 | Le joueur commande une force | `engine/core/preparationCommands.ts` → `addShip()` | `executeCommand.test.ts` | Partiel | Composition seulement, aucune commande tactique. |
 | G-01.4, G-01.5 | Adversaire IA, activations alternées ; brouillard de guerre | — | — | Non implémenté | |
 | G-01.6, G-01.7 | Solo contre l'IA (`PROPOSÉ`) ; difficulté, sauvegardes, rejouabilité (`À DÉFINIR`) | — | — | Non implémenté (ouvert) | |
 | G-02.1 à G-02.6 | Conditions de victoire et de défaite | — | — | Non implémenté | Voir SF-08. |
@@ -155,22 +160,25 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | G-03.2.10 à G-03.2.12 | Persistance des ordres, cas limites, forces d'interception | — | — | Non implémenté (ouvert) | |
 | G-04.1 | Carte 2D d'hexagones, procédurale | `engine/map/generate.ts` → `generateTerrain()` | `generate.test.ts` | Implémenté | |
 | G-04.2 | Hexagone (0,0) en haut à gauche | `engine/map/gameMap.ts` → `indexOf()`<br>`features/tactical-map/hexGeometry.ts` → `hexCenter()` | — | Non vérifié | |
-| G-04.3 | Déplacements et contacts référencés par coordonnées dans le journal | `features/tactical-map/TacticalMap.tsx` → `HexCaption()`<br>`features/commands/UnitPanel.tsx` → `UnitPanel()` | — | Partiel | Coordonnées affichées sur la carte et dans le panneau d'unité ; le journal n'en contient pas. |
+| G-04.3 | Déplacements et contacts référencés par coordonnées dans le journal | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()`<br>`features/tactical-map/TacticalMap.tsx` → `HexCaption()` | — | Partiel | Les déplacements du journal citent les coordonnées ; les contacts n'existent pas. Non testé. |
 | G-04.4 | Navigabilité par type d'unité | `engine/map/terrain.ts` → `isNavigable()` | `gameMap.test.ts` | Implémenté | Voir SF-02 §2. |
 | G-04.5 | Convention des coordonnées (offset, axial, cube) | `engine/map/hex.ts` → `hexDistance()`, `hexNeighbors()`, `hexLine()` | `hex.test.ts` | Implémenté | Statut `À DÉFINIR` au GDD (GD-06 ouvert). Convention consignée comme choix technique dans `docs/architecture/STRUCTURE.md` (« Conventions techniques »). |
 | G-04.6 | 35×35, six terrains, A→B garanti | Voir SF-02 §1 et §3 | `generate.test.ts`, `gameConfig.test.ts` | Implémenté | |
 | G-05.1 | Frégates, sous-marins, porte-avions | `engine/config/gameConfig.ts` → `defaultConfig.ships` | `executeCommand.test.ts` | Implémenté | |
-| G-05.2, G-05.4 | Choix de l'ordre d'activation ; un déplacement et une action par activation | — | — | Non implémenté | Voir SF-03. |
-| G-05.3 | Capacité de déplacement propre à chaque unité | `engine/config/gameConfig.ts` → `ShipSpec.movement`<br>`engine/units/unit.ts` → `Unit.movement` | `executeCommand.test.ts` | Partiel | Valeur de mouvement seulement, aucun déplacement. |
+| G-05.2, G-05.4 | Choix de l'ordre d'activation ; un déplacement et une action par activation | `engine/core/missionCommands.ts` → `moveUnit()`, `endActivation()` | `missionCommands.test.ts` | Partiel | Ordre d'activation libre et un seul déplacement par activation ; l'action spéciale n'existe pas. |
+| G-05.3 | Capacité de déplacement propre à chaque unité | `engine/config/gameConfig.ts` → `ShipSpec.movement`<br>`engine/units/movement.ts` → `reachableHexes()` | `gameConfig.test.ts`, `movement.test.ts` | Implémenté | |
 | G-05.5 | Caractéristiques configurables (`PROPOSÉ`) | `engine/config/gameConfig.ts` → `ShipSpec` | — | Partiel (ouvert) | Mouvement, armement et PV seulement ; ni capteurs ni composants. |
 | G-05.6 | Valeurs par classe, composants, munitions (`À DÉFINIR`) | `engine/config/gameConfig.ts` → `defaultConfig.ships` | `gameConfig.test.ts` | Partiel (ouvert) | Valeurs provisoires de D-03 ; composants absents. |
 | G-05.7 | Quatre contraintes, sans retrait automatique | Voir SF-01 §4 | `executeCommand.test.ts` | Partiel | « Capteurs dégradés » sans effet. |
-| G-06.2.1 à G-06.2.6 | Activation alliée | — | — | Non implémenté | |
+| G-06.2.1, G-06.2.2, G-06.2.5, G-06.2.6 | Choix libre d'une unité disponible ; déplacement ou rester sur place ; une activation par cycle ; terminer sans déplacement | `engine/core/missionCommands.ts` → `moveUnit()`, `endActivation()`<br>`engine/missions/activation.ts` → `orderBlocker()` | `missionCommands.test.ts`, `activation.test.ts` | Implémenté | |
+| G-06.2.3, G-06.2.4 | Une action spéciale facultative, dans l'ordre choisi | — | — | Non implémenté | Aucune action spéciale. |
 | G-06.3.1, G-06.3.2 | Réaction ennemie sans contre-réaction | — | — | Non implémenté | |
 | G-06.3.3, G-06.3.4, G-06.4.5, G-06.5.6 | Règles `PROPOSÉ` : renseignements de l'IA, réaction passée, une activation ennemie par cycle, quota d'ordre | — | — | Non implémenté (ouvert) | |
-| G-06.4.1 à G-06.4.4 | Fin anticipée | — | — | Non implémenté | |
+| G-06.4.1 à G-06.4.3 | Fin anticipée après une séquence complète ; unités non activées perdues | `engine/core/missionCommands.ts` → `endCycleEarly()`<br>`engine/missions/cycle.ts` → `startNextCycle()` | `missionCommands.test.ts` | Implémenté | |
+| G-06.4.4 | Les unités ennemies restantes achèvent leurs activations | — | — | Non implémenté | Aucun ennemi. |
 | G-06.5.1 à G-06.5.5 | Ordre de navigation, navigation automatique | — | — | Non implémenté | |
-| G-07.1 à G-07.3 | Activation (un déplacement, une action) ; actions envisagées ; recherche active | — | — | Non implémenté | |
+| G-07.1 | Un déplacement et une action spéciale facultative par activation, dans n'importe quel ordre | `engine/core/missionCommands.ts` → `moveUnit()` | `missionCommands.test.ts` | Partiel | Le déplacement seul est implémenté. |
+| G-07.2, G-07.3 | Actions envisagées ; recherche active | — | — | Non implémenté | |
 | G-07.4 à G-07.6 | Préconditions, catalogue, effets d'échec | — | — | Non implémenté (ouvert) | |
 | G-08.1.1 à G-08.1.4 | Détection hybride, brouillard, tirage probabiliste, paramétrage par type | — | — | Non implémenté | |
 | G-08.1.5 | Mêmes principes pour les deux camps (`PROPOSÉ`) | — | — | Non implémenté (ouvert) | |
@@ -185,7 +193,7 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | G-09.10.1 à G-09.10.4 | Ordonnancement des engagements | — | — | Non implémenté | |
 | G-09-C1 à G-09-C4 | Contrôles de cohérence | — | — | Non implémenté | |
 | G-10.1 à G-10.8, G-10.10 | IA ennemie | — | — | Non implémenté | |
-| G-10.9 | Difficulté sélectionnée avant la partie | `engine/core/executeCommand.ts` → `setDifficulty()` | `executeCommand.test.ts` | Partiel | Sélection seulement. |
+| G-10.9 | Difficulté sélectionnée avant la partie | `engine/core/preparationCommands.ts` → `setDifficulty()` | `executeCommand.test.ts` | Partiel | Sélection seulement. |
 | G-11.1, G-11.6 | Catalogue commun de quatre contraintes, disponibles dans les deux missions | `engine/missions/setup.ts` → `CONSTRAINTS` | `executeCommand.test.ts` | Implémenté | |
 | G-11.2 | 0, 1 ou 2 contraintes, choisies ou tirées | `engine/missions/setup.ts` → `areConstraintsValid()`, `drawConstraints()`<br>`engine/config/gameConfig.ts` → `defaultConfig.constraints.maxCount` | `executeCommand.test.ts`, `setup.test.ts` | Implémenté | |
 | G-11.3 | « Moyens limités » : budget à 70 | `engine/missions/setup.ts` → `computeBudget()` | `executeCommand.test.ts` | Implémenté | |
@@ -194,7 +202,7 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | G-11.7 | Cumul, paires distinctes compatibles | `engine/missions/setup.ts` → `areConstraintsValid()` | `executeCommand.test.ts` | Implémenté | |
 | G-11.8 | Contraintes et conséquences connues avant la mission | `features/mission-setup/SetupSteps.tsx` → `ConstraintsStep()`<br>`features/mission-setup/Recap.tsx` → `Recap()` | — | Non vérifié | Le récapitulatif liste les noms des contraintes, pas leurs effets (affichés à l'étape 3). |
 | G-11.9 | Contraintes indépendantes de la difficulté ; évaluation globale | — | — | Non implémenté | Aucun calcul défini. |
-| G-12.1 à G-12.10 | Journal de bord : événements, brouillard, présentation, synthèses, historique | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()`<br>`engine/core/types.ts` → `GameEvent` | — | Partiel | Un seul événement. Voir SF-07. |
+| G-12.1 à G-12.10 | Journal de bord : événements, brouillard, présentation, synthèses, historique | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()`<br>`engine/core/types.ts` → `GameEvent` | — | Partiel | Trois événements provisoires. Voir SF-07. |
 | G-13.1 Q1 à Q5, G-13.2 Q1, Q2 | Déclenchement de fin, résultat binaire | — | — | Non implémenté | |
 | G-13.3 à G-13.9, C1 à C4 | Bilan, évaluation, réutilisation | — | — | Non implémenté | |
 
@@ -223,3 +231,10 @@ Revue faite après la fusion de la première version. Les points marqués **Rés
 7. **Paramètres de contraintes — Résolue.** La borne maximale est dans `GameConfig` (`constraints.maxCount`).
 8. **SF-08.P4 — Résolue en partie.** « Nouvelle partie » demande désormais confirmation. Le retour après débriefing reste à faire avec l'écran de fin (SF-08).
 9. **Statuts `PROPOSÉ` et `À DÉFINIR` — Sans objet.** Leur code n'est pas attendu (README du GDD). Ils sont signalés « (ouvert) » pour ne pas les compter comme des manques.
+
+Hypothèses d'interprétation **validées** lors de la mise en place du déplacement et des activations (aucune règle de jeu nouvelle, à rouvrir si elles s'avèrent fausses) :
+
+10. **Porte-avions non activable.** G-03.2.4 distingue l'ordre de navigation des activations, et G-06 parle d'« unité standard » : le porte-avions ne reçoit pas d'activation et n'a pas d'état d'activation sur sa fiche (SF-03.6).
+11. **Case occupée infranchissable.** SF-02 §2 impose une seule unité navale par hexagone y compris en déplacement, et SF-02 §6 parle d'« occupations connues » : une unité ne traverse pas une case occupée.
+12. **Journal minimal provisoire.** Le catalogue des événements est ouvert (D-11) : seuls le déplacement et l'ouverture d'un cycle sont journalisés, d'après la maquette.
+13. **Clôture du cycle incomplète — Ouverte.** La clôture automatique n'offre pas encore la dernière possibilité d'ordre de navigation du porte-avions (SF-03.4, §5) ni les phases de fin de cycle : le porte-avions ne bouge pas.
