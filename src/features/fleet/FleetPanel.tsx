@@ -6,21 +6,40 @@ import { shipIcon } from '../../shared/assets';
 import { ActivationBadge } from './ActivationBadge';
 import { HpBar, StockLine } from './UnitStats';
 
-/** Forces alliées : cartes cliquables, l'état affiché vient du GameState. */
+/** Largeur minimale d'une carte : assez large pour que le nom et l'état tiennent sur une ligne. */
+const CARD_WIDTH = 270;
+
+/**
+ * Forces alliées : cartes cliquables, l'état affiché vient du GameState. Les cartes restent sur
+ * une seule rangée et la rangée défile horizontalement quand la flotte ne tient pas dans la
+ * largeur : la hauteur du panneau, fixe, n'est jamais dépassée.
+ */
 export function FleetPanel({ units }: { units: Unit[] }) {
   const { selectedUnitId, selectUnit, selectHex } = useSelectionStore();
   const friends = units.filter((u) => u.side === 'friend');
 
   return (
-    <Paper sx={{ p: 1.5, height: '100%', overflow: 'auto', boxSizing: 'border-box' }}>
+    <Paper
+      sx={{
+        p: 1.5,
+        height: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
       <Typography variant="h6" sx={{ mb: 1 }}>
         Forces alliées
       </Typography>
       <Box
         sx={{
-          display: 'grid',
+          display: 'flex',
           gap: 1,
-          gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+          flex: 1,
+          minHeight: 0,
+          overflowX: 'auto',
+          overflowY: 'hidden',
         }}
       >
         {friends.map((unit) => {
@@ -36,6 +55,7 @@ export function FleetPanel({ units }: { units: Unit[] }) {
                 selectHex(unit.position);
               }}
               sx={{
+                flex: `0 0 ${CARD_WIDTH}px`,
                 p: 1,
                 textAlign: 'left',
                 color: 'inherit',
