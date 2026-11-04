@@ -1,4 +1,5 @@
 import type {
+  ActivationStatus,
   Constraint,
   Difficulty,
   GameError,
@@ -40,14 +41,14 @@ export const briefing: Record<
 > = {
   naval_combat: {
     context: 'Une force navale alliée doit affronter une flotte ennemie dont rien n’est connu.',
-    objective: 'Éliminer la flotte ennemie.',
+    objective: 'Éliminer la flotte ennemie',
     victory: 'Le dernier navire ennemi est détruit.',
     defeat: 'Toutes les unités alliées sont détruites.',
   },
   escort: {
     context: 'Un porte-avions fourni par le scénario doit traverser une zone contestée.',
-    objective: 'Protéger le porte-avions jusqu’au point B.',
-    victory: 'Le porte-avions arrive en B en état opérationnel.',
+    objective: 'Protéger le porte-avions jusqu’à l’arrivée',
+    victory: 'Le porte-avions atteint l’arrivée en état opérationnel.',
     defeat: 'Le porte-avions ou tous les navires d’escorte sont détruits.',
   },
 };
@@ -58,3 +59,10 @@ export const blockerLabel: Record<LaunchBlocker, string> = {
 };
 
 export const errorMessage = (error: GameError): string => error.message;
+
+/** État d'activation affiché sur les fiches ; le porte-avions n'en a pas (SF-03.6). */
+export const activationLabel: Record<Exclude<ActivationStatus, 'not_activable'>, string> = {
+  available: 'Disponible',
+  in_progress: 'En cours',
+  activated: 'Activée',
+};

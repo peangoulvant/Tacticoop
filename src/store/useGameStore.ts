@@ -17,6 +17,7 @@ interface GameStore {
   lastError: GameError | null;
   /** Transmet la commande au moteur puis publie le résultat ; renvoie true si elle est acceptée. */
   dispatch: (command: GameCommand) => boolean;
+  clearError: () => void;
   reset: () => void;
 }
 
@@ -35,5 +36,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((s) => ({ state: result.state, events: [...s.events, ...result.events], lastError: null }));
     return true;
   },
+  clearError: () => set({ lastError: null }),
   reset: () => set({ state: freshState(), events: [], lastError: null }),
 }));

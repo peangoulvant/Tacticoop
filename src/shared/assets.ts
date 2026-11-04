@@ -5,6 +5,7 @@ import helicopter from '../assets/units/helicoptere.png';
 import missile from '../assets/units/missile.png';
 import submarine from '../assets/units/sna.png';
 import torpedo from '../assets/units/torpille.png';
+import finishFlag from '../assets/map/drapeau.png';
 import beach from '../assets/terrains/plage.png';
 import coastalSea from '../assets/terrains/mer_cotiere.png';
 import deepSea from '../assets/terrains/mer_profonde.png';
@@ -31,3 +32,6 @@ export const terrainIcon: Record<Terrain, string> = {
   plain,
   mountain,
 };
+
+/** Drapeau d'arrivée affiché sur la case du point B. */
+export const finishFlagIcon = finishFlag;

@@ -13,10 +13,14 @@ import {
   type Unit,
 } from '../../engine';
 import { palette } from '../../app/theme';
+import { finishFlagIcon } from '../../shared/assets';
 import { terrainLabel } from '../../shared/labels';
+import { useMovePlanStore } from '../../store/useMovePlanStore';
 import { useSelectionStore } from '../../store/useSelectionStore';
+import type { MovePreparation } from '../commands/useMovePlan';
 import { ShipGlyph, terrainFill } from './glyphs';
 import { HEX_POINTS, hexCenter, mapViewBox } from './hexGeometry';
+import { MoveOverlay } from './MoveOverlay';
 import { useMapView } from './useMapView';
 
 /**
@@ -68,14 +72,20 @@ function UnitToken({ unit, selected }: { unit: Unit; selected: boolean }) {
   );
 }
 
-function Waypoint({ hex, label }: { hex: Hex; label: string }) {
+/** Drapeau d'arrivée, centré dans la case du point d'arrivée (B). */
+function FinishFlag({ hex }: { hex: Hex }) {
   const { x, y } = hexCenter(hex);
   return (
     <g transform={`translate(${x} ${y})`} pointerEvents="none">
-      <circle r="4" cy="-8" fill="#fff" stroke={palette.bg} strokeWidth="0.8" />
-      <text y="-6.3" textAnchor="middle" fontSize="5.5" fontWeight="700" fill={palette.bg}>
-        {label}
-      </text>
+      <title>Arrivée</title>
+      <image
+        href={finishFlagIcon}
+        x="-6"
+        y="-5"
+        width="12"
+        height="10"
+        preserveAspectRatio="xMidYMid meet"
+      />
     </g>
   );
 }
@@ -121,14 +131,27 @@ function HexCaption({ map, hex, unit }: { map: GameMap; hex: Hex | null; unit?: 
  * Carte tactique : rendu SVG 2D simplifié (docs/maquette). Occupe toute la zone (tronquée si
  * besoin), se déplace par glisser-déposer et se zoome à la molette, comme une carte en ligne.
  */
-export function TacticalMap({ mission }: { mission: MissionState }) {
+export function TacticalMap({
+  mission,
+  move,
+}: {
+  mission: MissionState;
+  move: MovePreparation | null;
+}) {
   const { map, units, start, goal } = mission;
   const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
   const content = mapViewBox(map);
 
+  const previewMove = useMovePlanStore((s) => s.preview);
+
+  // Une unité cliquée est consultée (sa fiche s'affiche). Une case vide choisit la destination du
+  // déplacement en préparation ; sans déplacement en préparation, elle désélectionne l'unité.
   const onCellClick = (hex: Hex) => {
     selectHex(hex);
-    selectUnit(units.find((u) => sameHex(u.position, hex))?.id ?? null);
+    const here = units.find((u) => sameHex(u.position, hex));
+    if (here) selectUnit(here.id);
+    else if (move) previewMove(hex);
+    else selectUnit(null);
   };
   const { containerRef, viewport, view, zoomBy, resetView, pointerHandlers } = useMapView(
     content.width,
@@ -162,13 +185,13 @@ export function TacticalMap({ mission }: { mission: MissionState }) {
           {view && (
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
               <TerrainLayer map={map} />
+              <MoveOverlay move={move} />
               {selected && (
                 <g transform={`translate(${selected.x} ${selected.y})`} pointerEvents="none">
                   <polygon points={HEX_POINTS} fill="none" stroke="#5fd3ff" strokeWidth="1.6" />
                 </g>
               )}
-              <Waypoint hex={start} label="A" />
-              {goal && <Waypoint hex={goal} label="B" />}
+              {goal && <FinishFlag hex={goal} />}
               {units.map((u) => (
                 <UnitToken key={u.id} unit={u} selected={u.id === selectedUnitId} />
               ))}
