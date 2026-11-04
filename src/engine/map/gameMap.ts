@@ -1,5 +1,5 @@
 import type { Hex } from './hex';
-import { hexDistance, hexNeighbors, sameHex } from './hex';
+import { hexDistance, hexNeighbors } from './hex';
 import { isNavigable, type NavalCategory, type Terrain } from './terrain';
 
 /** Carte immuable pendant la mission (SF-02 §3) ; terrains stockés ligne par ligne. */
@@ -47,40 +47,64 @@ export function nearestNavigableHex(
   return best;
 }
 
-/** Remonte le chemin depuis `end` grâce aux prédécesseurs enregistrés par la recherche. */
-function walkBack(map: GameMap, previous: ReadonlyMap<number, Hex>, end: Hex): Hex[] {
-  const path = [end];
-  for (let p = previous.get(indexOf(map, end)); p; p = previous.get(indexOf(map, p))) {
-    path.unshift(p);
-  }
-  return path;
-}
+/** Hexagone d'indice `index` dans `terrain` (inverse de `indexOf`). */
+export const hexFromIndex = (map: Pick<GameMap, 'width'>, index: number): Hex => ({
+  col: index % map.width,
+  row: Math.floor(index / map.width),
+});
 
-interface SearchState {
-  seen: Set<number>;
-  previous: Map<number, Hex>;
-  queue: Hex[];
-}
+/** Prédécesseur de chaque case atteinte ; la case de départ a pour prédécesseur `null`. */
+export type PathTree = ReadonlyMap<number, Hex | null>;
 
-/** Ajoute à la file les voisins navigables pas encore vus, dans l'ordre fixe des directions. */
-function enqueueNeighbors(
+/** Cases voisines de la frontière, non encore atteintes et accessibles, dans l'ordre fixe des directions. */
+function expandFrontier(
   map: GameMap,
-  current: Hex,
+  frontier: readonly Hex[],
   canEnter: (hex: Hex) => boolean,
-  { seen, previous, queue }: SearchState,
-): void {
-  for (const next of hexNeighbors(current, map.width, map.height)) {
-    const key = indexOf(map, next);
-    if (seen.has(key) || !canEnter(next)) continue;
-    seen.add(key);
-    previous.set(key, current);
-    queue.push(next);
+  previous: Map<number, Hex | null>,
+): Hex[] {
+  const next: Hex[] = [];
+  for (const current of frontier) {
+    for (const neighbor of hexNeighbors(current, map.width, map.height)) {
+      const key = indexOf(map, neighbor);
+      if (previous.has(key) || !canEnter(neighbor)) continue;
+      previous.set(key, current);
+      next.push(neighbor);
+    }
   }
+  return next;
 }
 
 /**
- * Plus court chemin navigable (BFS, ordre des voisins fixe : même situation, même chemin).
- * Ignore l'occupation : à compléter avec les règles de déplacement (SF-02 §6).
+ * Parcours en largeur depuis `from`, limité à `maxSteps` pas. L'ordre des voisins étant fixe,
+ * une même situation donne toujours les mêmes chemins (SF-02 §6). La case de départ n'est pas
+ * soumise à `canEnter`.
+ */
+export function exploreFrom(
+  map: GameMap,
+  from: Hex,
+  canEnter: (hex: Hex) => boolean,
+  maxSteps = Infinity,
+): PathTree {
+  const previous = new Map<number, Hex | null>([[indexOf(map, from), null]]);
+  let frontier: Hex[] = [from];
+  for (let step = 0; step < maxSteps && frontier.length > 0; step++) {
+    frontier = expandFrontier(map, frontier, canEnter, previous);
+  }
+  return previous;
+}
+
+/** Chemin du départ à `to` (extrémités incluses) d'après l'arbre de parcours, ou `null`. */
+export function pathTo(map: GameMap, tree: PathTree, to: Hex): Hex[] | null {
+  if (!tree.has(indexOf(map, to))) return null;
+  const path = [to];
+  for (let p = tree.get(indexOf(map, to)); p; p = tree.get(indexOf(map, p))) path.unshift(p);
+  return path;
+}
+
+/**
+ * Plus court chemin navigable, sans tenir compte de l'occupation ni de la capacité de mouvement
+ * (voir `planMove` pour le déplacement d'une unité).
  */
 export function shortestPath(
   map: GameMap,
@@ -90,15 +114,5 @@ export function shortestPath(
 ): Hex[] | null {
   const canEnter = (hex: Hex) => isNavigable(terrainAt(map, hex), category);
   if (!canEnter(from) || !canEnter(to)) return null;
-  const state: SearchState = {
-    seen: new Set([indexOf(map, from)]),
-    previous: new Map(),
-    queue: [from],
-  };
-  for (let head = 0; head < state.queue.length; head++) {
-    const current = state.queue[head] as Hex;
-    if (sameHex(current, to)) return walkBack(map, state.previous, current);
-    enqueueNeighbors(map, current, canEnter, state);
-  }
-  return null;
+  return pathTo(map, exploreFrom(map, from, canEnter), to);
 }
