@@ -15,7 +15,6 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import {
   CONSTRAINTS,
   DIFFICULTIES,
-  MAX_CONSTRAINTS,
   MISSIONS,
   PURCHASABLE_CLASSES,
   defaultConfig,
@@ -101,7 +100,7 @@ export function ConstraintsStep({ setup }: { setup: MissionSetup }) {
   return (
     <>
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        Entre 0 et {MAX_CONSTRAINTS} contraintes, modifiables jusqu’au lancement.
+        Entre 0 et {defaultConfig.constraints.maxCount} contraintes, modifiables jusqu’au lancement.
       </Typography>
       {CONSTRAINTS.map((c) => (
         <FormControlLabel

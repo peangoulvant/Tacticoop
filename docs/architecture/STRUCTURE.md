@@ -41,3 +41,8 @@ Dépendances usuelles : `features → store → engine` et `store → persistenc
 ## Terminologie
 
 Les nouveaux noms de types et fonctions métier utilisent **`Friend`** (camp ami) et **`Hostile`** (camp hostile), notamment `FriendObservation` et `HostileObservation`. Les textes fonctionnels et d'interface peuvent conserver les termes français.
+
+## Conventions techniques
+
+**Coordonnées hexagonales.** Hexagones « pointy-top » (pointe en haut), coordonnées de type *offset* `(col, row)` avec **décalage des lignes impaires** d'une demi-largeur vers la droite ; l'origine `(0,0)` est en haut à gauche. Les distances, voisins et lignes sont calculés en coordonnées axiales, converties en interne (`engine/map/hex.ts`). Les coordonnées présentées au joueur et dans le journal sont les coordonnées *offset*. Ce choix est technique et n'ajoute aucune règle de jeu.
+

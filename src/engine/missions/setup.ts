@@ -17,7 +17,6 @@ export const CONSTRAINTS: readonly Constraint[] = [
   'degraded_sensors',
   'bad_weather',
 ];
-export const MAX_CONSTRAINTS = 2;
 
 /** Choix du joueur avant lancement (SF-01). */
 export interface MissionSetup {
@@ -79,9 +78,9 @@ export function launchBlockers(setup: MissionSetup, config: GameConfig): LaunchB
   return blockers;
 }
 
-/** 0 à 2 contraintes, toutes distinctes (SF-01 §4). */
-export const areConstraintsValid = (constraints: readonly Constraint[]): boolean =>
-  constraints.length <= MAX_CONSTRAINTS &&
+/** De 0 à `max` contraintes (2 en V1), toutes distinctes (SF-01 §4). */
+export const areConstraintsValid = (constraints: readonly Constraint[], max: number): boolean =>
+  constraints.length <= max &&
   new Set(constraints).size === constraints.length &&
   constraints.every((c) => CONSTRAINTS.includes(c));
 

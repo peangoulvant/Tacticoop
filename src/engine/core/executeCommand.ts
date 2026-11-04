@@ -6,7 +6,6 @@ import {
   drawConstraints,
   emptyForce,
   launchBlockers,
-  MAX_CONSTRAINTS,
   type MissionSetup,
 } from '../missions/setup';
 import { createRng } from './rng';
@@ -36,8 +35,8 @@ const accept = (setup: MissionSetup): CommandResult => ({
   events: [],
 });
 
-const invalidConstraints = (): CommandResult =>
-  reject('INVALID_CONSTRAINTS', `Choisir entre 0 et ${MAX_CONSTRAINTS} contraintes distinctes.`);
+const invalidConstraints = (max: number): CommandResult =>
+  reject('INVALID_CONSTRAINTS', `Choisir entre 0 et ${max} contraintes distinctes.`);
 
 /** Changer de mission conserve la difficulté mais réinitialise contraintes et force (SF-01 §2). */
 const selectMission: Handler<'SELECT_MISSION'> = (setup, { mission }) =>
@@ -47,16 +46,21 @@ const setDifficulty: Handler<'SET_DIFFICULTY'> = (setup, { difficulty }) =>
   accept({ ...setup, difficulty });
 
 /** Un budget réduit sous le coût de la force n'efface rien : seul le lancement sera bloqué. */
-const setConstraints: Handler<'SET_CONSTRAINTS'> = (setup, { constraints }) =>
-  areConstraintsValid(constraints)
+const setConstraints: Handler<'SET_CONSTRAINTS'> = (setup, { constraints }, config) =>
+  areConstraintsValid(constraints, config.constraints.maxCount)
     ? accept({ ...setup, constraints: [...constraints] })
-    : invalidConstraints();
+    : invalidConstraints(config.constraints.maxCount);
 
-const drawRandomConstraints: Handler<'DRAW_RANDOM_CONSTRAINTS'> = (setup, { count, seed }) => {
-  const valid = Number.isInteger(count) && count >= 0 && count <= MAX_CONSTRAINTS;
+const drawRandomConstraints: Handler<'DRAW_RANDOM_CONSTRAINTS'> = (
+  setup,
+  { count, seed },
+  config,
+) => {
+  const max = config.constraints.maxCount;
+  const valid = Number.isInteger(count) && count >= 0 && count <= max;
   return valid
     ? accept({ ...setup, constraints: drawConstraints(count, createRng(seed)) })
-    : invalidConstraints();
+    : invalidConstraints(max);
 };
 
 const withShipCount = (

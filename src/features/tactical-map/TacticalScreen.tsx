@@ -1,5 +1,16 @@
 import { useCallback, useRef, useState } from 'react';
-import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
 import type { MissionState } from '../../engine';
 import { constraintLabel, difficultyLabel, missionLabel } from '../../shared/labels';
 import { useGameStore } from '../../store/useGameStore';
@@ -45,6 +56,7 @@ function Splitter({ onDrag }: { onDrag: (delta: number) => void }) {
 
 function TopBar({ mission }: { mission: MissionState }) {
   const reset = useGameStore((s) => s.reset);
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const { setup } = mission;
   const weather = setup.constraints.includes('bad_weather')
     ? constraintLabel.bad_weather.name
@@ -77,9 +89,24 @@ function TopBar({ mission }: { mission: MissionState }) {
         </Typography>
         <Typography variant="body2">{difficultyLabel[setup.difficulty]}</Typography>
       </Stack>
-      <Button size="small" variant="outlined" onClick={reset}>
+      <Button size="small" variant="outlined" onClick={() => setConfirmingReset(true)}>
         Nouvelle partie
       </Button>
+      <Dialog open={confirmingReset} onClose={() => setConfirmingReset(false)}>
+        <DialogTitle>Abandonner la mission ?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            La mission en cours sera perdue et vous reviendrez à la préparation d’une nouvelle
+            partie.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmingReset(false)}>Continuer la mission</Button>
+          <Button color="error" onClick={reset}>
+            Abandonner
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 }
