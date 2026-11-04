@@ -3,6 +3,8 @@ export { executeCommand } from './core/executeCommand';
 export type {
   CommandResult,
   GameCommand,
+  MissionCommand,
+  PreparationCommand,
   GameError,
   GameEvent,
   GameState,
@@ -33,4 +35,6 @@ export { terrainAt, indexOf } from './map/gameMap';
 export type { Hex } from './map/hex';
 export { hexDistance, sameHex } from './map/hex';
 export type { Terrain } from './map/terrain';
-export type { Unit } from './units/unit';
+export type { ActivationStatus, Unit } from './units/unit';
+export { planMove, reachableHexes } from './units/movement';
+export type { MovePlan, MoveRefusal } from './units/movement';

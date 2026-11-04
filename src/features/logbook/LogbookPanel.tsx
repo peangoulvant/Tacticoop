@@ -1,5 +1,5 @@
 import { Box, Paper, Typography } from '@mui/material';
-import type { GameEvent } from '../../engine';
+import { defaultConfig, type GameEvent } from '../../engine';
 import { missionLabel } from '../../shared/labels';
 
 /** Texte d'un événement ; le catalogue complet du journal reste à arbitrer (D-11). */
@@ -7,6 +7,10 @@ function describe(event: GameEvent): string {
   switch (event.type) {
     case 'MISSION_LAUNCHED':
       return `Mission lancée : ${missionLabel[event.mission]}`;
+    case 'UNIT_MOVED':
+      return `${defaultConfig.ships[event.shipClass].label} : déplacement de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
+    case 'CYCLE_STARTED':
+      return `Cycle ${event.cycle} ouvert`;
   }
 }
 
