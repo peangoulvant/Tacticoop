@@ -121,7 +121,7 @@ Les paragraphes de SF-07 n'ont pas d'identifiant par exigence.
 
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
-| SF-07 §1 | Journal de bord sous le bloc « Force » | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()`<br>`features/tactical-map/TacticalScreen.tsx` → `TacticalScreen()` | — | Non vérifié | SF-07 §1 et G-12.1 sont alignés sur la maquette : colonne de droite, sous le panneau de l'unité. Disposition non testée. |
+| SF-07 §1 | Journal de bord sous le bloc « Force » | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()`<br>`features/tactical-map/TacticalScreen.tsx` → `TacticalScreen()` | — | Non vérifié | SF-07 §1 est aligné sur la maquette : colonne de droite, sous le panneau de l'unité (G-12.1 ne fixe plus d'emplacement). Disposition non testée. |
 | SF-07 §2 | Événements majeurs, synthèse de fin de cycle, ordre chronologique | `engine/core/types.ts` → `GameEvent`<br>`store/useGameStore.ts` → `useGameStore` (`events`) | — | Partiel | Un seul type d'événement (`MISSION_LAUNCHED`). Pas de synthèse. Catalogue ouvert (D-11). |
 | SF-07 §3 | Confidentialité tactique | — | — | Non implémenté | Aucun événement caché n'existe. |
 | SF-07 §4 | Consultation de tout l'historique, accès direct à un cycle | `features/logbook/LogbookPanel.tsx` → `LogbookPanel()` | — | Partiel | Liste complète des événements du store ; pas de navigation par cycle. |
@@ -215,7 +215,7 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 Revue faite après la fusion de la première version. Les points marqués **Résolue** sont corrigés ; les points **Ouverte** attendent une décision ou un développement ultérieur.
 
 1. **Granularité des identifiants — Ouverte.** SF-04 à SF-08 n'ont pas d'identifiant par exigence (sauf `SF-08.P4`). SF-01 n'a que des Q-numéros dans sa table de traçabilité. SF-02 groupe ses identifiants dans les titres de section, sans correspondance puce par puce. G-09 §2 à §4 n'a que des plages. Les lignes restent au niveau du paragraphe tant que les spécifications n'ont pas d'identifiants plus fins.
-2. **Emplacement du journal — Résolue.** SF-07 §1 et G-12.1 sont alignés sur la maquette : colonne de droite, sous le panneau de l'unité, à côté des forces alliées. La référence à `docs/game-design/JOURNAL.md`, supprimé, est retirée.
+2. **Emplacement du journal — Résolue.** SF-07 §1 est aligné sur la maquette : colonne de droite, sous le panneau de l'unité, à côté des forces alliées. G-12.1 ne fixe plus d'emplacement, qui relève de la spécification fonctionnelle. La référence à `docs/game-design/JOURNAL.md`, supprimé, est retirée de SF-07.
 3. **Convention de coordonnées — Résolue côté technique, Ouverte côté GDD.** La convention (offset, lignes impaires décalées, axial en interne) est consignée dans `docs/architecture/STRUCTURE.md`. G-04.5 et GD-06 restent marqués « À DÉFINIR » au GDD : leur clôture relève d'une décision fonctionnelle.
 4. **Lutte navale sans ennemi — Ouverte.** G-03.1.2 et G-03.1.3 définissent la flotte ennemie. Le moteur lance la mission sans adversaire, car la composition et les zones de départ ne sont pas arbitrées.
 5. **« Capteurs dégradés » — Ouverte.** SF-01 §4 définit un effet (−20 %) sur une portée de détection qui n'existe pas encore. La contrainte est sélectionnable sans conséquence jusqu'à l'implémentation de la détection (SF-04).
