@@ -1,25 +1,17 @@
-import type {
-  ActivationStatus,
-  Constraint,
-  Difficulty,
-  GameError,
-  LaunchBlocker,
-  MissionKind,
-  Terrain,
-} from '../engine';
+import * as engine from '../engine';
 
 /** Textes d'interface en français ; les identifiants du moteur restent en anglais. */
-export const missionLabel: Record<MissionKind, string> = {
+export const missionLabel: Record<engine.MissionKind, string> = {
   naval_combat: 'Lutte navale',
   escort: 'Escorte de porte-avions',
 };
 
-export const difficultyLabel: Record<Difficulty, string> = {
+export const difficultyLabel: Record<engine.Difficulty, string> = {
   classic: 'Classique',
   expert: 'Expert',
 };
 
-export const terrainLabel: Record<Terrain, string> = {
+export const terrainLabel: Record<engine.Terrain, string> = {
   deep_sea: 'Mer profonde',
   sea: 'Mer classique',
   coastal_sea: 'Mer côtière',
@@ -28,7 +20,7 @@ export const terrainLabel: Record<Terrain, string> = {
   mountain: 'Montagne',
 };
 
-export const constraintLabel: Record<Constraint, { name: string; effect: string }> = {
+export const constraintLabel: Record<engine.Constraint, { name: string; effect: string }> = {
   limited_means: { name: 'Moyens limités', effect: 'Budget ramené à 70 points' },
   limited_ammo: { name: 'Stocks de munitions limités', effect: 'Dotations initiales −30 %' },
   degraded_sensors: { name: 'Capteurs dégradés', effect: 'Portée de détection −20 %' },
@@ -36,7 +28,7 @@ export const constraintLabel: Record<Constraint, { name: string; effect: string 
 };
 
 export const briefing: Record<
-  MissionKind,
+  engine.MissionKind,
   { context: string; objective: string; victory: string; defeat: string }
 > = {
   naval_combat: {
@@ -53,15 +45,15 @@ export const briefing: Record<
   },
 };
 
-export const blockerLabel: Record<LaunchBlocker, string> = {
+export const blockerLabel: Record<engine.LaunchBlocker, string> = {
   NO_SHIP: 'Sélectionnez au moins un bâtiment.',
   BUDGET_EXCEEDED: 'Le budget est dépassé : retirez des bâtiments.',
 };
 
-export const errorMessage = (error: GameError): string => error.message;
+export const errorMessage = (error: engine.GameError): string => error.message;
 
 /** État d'activation affiché sur les fiches ; le porte-avions n'en a pas (SF-03.6). */
-export const activationLabel: Record<Exclude<ActivationStatus, 'not_activable'>, string> = {
+export const activationLabel: Record<Exclude<engine.ActivationStatus, 'not_activable'>, string> = {
   available: 'Disponible',
   in_progress: 'En cours',
   activated: 'Activée',

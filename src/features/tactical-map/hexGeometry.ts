@@ -1,16 +1,16 @@
-import type { GameMap, Hex } from '../../engine';
+import * as engine from '../../engine';
 
 /** Rayon d'un hexagone (pointy-top) dans l'espace du viewBox SVG. */
 export const HEX_SIZE = 10;
 const W = Math.sqrt(3) * HEX_SIZE;
 
 /** Centre d'un hexagone ; les lignes impaires sont décalées d'une demi-largeur. */
-export const hexCenter = ({ col, row }: Hex): { x: number; y: number } => ({
+export const hexCenter = ({ col, row }: engine.Hex): { x: number; y: number } => ({
   x: col * W + (row % 2 === 1 ? W / 2 : 0) + W / 2,
   y: row * 1.5 * HEX_SIZE + HEX_SIZE,
 });
 
-export const mapViewBox = (map: Pick<GameMap, 'width' | 'height'>) => ({
+export const mapViewBox = (map: Pick<engine.GameMap, 'width' | 'height'>) => ({
   width: map.width * W + W / 2,
   height: (map.height - 1) * 1.5 * HEX_SIZE + 2 * HEX_SIZE,
 });

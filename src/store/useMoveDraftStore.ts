@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Hex } from '../engine';
+import * as engine from '../engine';
 
 /**
  * Brouillon de déplacement : déplacement en préparation, pas encore confirmé (SF-03.12). Il reste
@@ -9,9 +9,9 @@ import type { Hex } from '../engine';
  */
 interface MoveDraftStore {
   unitId: string | null;
-  destination: Hex | null;
+  destination: engine.Hex | null;
   startDraft: (unitId: string) => void;
-  previewDestination: (destination: Hex) => void;
+  previewDestination: (destination: engine.Hex) => void;
   cancelDraft: () => void;
 }
 

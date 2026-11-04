@@ -1,4 +1,4 @@
-import type { Hex } from '../../engine';
+import * as engine from '../../engine';
 import type { MoveDraft } from '../commands/useMoveDraft';
 import { HEX_POINTS, hexCenter } from './hexGeometry';
 
@@ -6,7 +6,7 @@ const ACCESSIBLE = '#7cfc9a';
 const REFUSED = '#ff5252';
 
 /** Liste de points « x,y » d'un tracé passant par le centre de chaque hexagone. */
-function pointsOf(path: readonly Hex[]): string {
+function pointsOf(path: readonly engine.Hex[]): string {
   return path
     .map((hex) => {
       const { x, y } = hexCenter(hex);

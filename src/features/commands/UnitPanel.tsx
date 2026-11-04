@@ -1,14 +1,7 @@
 import { Box, Button, IconButton, Paper, Stack, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import {
-  BLOCKER_MESSAGES,
-  defaultConfig,
-  moveBlocker,
-  orderBlocker,
-  type MissionState,
-  type Unit,
-} from '../../engine';
-import { shipIcon } from '../../shared/assets';
+import * as engine from '../../engine';
+import * as assets from '../../shared/assets';
 import { useMoveDraftStore } from '../../store/useMoveDraftStore';
 import { useSelectionStore } from '../../store/useSelectionStore';
 import { ActivationBadge } from '../fleet/ActivationBadge';
@@ -26,14 +19,14 @@ const UNAVAILABLE_COMMANDS = [
 ];
 
 /** Motif d'indisponibilité à afficher sous les boutons (SF-03.9), ou `null`. */
-function unavailabilityReason(mission: MissionState, unit: Unit): string | null {
-  const blocker = moveBlocker(mission.units, unit);
+function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): string | null {
+  const blocker = engine.moveBlocker(mission.units, unit);
   if (!blocker) return null;
   const prefix = blocker === 'ALREADY_MOVED' ? 'Déplacement indisponible' : 'Ordres indisponibles';
-  return `${prefix} : ${BLOCKER_MESSAGES[blocker]}`;
+  return `${prefix} : ${engine.BLOCKER_MESSAGES[blocker]}`;
 }
 
-function CommandButtons({ mission, unit }: { mission: MissionState; unit: Unit }) {
+function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
   const startDraft = useMoveDraftStore((s) => s.startDraft);
   const reason = unavailabilityReason(mission, unit);
   return (
@@ -41,7 +34,7 @@ function CommandButtons({ mission, unit }: { mission: MissionState; unit: Unit }
       <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: '1fr 1fr' }}>
         <Button
           variant="outlined"
-          disabled={moveBlocker(mission.units, unit) !== null}
+          disabled={engine.moveBlocker(mission.units, unit) !== null}
           onClick={() => startDraft(unit.id)}
         >
           Déplacement
@@ -53,7 +46,7 @@ function CommandButtons({ mission, unit }: { mission: MissionState; unit: Unit }
         ))}
         <Button
           variant="outlined"
-          disabled={orderBlocker(mission.units, unit) !== null}
+          disabled={engine.orderBlocker(mission.units, unit) !== null}
           onClick={() => endActivation(unit.id)}
         >
           Terminer l’activation
@@ -68,20 +61,20 @@ function CommandButtons({ mission, unit }: { mission: MissionState; unit: Unit }
   );
 }
 
-function UnitHeader({ unit }: { unit: Unit }) {
+function UnitHeader({ unit }: { unit: engine.Unit }) {
   const selectUnit = useSelectionStore((s) => s.selectUnit);
   return (
     <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
       <Box>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography variant="h6" component="h2">
-            {defaultConfig.ships[unit.shipClass].label}
+            {engine.defaultConfig.ships[unit.shipClass].label}
           </Typography>
           <ActivationBadge status={unit.activation} />
         </Stack>
         <Box
           component="img"
-          src={shipIcon[unit.shipClass]}
+          src={assets.shipIcon[unit.shipClass]}
           alt=""
           sx={{
             display: 'block',
@@ -101,7 +94,7 @@ function UnitHeader({ unit }: { unit: Unit }) {
 }
 
 /** Fiche et commandes de l'unité sélectionnée ; les règles viennent du moteur. */
-export function UnitPanel({ mission }: { mission: MissionState }) {
+export function UnitPanel({ mission }: { mission: engine.MissionState }) {
   const selectedUnitId = useSelectionStore((s) => s.selectedUnitId);
   const unit = mission.units.find((u) => u.id === selectedUnitId);
 

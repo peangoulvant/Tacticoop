@@ -1,20 +1,20 @@
 import { Box, Paper, Typography } from '@mui/material';
-import { defaultConfig, type GameEvent } from '../../engine';
-import { missionLabel } from '../../shared/labels';
+import * as engine from '../../engine';
+import * as labels from '../../shared/labels';
 
 /** Texte d'un événement ; le catalogue complet du journal reste à arbitrer (D-11). */
-function describe(event: GameEvent): string {
+function describe(event: engine.GameEvent): string {
   switch (event.type) {
     case 'MISSION_LAUNCHED':
-      return `Mission lancée : ${missionLabel[event.mission]}`;
+      return `Mission lancée : ${labels.missionLabel[event.mission]}`;
     case 'UNIT_MOVED':
-      return `${defaultConfig.ships[event.shipClass].label} : déplacement de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
+      return `${engine.defaultConfig.ships[event.shipClass].label} : déplacement de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
     case 'CYCLE_STARTED':
       return `Cycle ${event.cycle} ouvert`;
   }
 }
 
-export function LogbookPanel({ events }: { events: GameEvent[] }) {
+export function LogbookPanel({ events }: { events: engine.GameEvent[] }) {
   return (
     <Paper sx={{ p: 1.5, height: '100%', overflow: 'auto', boxSizing: 'border-box' }}>
       <Typography variant="h6" sx={{ mb: 1 }}>

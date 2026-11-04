@@ -3,18 +3,10 @@ import { Box, IconButton, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import FitScreenIcon from '@mui/icons-material/FitScreen';
-import {
-  defaultConfig,
-  sameHex,
-  terrainAt,
-  type GameMap,
-  type Hex,
-  type MissionState,
-  type Unit,
-} from '../../engine';
+import * as engine from '../../engine';
 import { palette } from '../../app/theme';
-import { finishFlagIcon } from '../../shared/assets';
-import { terrainLabel } from '../../shared/labels';
+import * as assets from '../../shared/assets';
+import * as labels from '../../shared/labels';
 import { useMoveDraftStore } from '../../store/useMoveDraftStore';
 import { useSelectionStore } from '../../store/useSelectionStore';
 import type { MoveDraft } from '../commands/useMoveDraft';
@@ -27,7 +19,7 @@ import { useMapView } from './useMapView';
  * Terrain statique : mémoïsé car la carte ne change pas pendant la mission (SF-02 §3).
  * L'opacité réduite fait ressortir les cases occupées par une unité.
  */
-const TerrainLayer = memo(function TerrainLayer({ map }: { map: GameMap }) {
+const TerrainLayer = memo(function TerrainLayer({ map }: { map: engine.GameMap }) {
   const cells = [];
   for (let row = 0; row < map.height; row++) {
     for (let col = 0; col < map.width; col++) {
@@ -42,7 +34,7 @@ const TerrainLayer = memo(function TerrainLayer({ map }: { map: GameMap }) {
         >
           <polygon
             points={HEX_POINTS}
-            fill={terrainFill[terrainAt(map, { col, row })]}
+            fill={terrainFill[engine.terrainAt(map, { col, row })]}
             stroke="#0a1a33"
             strokeWidth="0.6"
           />
@@ -53,7 +45,7 @@ const TerrainLayer = memo(function TerrainLayer({ map }: { map: GameMap }) {
   return <>{cells}</>;
 });
 
-function UnitToken({ unit, selected }: { unit: Unit; selected: boolean }) {
+function UnitToken({ unit, selected }: { unit: engine.Unit; selected: boolean }) {
   const { x, y } = hexCenter(unit.position);
   return (
     <g transform={`translate(${x} ${y})`} pointerEvents="none" data-testid={`unit-${unit.id}`}>
@@ -73,13 +65,13 @@ function UnitToken({ unit, selected }: { unit: Unit; selected: boolean }) {
 }
 
 /** Drapeau d'arrivée, centré dans la case du point d'arrivée (B). */
-function FinishFlag({ hex }: { hex: Hex }) {
+function FinishFlag({ hex }: { hex: engine.Hex }) {
   const { x, y } = hexCenter(hex);
   return (
     <g transform={`translate(${x} ${y})`} pointerEvents="none">
       <title>Arrivée</title>
       <image
-        href={finishFlagIcon}
+        href={assets.finishFlagIcon}
         x="-6"
         y="-5"
         width="12"
@@ -115,11 +107,19 @@ function ZoomControls({
 }
 
 /** Légende de la case sélectionnée : coordonnées, terrain et bâtiment éventuel. */
-function HexCaption({ map, hex, unit }: { map: GameMap; hex: Hex | null; unit?: Unit }) {
+function HexCaption({
+  map,
+  hex,
+  unit,
+}: {
+  map: engine.GameMap;
+  hex: engine.Hex | null;
+  unit?: engine.Unit;
+}) {
   const text = hex
-    ? `(${hex.col}, ${hex.row}) — ${terrainLabel[terrainAt(map, hex)]}`
+    ? `(${hex.col}, ${hex.row}) — ${labels.terrainLabel[engine.terrainAt(map, hex)]}`
     : 'Sélectionnez un hexagone';
-  const ship = unit ? ` — ${defaultConfig.ships[unit.shipClass].label}` : '';
+  const ship = unit ? ` — ${engine.defaultConfig.ships[unit.shipClass].label}` : '';
   return (
     <Typography variant="caption" sx={{ ...overlay, left: 8, bottom: 8, px: 1, py: 0.25 }}>
       {`${text}${ship} · ${map.width}×${map.height}`}
@@ -131,7 +131,13 @@ function HexCaption({ map, hex, unit }: { map: GameMap; hex: Hex | null; unit?: 
  * Carte tactique : rendu SVG 2D simplifié (docs/maquette). Occupe toute la zone (tronquée si
  * besoin), se déplace par glisser-déposer et se zoome à la molette, comme une carte en ligne.
  */
-export function TacticalMap({ mission, move }: { mission: MissionState; move: MoveDraft | null }) {
+export function TacticalMap({
+  mission,
+  move,
+}: {
+  mission: engine.MissionState;
+  move: MoveDraft | null;
+}) {
   const { map, units, start, goal } = mission;
   const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
   const content = mapViewBox(map);
@@ -140,9 +146,9 @@ export function TacticalMap({ mission, move }: { mission: MissionState; move: Mo
 
   // Une unité cliquée est consultée (sa fiche s'affiche). Une case vide choisit la destination du
   // déplacement en préparation ; sans déplacement en préparation, elle désélectionne l'unité.
-  const onCellClick = (hex: Hex) => {
+  const onCellClick = (hex: engine.Hex) => {
     selectHex(hex);
-    const here = units.find((u) => sameHex(u.position, hex));
+    const here = units.find((u) => engine.sameHex(u.position, hex));
     if (here) selectUnit(here.id);
     else if (move) previewDestination(hex);
     else selectUnit(null);
@@ -197,7 +203,7 @@ export function TacticalMap({ mission, move }: { mission: MissionState; move: Mo
       <HexCaption
         map={map}
         hex={selectedHex}
-        unit={units.find((u) => selectedHex && sameHex(u.position, selectedHex))}
+        unit={units.find((u) => selectedHex && engine.sameHex(u.position, selectedHex))}
       />
     </Box>
   );

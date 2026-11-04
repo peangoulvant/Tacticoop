@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import type { Hex } from '../engine';
+import * as engine from '../engine';
 
 /** Sélection : seulement des identifiants, jamais de données métier. La vue de la carte reste locale. */
 interface SelectionStore {
   selectedUnitId: string | null;
-  selectedHex: Hex | null;
+  selectedHex: engine.Hex | null;
   selectUnit: (id: string | null) => void;
-  selectHex: (hex: Hex | null) => void;
+  selectHex: (hex: engine.Hex | null) => void;
 }
 
 export const useSelectionStore = create<SelectionStore>((set) => ({
