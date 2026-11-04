@@ -3,7 +3,7 @@ import { closeCycleIfDone, hasActivationInProgress, startNextCycle } from '../mi
 import { planMove, type MoveRefusal } from '../units/movement';
 import type { Unit } from '../units/unit';
 import { accept, reject } from './results';
-import type { CommandResult, GameCommand, GameError, MissionCommand, MissionState } from './types';
+import type { CommandResult, GameCommand, MissionCommand, MissionState } from './types';
 
 type CommandOf<T extends MissionCommand['type']> = Extract<MissionCommand, { type: T }>;
 
@@ -14,18 +14,17 @@ type Handler<T extends MissionCommand['type']> = (
   config: GameConfig,
 ) => CommandResult;
 
-const ENGAGED: GameError = {
-  code: 'ACTIVATION_IN_PROGRESS',
-  message: 'Une autre unité est en cours d’activation : terminez-la d’abord.',
-};
+const ENGAGED = reject(
+  'ACTIVATION_IN_PROGRESS',
+  'Une autre unité est en cours d’activation : terminez-la d’abord.',
+);
 
-/** Motifs d'impossibilité tirés de l'état d'activation de l'unité (SF-03.1, SF-03.8). */
-const STATUS_ERRORS: Partial<Record<Unit['activation'], GameError>> = {
-  not_activable: { code: 'UNIT_NOT_ACTIVABLE', message: 'Cette unité ne reçoit pas d’activation.' },
-  activated: {
-    code: 'UNIT_ALREADY_ACTIVATED',
-    message: 'Cette unité a déjà été activée pendant ce cycle.',
-  },
+const UNKNOWN_UNIT = reject('UNIT_NOT_FOUND', 'Unité inconnue.');
+
+/** Refus dû à l'état d'activation de l'unité visée (SF-03.1, SF-03.8). */
+const STATUS_REJECTIONS: Partial<Record<Unit['activation'], CommandResult>> = {
+  not_activable: reject('UNIT_NOT_ACTIVABLE', 'Cette unité ne reçoit pas d’activation.'),
+  activated: reject('UNIT_ALREADY_ACTIVATED', 'Cette unité a déjà été activée pendant ce cycle.'),
 };
 
 const MOVE_REFUSALS: Record<MoveRefusal, string> = {
@@ -36,8 +35,14 @@ const MOVE_REFUSALS: Record<MoveRefusal, string> = {
   NO_PATH: 'Aucun chemin navigable ne mène à cette destination.',
 };
 
-function orderError(mission: MissionState, unit: Unit): GameError | null {
-  const byStatus = STATUS_ERRORS[unit.activation];
+/**
+ * Refus à opposer à un ordre visant cette unité, ou `null` si elle peut le recevoir. Une unité
+ * ne peut pas recevoir d'ordre quand elle n'est pas activable par le joueur (porte-avions,
+ * unités ennemies), quand elle est déjà activée ce cycle, ou quand une autre unité est en cours
+ * d'activation (seule celle-ci reçoit des ordres).
+ */
+function orderRejection(mission: MissionState, unit: Unit): CommandResult | null {
+  const byStatus = STATUS_REJECTIONS[unit.activation];
   if (byStatus) return byStatus;
   const otherEngaged = mission.units.some(
     (u) => u.id !== unit.id && u.activation === 'in_progress',
@@ -45,36 +50,41 @@ function orderError(mission: MissionState, unit: Unit): GameError | null {
   return otherEngaged ? ENGAGED : null;
 }
 
-/** L'unité visée par un ordre, si elle peut en recevoir un : seule l'unité en cours reçoit des ordres. */
+/**
+ * Retrouve l'unité visée par son identifiant et vérifie qu'elle peut recevoir un ordre
+ * maintenant. Renvoie l'unité, ou le refus à transmettre tel quel au joueur.
+ */
 function findOrderableUnit(
   mission: MissionState,
   unitId: string,
-): { unit: Unit } | { error: GameError } {
+): { unit: Unit } | { rejection: CommandResult } {
   const unit = mission.units.find((u) => u.id === unitId);
-  if (!unit) return { error: { code: 'UNIT_NOT_FOUND', message: 'Unité inconnue.' } };
-  const error = orderError(mission, unit);
-  return error ? { error } : { unit };
+  if (!unit) return { rejection: UNKNOWN_UNIT };
+  const rejection = orderRejection(mission, unit);
+  return rejection ? { rejection } : { unit };
 }
 
-const withUnit = (mission: MissionState, unitId: string, patch: Partial<Unit>): MissionState => ({
+/** Nouvelle mission où seule l'unité `unitId` est modifiée (position, activation…). */
+const updateUnitInMission = (
+  mission: MissionState,
+  unitId: string,
+  patch: Partial<Unit>,
+): MissionState => ({
   ...mission,
   units: mission.units.map((u) => (u.id === unitId ? { ...u, ...patch } : u)),
 });
 
-const fail = ({ code, message, ...extra }: GameError): CommandResult =>
-  reject(code, message, extra);
-
 /** Un déplacement par activation, exécuté après validation ; l'activation reste engagée (SF-03.3). */
 const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config) => {
   const found = findOrderableUnit(mission, unitId);
-  if ('error' in found) return fail(found.error);
+  if ('rejection' in found) return found.rejection;
   const { unit } = found;
   if (unit.hasMoved)
     return reject('ALREADY_MOVED', 'Cette unité s’est déjà déplacée pendant son activation.');
   const plan = planMove(mission, unit, destination, config);
   if (!plan.ok)
     return reject('MOVE_REFUSED', MOVE_REFUSALS[plan.reason], { moveRefusal: plan.reason });
-  const moved = withUnit(mission, unitId, {
+  const moved = updateUnitInMission(mission, unitId, {
     position: destination,
     activation: 'in_progress',
     hasMoved: true,
@@ -99,16 +109,16 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
  */
 const endActivation: Handler<'END_ACTIVATION'> = (mission, { unitId }) => {
   const found = findOrderableUnit(mission, unitId);
-  if ('error' in found) return fail(found.error);
+  if ('rejection' in found) return found.rejection;
   const { state, events } = closeCycleIfDone(
-    withUnit(mission, unitId, { activation: 'activated' }),
+    updateUnitInMission(mission, unitId, { activation: 'activated' }),
   );
   return accept(state, events);
 };
 
 /** Fin anticipée : possible entre deux séquences complètes, jamais pendant une activation (SF-03.5). */
 const endCycleEarly: Handler<'END_CYCLE_EARLY'> = (mission) => {
-  if (hasActivationInProgress(mission.units)) return fail(ENGAGED);
+  if (hasActivationInProgress(mission.units)) return ENGAGED;
   const { state, events } = startNextCycle(mission);
   return accept(state, events);
 };
