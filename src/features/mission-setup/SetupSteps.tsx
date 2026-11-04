@@ -75,7 +75,7 @@ export function BriefingStep({ setup }: { setup: MissionSetup }) {
     <>
       <Typography gutterBottom>{text.context}</Typography>
       <Typography variant="body2">
-        <b>Objectif :</b> {text.objective}
+        <b>Objectif :</b> {text.objective}.
       </Typography>
       <Typography variant="body2">
         <b>Victoire :</b> {text.victory}

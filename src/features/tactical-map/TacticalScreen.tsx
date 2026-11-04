@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material';
 import type { MissionState } from '../../engine';
-import { constraintLabel, difficultyLabel, missionLabel } from '../../shared/labels';
+import { briefing, constraintLabel, difficultyLabel, missionLabel } from '../../shared/labels';
 import { useGameStore } from '../../store/useGameStore';
 import { EndCycleButton } from '../commands/EndCycleButton';
 import { MoveBar } from '../commands/MoveBar';
@@ -52,10 +52,7 @@ function TopBar({ mission }: { mission: MissionState }) {
   const weather = setup.constraints.includes('bad_weather')
     ? constraintLabel.bad_weather.name
     : 'Normale';
-  const objective =
-    setup.mission === 'escort'
-      ? 'Protéger le porte-avions jusqu’au point B'
-      : 'Éliminer la flotte ennemie';
+  const objective = briefing[setup.mission].objective;
   return (
     <Paper component="header" sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
       <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 2 }}>

@@ -85,7 +85,7 @@ function ForceLines({ setup }: { setup: MissionSetup }) {
 export function Recap({ setup }: { setup: MissionSetup }) {
   const dispatch = useGameStore((s) => s.dispatch);
   const blockers = launchBlockers(setup, defaultConfig);
-  const objective = briefing[setup.mission].objective.replace(/\.$/, '');
+  const objective = briefing[setup.mission].objective;
 
   return (
     <Paper
