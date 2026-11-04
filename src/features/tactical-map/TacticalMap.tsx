@@ -13,6 +13,7 @@ import {
   type Unit,
 } from '../../engine';
 import { palette } from '../../app/theme';
+import { finishFlagIcon } from '../../shared/assets';
 import { terrainLabel } from '../../shared/labels';
 import { useMovePlanStore } from '../../store/useMovePlanStore';
 import { useSelectionStore } from '../../store/useSelectionStore';
@@ -71,32 +72,19 @@ function UnitToken({ unit, selected }: { unit: Unit; selected: boolean }) {
   );
 }
 
-/** Drapeau à damier d'arrivée, centré dans la case du point d'arrivée (B). */
+/** Drapeau d'arrivée, centré dans la case du point d'arrivée (B). */
 function FinishFlag({ hex }: { hex: Hex }) {
   const { x, y } = hexCenter(hex);
   return (
     <g transform={`translate(${x} ${y})`} pointerEvents="none">
       <title>Arrivée</title>
-      <line
-        x1="-3.5"
-        y1="-5.5"
-        x2="-3.5"
-        y2="5.5"
-        stroke="#fff"
-        strokeWidth="1"
-        strokeLinecap="round"
-      />
-      <rect x="-3" y="-5.5" width="8" height="6" fill="#fff" />
-      <rect x="1" y="-5.5" width="4" height="3" fill={palette.bg} />
-      <rect x="-3" y="-2.5" width="4" height="3" fill={palette.bg} />
-      <rect
-        x="-3"
-        y="-5.5"
-        width="8"
-        height="6"
-        fill="none"
-        stroke={palette.bg}
-        strokeWidth="0.5"
+      <image
+        href={finishFlagIcon}
+        x="-6"
+        y="-5"
+        width="12"
+        height="10"
+        preserveAspectRatio="xMidYMid meet"
       />
     </g>
   );
