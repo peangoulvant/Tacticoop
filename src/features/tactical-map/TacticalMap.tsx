@@ -71,14 +71,33 @@ function UnitToken({ unit, selected }: { unit: Unit; selected: boolean }) {
   );
 }
 
-function Waypoint({ hex, label }: { hex: Hex; label: string }) {
+/** Drapeau à damier d'arrivée, centré dans la case du point d'arrivée (B). */
+function FinishFlag({ hex }: { hex: Hex }) {
   const { x, y } = hexCenter(hex);
   return (
     <g transform={`translate(${x} ${y})`} pointerEvents="none">
-      <circle r="4" cy="-8" fill="#fff" stroke={palette.bg} strokeWidth="0.8" />
-      <text y="-6.3" textAnchor="middle" fontSize="5.5" fontWeight="700" fill={palette.bg}>
-        {label}
-      </text>
+      <title>Arrivée</title>
+      <line
+        x1="-3.5"
+        y1="-5.5"
+        x2="-3.5"
+        y2="5.5"
+        stroke="#fff"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      <rect x="-3" y="-5.5" width="8" height="6" fill="#fff" />
+      <rect x="1" y="-5.5" width="4" height="3" fill={palette.bg} />
+      <rect x="-3" y="-2.5" width="4" height="3" fill={palette.bg} />
+      <rect
+        x="-3"
+        y="-5.5"
+        width="8"
+        height="6"
+        fill="none"
+        stroke={palette.bg}
+        strokeWidth="0.5"
+      />
     </g>
   );
 }
@@ -184,8 +203,7 @@ export function TacticalMap({
                   <polygon points={HEX_POINTS} fill="none" stroke="#5fd3ff" strokeWidth="1.6" />
                 </g>
               )}
-              <Waypoint hex={start} label="A" />
-              {goal && <Waypoint hex={goal} label="B" />}
+              {goal && <FinishFlag hex={goal} />}
               {units.map((u) => (
                 <UnitToken key={u.id} unit={u} selected={u.id === selectedUnitId} />
               ))}
