@@ -39,7 +39,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 ## Conventions de code (rappel des exigences exprimées en revue)
 
 - Complexité cyclomatique par fonction : **5 conseillé, 10 maximum**, partout, composants React compris (ESLint `complexity` à 10, vérifié à 5 à la main).
-- **Pas de test d'interface** : « tester les comportements IHM n'a aucun intérêt » (`App.test.tsx` supprimé). Tester le moteur et la logique pure ; une vérification visuelle dans le navigateur suffit pour l'interface.
+- **Pas de test d'interface écrit à la main pour l'instant** (`App.test.tsx` supprimé). Tester le comportement de l'interface en code pur (Testing Library) a peu d'intérêt face à un outil dédié comme Cypress : **les tests d'interface seront mis en place plus tard** avec un tel framework. D'ici là, tester le moteur et la logique pure, et vérifier l'interface visuellement dans le navigateur. Ne pas en conclure que l'interface n'a pas à être testée.
 - Pas de doublon de données : `Unit` ne porte que l'état courant, les caractéristiques de classe restent dans `ShipSpec` (`GameConfig`).
 - Le moteur ne dépend ni de React, ni de Zustand, ni de MUI, ni d'IndexedDB (règle ESLint). L'UI n'importe que depuis `engine/index.ts`.
 - Valeurs de jeu dans `GameConfig`, jamais en dur dans l'UI. Hasard injecté par graine.
