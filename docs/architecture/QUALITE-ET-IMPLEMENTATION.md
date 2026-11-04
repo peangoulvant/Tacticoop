@@ -22,6 +22,22 @@ Appliquer les principes **SOLID** de manière pragmatique :
 - Pas de limite arbitraire de lignes par fonction/fichier, ni d'outil de qualimétrie lourd imposé à la V1.
 - Ne pas sur-découper : le coût de navigation entre fichiers fait aussi partie de la maintenabilité.
 
+## Conventions de nommage et d'import
+
+Un développeur doit savoir **d'où vient** une fonction ou un type en lisant une seule ligne.
+
+**Importer sous un nom ce dont l'origine n'est pas évidente.**
+- Par défaut, un module d'une autre couche s'importe sous un nom : `import * as engine from '../../engine'`, puis `engine.planMove(...)`, `engine.MoveBlocker`. Même principe pour `shared/labels` (`labels`) et `shared/assets` (`assets`).
+- L'import nommé reste accepté quand le nom porte déjà son origine : composant React (`UnitPanel`), hook ou store (`useGameStore`), fonction du même dossier.
+- Le moteur (`src/engine`) importe ses propres modules par chemin relatif, sans espace de noms.
+- ESLint impose cette règle pour le moteur, `shared/labels` et `shared/assets` (`no-restricted-syntax`). Pour les autres cas, la relecture tranche : dans le doute, importer sous un nom.
+
+**Un mot, une couche.** Deux éléments de couches différentes ne portent pas des noms voisins.
+- `plan` désigne le calcul du moteur : `engine.planMove`, `engine.MovePlan`.
+- `draft` (« brouillon ») désigne l'état d'interface d'une action en préparation, pas encore exécutée : `useMoveDraft`, `MoveDraft`, `useMoveDraftStore`.
+- Un hook s'appelle `useXxx`, un store Zustand `useXxxStore` ; un composant React porte un nom de rôle (`UnitPanel`, `MoveBar`).
+- Avant de nommer, chercher les noms déjà proches dans les autres couches et choisir un mot distinct.
+
 ## Tests
 
 Priorité aux tests unitaires du moteur : commandes et erreurs, calculs de déplacement, contacts et observations filtrées, combat, transitions et conditions terminales selon les règles fonctionnelles.
