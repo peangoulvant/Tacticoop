@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import type { Hex } from '../../engine';
+import * as engine from '../../engine';
 import { clampView, resolveView, zoomAt, type Size, type View } from './viewTransform';
 
 /** Déplacement (px) au-delà duquel un appui devient un glisser et non un clic. */
@@ -40,7 +40,7 @@ function useWheelZoom(
 }
 
 /** Case sous un point de l'écran, retrouvée par ses attributs `data-col` / `data-row`. */
-function hexAtPoint(x: number, y: number): Hex | null {
+function hexAtPoint(x: number, y: number): engine.Hex | null {
   const cell = document.elementFromPoint(x, y)?.closest('[data-col]');
   if (!cell) return null;
   return { col: Number(cell.getAttribute('data-col')), row: Number(cell.getAttribute('data-row')) };
@@ -59,7 +59,7 @@ function usePanAndClick(
   viewport: Size,
   content: Size,
   setCustom: (view: View) => void,
-  onCellClick: (hex: Hex) => void,
+  onCellClick: (hex: engine.Hex) => void,
 ) {
   const drag = useRef<Drag | null>(null);
 
@@ -104,7 +104,7 @@ export function useMapView(
   contentWidth: number,
   contentHeight: number,
   focusY: number,
-  onCellClick: (hex: Hex) => void,
+  onCellClick: (hex: engine.Hex) => void,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewport = useElementSize(containerRef);

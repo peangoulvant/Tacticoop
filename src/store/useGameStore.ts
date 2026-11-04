@@ -1,34 +1,29 @@
 import { create } from 'zustand';
-import {
-  defaultConfig,
-  executeCommand,
-  initialSetup,
-  type GameCommand,
-  type GameError,
-  type GameEvent,
-  type GameState,
-} from '../engine';
+import * as engine from '../engine';
 
 interface GameStore {
   /** Source de vérité métier : copie unique du GameState (AT-03). */
-  state: GameState;
+  state: engine.GameState;
   /** Événements produits par le moteur, du plus ancien au plus récent (alimente le journal). */
-  events: GameEvent[];
-  lastError: GameError | null;
+  events: engine.GameEvent[];
+  lastError: engine.GameError | null;
   /** Transmet la commande au moteur puis publie le résultat ; renvoie true si elle est acceptée. */
-  dispatch: (command: GameCommand) => boolean;
+  dispatch: (command: engine.GameCommand) => boolean;
   clearError: () => void;
   reset: () => void;
 }
 
-const freshState = (): GameState => ({ status: 'preparation', setup: initialSetup() });
+const freshState = (): engine.GameState => ({
+  status: 'preparation',
+  setup: engine.initialSetup(),
+});
 
 export const useGameStore = create<GameStore>((set, get) => ({
   state: freshState(),
   events: [],
   lastError: null,
   dispatch: (command) => {
-    const result = executeCommand(get().state, command, defaultConfig);
+    const result = engine.executeCommand(get().state, command, engine.defaultConfig);
     if (!result.ok) {
       set({ lastError: result.error });
       return false;

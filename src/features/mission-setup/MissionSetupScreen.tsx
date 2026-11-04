@@ -10,8 +10,8 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import { computeBudget, defaultConfig, shipCount, type MissionSetup } from '../../engine';
-import { constraintLabel, difficultyLabel, errorMessage, missionLabel } from '../../shared/labels';
+import * as engine from '../../engine';
+import * as labels from '../../shared/labels';
 import { useGameStore } from '../../store/useGameStore';
 import { Recap } from './Recap';
 import { BriefingStep, ConstraintsStep, ForceStep, MissionStep } from './SetupSteps';
@@ -36,20 +36,20 @@ function StepNav({ step, onStep }: { step: number; onStep: (step: number) => voi
 }
 
 /** Résumé affiché sous le titre d'une étape non active, une fois renseignée. */
-function stepSummaries(setup: MissionSetup): (string | undefined)[] {
-  const budget = computeBudget(setup, defaultConfig);
-  const constraints = setup.constraints.map((c) => constraintLabel[c].name).join(', ');
+function stepSummaries(setup: engine.MissionSetup): (string | undefined)[] {
+  const budget = engine.computeBudget(setup, engine.defaultConfig);
+  const constraints = setup.constraints.map((c) => labels.constraintLabel[c].name).join(', ');
   return [
-    `${missionLabel[setup.mission]} — ${difficultyLabel[setup.difficulty]}`,
+    `${labels.missionLabel[setup.mission]} — ${labels.difficultyLabel[setup.difficulty]}`,
     undefined,
     constraints || 'Aucune',
-    `${shipCount(setup)} bâtiment(s) — ${budget.committed} / ${budget.total} pts`,
+    `${engine.shipCount(setup)} bâtiment(s) — ${budget.committed} / ${budget.total} pts`,
     undefined,
   ];
 }
 
 /** Préparation de mission (SF-01) en stepper vertical ; l'écran n'affiche que ce que le moteur calcule. */
-export function MissionSetupScreen({ setup }: { setup: MissionSetup }) {
+export function MissionSetupScreen({ setup }: { setup: engine.MissionSetup }) {
   const lastError = useGameStore((s) => s.lastError);
   const [step, setStep] = useState(0);
   const summaries = stepSummaries(setup);
@@ -71,7 +71,7 @@ export function MissionSetupScreen({ setup }: { setup: MissionSetup }) {
       </Typography>
       {lastError && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {errorMessage(lastError)}
+          {labels.errorMessage(lastError)}
         </Alert>
       )}
       <Stepper nonLinear activeStep={step} orientation="vertical">

@@ -2,7 +2,7 @@
 
 Lien entre les exigences du [Game Design](game-design/README.md) et des [spécifications fonctionnelles](functional-specs/README.md) et le code de `src/`. Document de suivi : il ne définit aucune règle et ne reprend pas le détail des spécifications, qui font autorité.
 
-**État analysé :** `main` au commit `ba39d6d` (après la PR #13), avec la PR « interface du déplacement et des activations ». `npm test` donne 74 tests réussis sur 11 fichiers, `npm run lint` et `npm run build` ne signalent rien.
+**État analysé :** `main` au commit `74fd9c5` (après la PR #14), avec la PR de convention de nommage (imports sous un nom, vocabulaire « brouillon »). `npm test` donne 74 tests réussis sur 11 fichiers, `npm run lint` et `npm run build` ne signalent rien.
 
 ## Lecture
 
@@ -66,7 +66,7 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-02 §4 | Placement aléatoire des ennemis | — | — | Non implémenté | |
 | SF-02 §5 (SF-02.5, SF-02.6) | Navigation du porte-avions : point de passage, déplacement automatique 0 à 2 | — | — | Non implémenté | |
 | SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : chemin le plus court déterministe, capacité de mouvement, destinations accessibles, refus motivé | `engine/units/movement.ts` → `planMove()`, `reachableHexes()`<br>`engine/map/gameMap.ts` → `exploreFrom()`, `pathTo()`<br>`engine/core/missionCommands.ts` → `moveUnit()` | `movement.test.ts`, `missionCommands.test.ts` | Implémenté | Motifs de refus : même case, terrain infranchissable, case occupée, hors de portée, aucun chemin. |
-| SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : destinations mises en évidence, trajet prévisualisé, confirmation ou annulation | `features/commands/useMovePlan.ts` → `useMovePlan()`<br>`features/tactical-map/MoveOverlay.tsx` → `MoveOverlay()`<br>`features/commands/MoveBar.tsx` → `MoveBar()`<br>`store/useMovePlanStore.ts` → `useMovePlanStore` | — | Non vérifié | Interface : pointillés verts (trajet valide) ou rouges (refus), annulation sans consommation. Non testée. |
+| SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : destinations mises en évidence, trajet prévisualisé, confirmation ou annulation | `features/commands/useMoveDraft.ts` → `useMoveDraft()`<br>`features/tactical-map/MoveOverlay.tsx` → `MoveOverlay()`<br>`features/commands/MoveBar.tsx` → `MoveBar()`<br>`store/useMoveDraftStore.ts` → `useMoveDraftStore` | — | Non vérifié | Interface : pointillés verts (trajet valide) ou rouges (refus), annulation sans consommation. Non testée. |
 | SF-02 §7 (SF-02.15, SF-02.16) | Obstacle ennemi non détecté | — | — | Non implémenté | |
 
 ## SF-03 — Cycles et commandes
@@ -82,7 +82,7 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-03.8 (§2) | Seule l'unité en cours d'activation reçoit des ordres | `engine/missions/activation.ts` → `orderBlocker()`, `moveBlocker()` | `activation.test.ts`, `missionCommands.test.ts` | Implémenté | |
 | SF-03.9 (§3) | Commandes indisponibles visibles mais désactivées, avec motif ; « Terminer l'activation » accessible | `features/commands/UnitPanel.tsx` → `UnitPanel()`, `CommandButtons()`<br>`engine/missions/activation.ts` → `BLOCKER_MESSAGES` | `activation.test.ts` | Partiel | Déplacement et « Terminer l'activation » suivent le moteur, avec motif affiché. Les actions spéciales restent désactivées en dur, avec une info-bulle générique. L'affichage n'est pas testé. |
 | SF-03.10, SF-03.11 (§3) | Validation, confirmation et annulation des actions spéciales | — | — | Non implémenté | Aucune action spéciale. |
-| SF-03.12 (§3) | Déplacement non confirmé : consultation d'autres unités, ordre conservé pour l'unité active | `store/useMovePlanStore.ts` → `useMovePlanStore`<br>`features/tactical-map/TacticalMap.tsx` → `TacticalMap()` | — | Non vérifié | Vérifié visuellement, sans test automatisé. |
+| SF-03.12 (§3) | Déplacement non confirmé : consultation d'autres unités, ordre conservé pour l'unité active | `store/useMoveDraftStore.ts` → `useMoveDraftStore`<br>`features/tactical-map/TacticalMap.tsx` → `TacticalMap()` | — | Non vérifié | Vérifié visuellement, sans test automatisé. |
 | SF-03.13 (§4) | Fin de cycle, bilan, cycle suivant automatique | `engine/missions/cycle.ts` → `startNextCycle()`<br>`engine/core/types.ts` → `MissionState.cycle` | `missionCommands.test.ts` | Partiel | Le cycle suivant s'ouvre automatiquement, les unités redeviennent disponibles. Pas de bilan de cycle (D-11) ni de renouvellement du quota de navigation. |
 | SF-03.14, SF-03.15 (§5) | Ordres de navigation du porte-avions, un par cycle | — | — | Non implémenté | |
 | SF-03.16 (§4) | Enchaînement automatique sans unité activable | — | — | Non implémenté | |

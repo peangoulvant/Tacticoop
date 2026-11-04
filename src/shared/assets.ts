@@ -1,4 +1,4 @@
-import type { ShipClass, Terrain } from '../engine';
+import * as engine from '../engine';
 import carrier from '../assets/units/porte-avions.png';
 import frigate from '../assets/units/fregate.png';
 import helicopter from '../assets/units/helicoptere.png';
@@ -14,7 +14,7 @@ import plain from '../assets/terrains/plaine.png';
 import sea from '../assets/terrains/mer_classique.png';
 
 /** Silhouettes blanches des bâtiments (une seule image pour les trois classes de frégates). */
-export const shipIcon: Record<ShipClass, string> = {
+export const shipIcon: Record<engine.ShipClass, string> = {
   fremm: frigate,
   frigate_da: frigate,
   frigate_asm: frigate,
@@ -24,7 +24,7 @@ export const shipIcon: Record<ShipClass, string> = {
 
 export const weaponIcon = { missile, torpedo, helicopter };
 
-export const terrainIcon: Record<Terrain, string> = {
+export const terrainIcon: Record<engine.Terrain, string> = {
   deep_sea: deepSea,
   sea,
   coastal_sea: coastalSea,

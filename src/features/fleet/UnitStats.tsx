@@ -1,11 +1,11 @@
 import { Box, LinearProgress, Stack, Typography } from '@mui/material';
-import { defaultConfig, type Unit } from '../../engine';
+import * as engine from '../../engine';
 import { palette } from '../../app/theme';
-import { weaponIcon } from '../../shared/assets';
+import * as assets from '../../shared/assets';
 
 /** Barre de PV : lit l'état de l'unité, sans le copier. */
-export function HpBar({ unit }: { unit: Unit }) {
-  const maxHp = defaultConfig.ships[unit.shipClass].maxHp;
+export function HpBar({ unit }: { unit: engine.Unit }) {
+  const maxHp = engine.defaultConfig.ships[unit.shipClass].maxHp;
   const percent = Math.round((unit.hp / maxHp) * 100);
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -31,11 +31,11 @@ export function HpBar({ unit }: { unit: Unit }) {
 }
 
 /** Stocks actuels ; les capteurs, la propulsion et la coque de la maquette ne sont pas encore modélisés. */
-export function StockLine({ unit }: { unit: Unit }) {
+export function StockLine({ unit }: { unit: engine.Unit }) {
   const stocks = [
-    { label: 'Missiles', icon: weaponIcon.missile, value: unit.missiles },
-    { label: 'Torpilles', icon: weaponIcon.torpedo, value: unit.torpedoes },
-    { label: 'Hélicoptères', icon: weaponIcon.helicopter, value: unit.helicopters },
+    { label: 'Missiles', icon: assets.weaponIcon.missile, value: unit.missiles },
+    { label: 'Torpilles', icon: assets.weaponIcon.torpedo, value: unit.torpedoes },
+    { label: 'Hélicoptères', icon: assets.weaponIcon.helicopter, value: unit.helicopters },
   ].filter((s) => s.label !== 'Hélicoptères' || s.value > 0);
   return (
     <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', color: 'text.secondary' }}>

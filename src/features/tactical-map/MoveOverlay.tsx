@@ -1,12 +1,12 @@
-import type { Hex } from '../../engine';
-import type { MovePreparation } from '../commands/useMovePlan';
+import * as engine from '../../engine';
+import type { MoveDraft } from '../commands/useMoveDraft';
 import { HEX_POINTS, hexCenter } from './hexGeometry';
 
 const ACCESSIBLE = '#7cfc9a';
 const REFUSED = '#ff5252';
 
 /** Liste de points « x,y » d'un tracé passant par le centre de chaque hexagone. */
-function pointsOf(path: readonly Hex[]): string {
+function pointsOf(path: readonly engine.Hex[]): string {
   return path
     .map((hex) => {
       const { x, y } = hexCenter(hex);
@@ -16,7 +16,7 @@ function pointsOf(path: readonly Hex[]): string {
 }
 
 /** Tracé en pointillés : vert si l'itinéraire est valide, rouge s'il est bloqué ou interdit. */
-function PathLine({ move }: { move: MovePreparation }) {
+function PathLine({ move }: { move: MoveDraft }) {
   const { unit, destination, plan } = move;
   if (!plan || !destination) return null;
   const color = plan.ok ? ACCESSIBLE : REFUSED;
@@ -38,7 +38,7 @@ function PathLine({ move }: { move: MovePreparation }) {
 }
 
 /** Surcouche de carte pendant la préparation d'un déplacement : destinations accessibles et trajet. */
-export function MoveOverlay({ move }: { move: MovePreparation | null }) {
+export function MoveOverlay({ move }: { move: MoveDraft | null }) {
   if (!move) return null;
   return (
     <g pointerEvents="none">

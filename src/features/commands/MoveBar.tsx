@@ -1,31 +1,32 @@
 import { Button, Paper, Stack, Typography } from '@mui/material';
-import { defaultConfig, MOVE_REFUSAL_MESSAGES } from '../../engine';
-import { useMovePlanStore } from '../../store/useMovePlanStore';
+import * as engine from '../../engine';
+import { useMoveDraftStore } from '../../store/useMoveDraftStore';
 import { confirmMove } from './commandActions';
-import type { MovePreparation } from './useMovePlan';
+import type { MoveDraft } from './useMoveDraft';
 
 /** Texte de la barre selon l'avancement de la préparation, et possibilité de confirmer. */
-function describePlan({ unit, reachable, plan }: MovePreparation): {
+function describeDraft({ unit, reachable, plan }: MoveDraft): {
   text: string;
   warning: boolean;
 } {
-  const label = defaultConfig.ships[unit.shipClass].label;
+  const label = engine.defaultConfig.ships[unit.shipClass].label;
   if (!plan) {
     return {
       text: `${label} : choisissez une destination (${reachable.length} cases accessibles).`,
       warning: false,
     };
   }
-  if (!plan.ok) return { text: `${label} : ${MOVE_REFUSAL_MESSAGES[plan.reason]}`, warning: true };
+  if (!plan.ok)
+    return { text: `${label} : ${engine.MOVE_REFUSAL_MESSAGES[plan.reason]}`, warning: true };
   const steps = plan.path.length - 1;
   return { text: `${label} : trajet de ${steps} hexagone${steps > 1 ? 's' : ''}.`, warning: false };
 }
 
-/** Confirmation ou annulation du déplacement en préparation (SF-02 §6, SF-03.11). */
-export function MoveBar({ move }: { move: MovePreparation | null }) {
-  const cancel = useMovePlanStore((s) => s.cancel);
+/** Confirmation ou annulation du brouillon de déplacement (SF-02 §6, SF-03.11). */
+export function MoveBar({ move }: { move: MoveDraft | null }) {
+  const cancelDraft = useMoveDraftStore((s) => s.cancelDraft);
   if (!move) return null;
-  const { text, warning } = describePlan(move);
+  const { text, warning } = describeDraft(move);
   const { unit, destination, plan } = move;
   return (
     <Paper
@@ -51,7 +52,7 @@ export function MoveBar({ move }: { move: MovePreparation | null }) {
         >
           Confirmer
         </Button>
-        <Button size="small" onClick={cancel}>
+        <Button size="small" onClick={cancelDraft}>
           Annuler
         </Button>
       </Stack>

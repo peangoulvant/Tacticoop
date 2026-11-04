@@ -1,8 +1,8 @@
 import { Box, LinearProgress, Stack, Typography } from '@mui/material';
-import { computeBudget, defaultConfig, type MissionSetup } from '../../engine';
+import * as engine from '../../engine';
 
-export function BudgetBar({ setup }: { setup: MissionSetup }) {
-  const budget = computeBudget(setup, defaultConfig);
+export function BudgetBar({ setup }: { setup: engine.MissionSetup }) {
+  const budget = engine.computeBudget(setup, engine.defaultConfig);
   return (
     <Box>
       <Stack direction="row" sx={{ justifyContent: 'space-between' }}>

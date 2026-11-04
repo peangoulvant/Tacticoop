@@ -7,7 +7,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { BLOCKER_MESSAGES, hasActivationInProgress, type MissionState } from '../../engine';
+import * as engine from '../../engine';
 import { endCycleEarly } from './commandActions';
 
 /** Texte d'avertissement : les activations non utilisées sont perdues (SF-03.5). */
@@ -18,9 +18,9 @@ function lossWarning(remaining: number): string {
 }
 
 /** Fin anticipée du cycle, avec confirmation ; impossible pendant une activation engagée. */
-export function EndCycleButton({ mission }: { mission: MissionState }) {
+export function EndCycleButton({ mission }: { mission: engine.MissionState }) {
   const [open, setOpen] = useState(false);
-  const blocked = hasActivationInProgress(mission.units);
+  const blocked = engine.hasActivationInProgress(mission.units);
   const remaining = mission.units.filter((u) => u.activation === 'available').length;
 
   return (
@@ -29,7 +29,7 @@ export function EndCycleButton({ mission }: { mission: MissionState }) {
         size="small"
         variant="outlined"
         disabled={blocked}
-        title={blocked ? BLOCKER_MESSAGES.OTHER_ACTIVATION_IN_PROGRESS : undefined}
+        title={blocked ? engine.BLOCKER_MESSAGES.OTHER_ACTIVATION_IN_PROGRESS : undefined}
         onClick={() => setOpen(true)}
       >
         Terminer le cycle

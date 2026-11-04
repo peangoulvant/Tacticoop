@@ -1,22 +1,9 @@
 import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import {
-  PURCHASABLE_CLASSES,
-  defaultConfig,
-  launchBlockers,
-  shipCount,
-  type MissionSetup,
-  type ShipClass,
-} from '../../engine';
+import * as engine from '../../engine';
 import { palette } from '../../app/theme';
-import { shipIcon } from '../../shared/assets';
-import {
-  blockerLabel,
-  briefing,
-  constraintLabel,
-  difficultyLabel,
-  missionLabel,
-} from '../../shared/labels';
+import * as assets from '../../shared/assets';
+import * as labels from '../../shared/labels';
 import { useGameStore } from '../../store/useGameStore';
 import { BudgetBar } from './BudgetBar';
 
@@ -27,7 +14,7 @@ function ShipLine({
   label,
   detail,
 }: {
-  shipClass: ShipClass;
+  shipClass: engine.ShipClass;
   label: string;
   detail: string;
 }) {
@@ -35,7 +22,7 @@ function ShipLine({
     <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', py: 0.5 }}>
       <Box
         component="img"
-        src={shipIcon[shipClass]}
+        src={assets.shipIcon[shipClass]}
         alt=""
         sx={{ width: 64, height: 22, objectFit: 'contain' }}
       />
@@ -45,20 +32,20 @@ function ShipLine({
   );
 }
 
-function ConstraintChips({ setup }: { setup: MissionSetup }) {
+function ConstraintChips({ setup }: { setup: engine.MissionSetup }) {
   if (setup.constraints.length === 0) return <Typography variant="body2">Aucune</Typography>;
   return (
     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
       {setup.constraints.map((c) => (
-        <Chip key={c} color="primary" variant="outlined" label={constraintLabel[c].name} />
+        <Chip key={c} color="primary" variant="outlined" label={labels.constraintLabel[c].name} />
       ))}
     </Stack>
   );
 }
 
-function ForceLines({ setup }: { setup: MissionSetup }) {
-  const { ships } = defaultConfig;
-  const chosen = PURCHASABLE_CLASSES.filter((cls) => setup.force[cls] > 0);
+function ForceLines({ setup }: { setup: engine.MissionSetup }) {
+  const { ships } = engine.defaultConfig;
+  const chosen = engine.PURCHASABLE_CLASSES.filter((cls) => setup.force[cls] > 0);
   return (
     <Box sx={{ my: 1 }}>
       {setup.mission === 'escort' && (
@@ -82,10 +69,10 @@ function ForceLines({ setup }: { setup: MissionSetup }) {
 }
 
 /** Récapitulatif final, mis en valeur : c'est lui que le joueur confirme avant le lancement. */
-export function Recap({ setup }: { setup: MissionSetup }) {
+export function Recap({ setup }: { setup: engine.MissionSetup }) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const blockers = launchBlockers(setup, defaultConfig);
-  const objective = briefing[setup.mission].objective;
+  const blockers = engine.launchBlockers(setup, engine.defaultConfig);
+  const objective = labels.briefing[setup.mission].objective;
 
   return (
     <Paper
@@ -101,10 +88,10 @@ export function Recap({ setup }: { setup: MissionSetup }) {
         Ordre de mission
       </Typography>
       <Typography variant="h5" sx={{ fontWeight: 700 }}>
-        {missionLabel[setup.mission]}
+        {labels.missionLabel[setup.mission]}
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 2 }}>
-        {objective} — difficulté {difficultyLabel[setup.difficulty]}
+        {objective} — difficulté {labels.difficultyLabel[setup.difficulty]}
       </Typography>
 
       <Typography variant="subtitle2" color="primary" sx={{ mb: 0.5 }}>
@@ -115,14 +102,14 @@ export function Recap({ setup }: { setup: MissionSetup }) {
       </Box>
 
       <Typography variant="subtitle2" color="primary">
-        Force navale — {shipCount(setup)} bâtiment(s)
+        Force navale — {engine.shipCount(setup)} bâtiment(s)
       </Typography>
       <ForceLines setup={setup} />
       <BudgetBar setup={setup} />
 
       {blockers.map((b) => (
         <Alert key={b} severity="warning" sx={{ mt: 2 }}>
-          {blockerLabel[b]}
+          {labels.blockerLabel[b]}
         </Alert>
       ))}
       <Button

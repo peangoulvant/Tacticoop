@@ -1,8 +1,8 @@
 import { Box, Paper, Stack, Typography } from '@mui/material';
-import { defaultConfig, type Unit } from '../../engine';
+import * as engine from '../../engine';
 import { palette } from '../../app/theme';
 import { useSelectionStore } from '../../store/useSelectionStore';
-import { shipIcon } from '../../shared/assets';
+import * as assets from '../../shared/assets';
 import { ActivationBadge } from './ActivationBadge';
 import { HpBar, StockLine } from './UnitStats';
 
@@ -14,7 +14,7 @@ const CARD_WIDTH = 270;
  * une seule rangée et la rangée défile horizontalement quand la flotte ne tient pas dans la
  * largeur : la hauteur du panneau, fixe, n'est jamais dépassée.
  */
-export function FleetPanel({ units }: { units: Unit[] }) {
+export function FleetPanel({ units }: { units: engine.Unit[] }) {
   const { selectedUnitId, selectUnit, selectHex } = useSelectionStore();
   const friends = units.filter((u) => u.side === 'friend');
 
@@ -49,7 +49,7 @@ export function FleetPanel({ units }: { units: Unit[] }) {
               key={unit.id}
               component="button"
               aria-pressed={selected}
-              aria-label={defaultConfig.ships[unit.shipClass].label}
+              aria-label={engine.defaultConfig.ships[unit.shipClass].label}
               onClick={() => {
                 selectUnit(unit.id);
                 selectHex(unit.position);
@@ -67,13 +67,13 @@ export function FleetPanel({ units }: { units: Unit[] }) {
             >
               <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography sx={{ fontWeight: 700 }}>
-                  {defaultConfig.ships[unit.shipClass].label}
+                  {engine.defaultConfig.ships[unit.shipClass].label}
                 </Typography>
                 <ActivationBadge status={unit.activation} />
               </Stack>
               <Box
                 component="img"
-                src={shipIcon[unit.shipClass]}
+                src={assets.shipIcon[unit.shipClass]}
                 alt=""
                 sx={{ display: 'block', width: '100%', height: 36, objectFit: 'contain', my: 0.5 }}
               />

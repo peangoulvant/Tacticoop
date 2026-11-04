@@ -12,25 +12,16 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import {
-  CONSTRAINTS,
-  DIFFICULTIES,
-  MISSIONS,
-  PURCHASABLE_CLASSES,
-  defaultConfig,
-  type Constraint,
-  type MissionSetup,
-  type PurchasableShipClass,
-} from '../../engine';
-import { shipIcon } from '../../shared/assets';
-import { briefing, constraintLabel, difficultyLabel, missionLabel } from '../../shared/labels';
+import * as engine from '../../engine';
+import * as assets from '../../shared/assets';
+import * as labels from '../../shared/labels';
 import { useGameStore } from '../../store/useGameStore';
 import { BudgetBar } from './BudgetBar';
 
 const newSeed = () => Math.floor(Math.random() * 2 ** 32);
 
 /** Contenu des étapes de préparation (SF-01) ; chaque étape envoie ses choix au moteur. */
-export function MissionStep({ setup }: { setup: MissionSetup }) {
+export function MissionStep({ setup }: { setup: engine.MissionSetup }) {
   const dispatch = useGameStore((s) => s.dispatch);
   return (
     <>
@@ -42,9 +33,9 @@ export function MissionStep({ setup }: { setup: MissionSetup }) {
         onChange={(_, mission) => mission && dispatch({ type: 'SELECT_MISSION', mission })}
         aria-label="Mission"
       >
-        {MISSIONS.map((m) => (
+        {engine.MISSIONS.map((m) => (
           <ToggleButton key={m} value={m}>
-            {missionLabel[m]}
+            {labels.missionLabel[m]}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
@@ -59,9 +50,9 @@ export function MissionStep({ setup }: { setup: MissionSetup }) {
         onChange={(_, difficulty) => difficulty && dispatch({ type: 'SET_DIFFICULTY', difficulty })}
         aria-label="Difficulté"
       >
-        {DIFFICULTIES.map((d) => (
+        {engine.DIFFICULTIES.map((d) => (
           <ToggleButton key={d} value={d}>
-            {difficultyLabel[d]}
+            {labels.difficultyLabel[d]}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
@@ -69,8 +60,8 @@ export function MissionStep({ setup }: { setup: MissionSetup }) {
   );
 }
 
-export function BriefingStep({ setup }: { setup: MissionSetup }) {
-  const text = briefing[setup.mission];
+export function BriefingStep({ setup }: { setup: engine.MissionSetup }) {
+  const text = labels.briefing[setup.mission];
   return (
     <>
       <Typography gutterBottom>{text.context}</Typography>
@@ -90,9 +81,9 @@ export function BriefingStep({ setup }: { setup: MissionSetup }) {
   );
 }
 
-export function ConstraintsStep({ setup }: { setup: MissionSetup }) {
+export function ConstraintsStep({ setup }: { setup: engine.MissionSetup }) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const toggle = (constraint: Constraint) => {
+  const toggle = (constraint: engine.Constraint) => {
     const others = setup.constraints.filter((c) => c !== constraint);
     const active = others.length < setup.constraints.length;
     dispatch({ type: 'SET_CONSTRAINTS', constraints: active ? others : [...others, constraint] });
@@ -100,18 +91,19 @@ export function ConstraintsStep({ setup }: { setup: MissionSetup }) {
   return (
     <>
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        Entre 0 et {defaultConfig.constraints.maxCount} contraintes, modifiables jusqu’au lancement.
+        Entre 0 et {engine.defaultConfig.constraints.maxCount} contraintes, modifiables jusqu’au
+        lancement.
       </Typography>
-      {CONSTRAINTS.map((c) => (
+      {engine.CONSTRAINTS.map((c) => (
         <FormControlLabel
           key={c}
           sx={{ display: 'flex', alignItems: 'flex-start' }}
           control={<Checkbox checked={setup.constraints.includes(c)} onChange={() => toggle(c)} />}
           label={
             <>
-              <Typography>{constraintLabel[c].name}</Typography>
+              <Typography>{labels.constraintLabel[c].name}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {constraintLabel[c].effect}
+                {labels.constraintLabel[c].effect}
               </Typography>
             </>
           }
@@ -135,9 +127,15 @@ export function ConstraintsStep({ setup }: { setup: MissionSetup }) {
   );
 }
 
-function ShipRow({ shipClass, setup }: { shipClass: PurchasableShipClass; setup: MissionSetup }) {
+function ShipRow({
+  shipClass,
+  setup,
+}: {
+  shipClass: engine.PurchasableShipClass;
+  setup: engine.MissionSetup;
+}) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const spec = defaultConfig.ships[shipClass];
+  const spec = engine.defaultConfig.ships[shipClass];
   return (
     <Stack
       direction="row"
@@ -146,7 +144,7 @@ function ShipRow({ shipClass, setup }: { shipClass: PurchasableShipClass; setup:
     >
       <Box
         component="img"
-        src={shipIcon[shipClass]}
+        src={assets.shipIcon[shipClass]}
         alt=""
         sx={{ width: 72, height: 24, objectFit: 'contain' }}
       />
@@ -177,7 +175,7 @@ function ShipRow({ shipClass, setup }: { shipClass: PurchasableShipClass; setup:
   );
 }
 
-export function ForceStep({ setup }: { setup: MissionSetup }) {
+export function ForceStep({ setup }: { setup: engine.MissionSetup }) {
   return (
     <>
       <BudgetBar setup={setup} />
@@ -186,7 +184,7 @@ export function ForceStep({ setup }: { setup: MissionSetup }) {
           Le porte-avions est fourni par le scénario, hors budget.
         </Typography>
       )}
-      {PURCHASABLE_CLASSES.map((cls) => (
+      {engine.PURCHASABLE_CLASSES.map((cls) => (
         <ShipRow key={cls} shipClass={cls} setup={setup} />
       ))}
     </>

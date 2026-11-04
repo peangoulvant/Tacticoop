@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material';
-import type { MissionState } from '../../engine';
-import { briefing, constraintLabel, difficultyLabel, missionLabel } from '../../shared/labels';
+import * as engine from '../../engine';
+import * as labels from '../../shared/labels';
 import { useGameStore } from '../../store/useGameStore';
 import { EndCycleButton } from '../commands/EndCycleButton';
 import { MoveBar } from '../commands/MoveBar';
 import { NewGameButton } from '../commands/NewGameButton';
 import { UnitPanel } from '../commands/UnitPanel';
-import { useMovePlan } from '../commands/useMovePlan';
+import { useMoveDraft } from '../commands/useMoveDraft';
 import { FleetPanel } from '../fleet/FleetPanel';
 import { LogbookPanel } from '../logbook/LogbookPanel';
 import { TacticalMap } from './TacticalMap';
@@ -47,19 +47,21 @@ function Splitter({ onDrag }: { onDrag: (delta: number) => void }) {
   );
 }
 
-function TopBar({ mission }: { mission: MissionState }) {
+function TopBar({ mission }: { mission: engine.MissionState }) {
   const { setup } = mission;
   const weather = setup.constraints.includes('bad_weather')
-    ? constraintLabel.bad_weather.name
+    ? labels.constraintLabel.bad_weather.name
     : 'Normale';
-  const objective = briefing[setup.mission].objective;
+  const objective = labels.briefing[setup.mission].objective;
   return (
     <Paper component="header" sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
       <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 2 }}>
         TACTICOOP
       </Typography>
       <Box sx={{ flex: 1 }}>
-        <Typography sx={{ fontWeight: 700 }}>Mission : {missionLabel[setup.mission]}</Typography>
+        <Typography sx={{ fontWeight: 700 }}>
+          Mission : {labels.missionLabel[setup.mission]}
+        </Typography>
         <Typography variant="body2" color="text.secondary">
           {objective}
         </Typography>
@@ -75,7 +77,7 @@ function TopBar({ mission }: { mission: MissionState }) {
         <Typography variant="caption" color="text.secondary">
           Difficulté
         </Typography>
-        <Typography variant="body2">{difficultyLabel[setup.difficulty]}</Typography>
+        <Typography variant="body2">{labels.difficultyLabel[setup.difficulty]}</Typography>
       </Stack>
       <EndCycleButton mission={mission} />
       <NewGameButton />
@@ -87,11 +89,11 @@ function TopBar({ mission }: { mission: MissionState }) {
  * Interface tactique : cinq zones de la maquette. La carte et les forces alliées ont une taille
  * fixe ; seuls le panneau d'unité et le journal se partagent la colonne de droite.
  */
-export function TacticalScreen({ mission }: { mission: MissionState }) {
+export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
   const events = useGameStore((s) => s.events);
   const lastError = useGameStore((s) => s.lastError);
   const clearError = useGameStore((s) => s.clearError);
-  const move = useMovePlan(mission);
+  const move = useMoveDraft(mission);
   const sideRef = useRef<HTMLDivElement>(null);
   const [unitHeight, setUnitHeight] = useState(420);
   const dragSplitter = useCallback((delta: number) => {
