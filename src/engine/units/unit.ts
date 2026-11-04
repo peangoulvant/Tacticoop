@@ -1,7 +1,14 @@
 import type { GameConfig, ShipClass } from '../config/gameConfig';
 import type { Hex } from '../map/hex';
+import type { NavalCategory } from '../map/terrain';
 
 export type Side = 'friend' | 'hostile';
+
+/**
+ * État d'activation dans le cycle (SF-03.6). « En cours » commence au premier ordre exécuté
+ * (SF-03.3). Le porte-avions et les unités hostiles ne reçoivent pas d'activation du joueur.
+ */
+export type ActivationStatus = 'available' | 'in_progress' | 'activated' | 'not_activable';
 
 /**
  * Unité navale : seulement l'état courant. Les caractéristiques fixes de sa classe (PV maximum,
@@ -20,6 +27,9 @@ export interface Unit {
   torpedoes: number;
   /** Hélicoptères embarqués (un seul utilisable à la fois : règle de D-03, non gérée ici). */
   helicopters: number;
+  activation: ActivationStatus;
+  /** Un déplacement a déjà été exécuté pendant l'activation en cours (un seul par activation). */
+  hasMoved: boolean;
 }
 
 export interface UnitModifiers {
@@ -28,6 +38,10 @@ export interface UnitModifiers {
   /** Plafond de déplacement, ou null. Ne s'applique pas au porte-avions. */
   movementCap: number | null;
 }
+
+/** Seules les unités alliées autres que le porte-avions sont activées par le joueur (G-03.2.4). */
+export const initialActivation = (side: Side, category: NavalCategory): ActivationStatus =>
+  side === 'friend' && category !== 'carrier' ? 'available' : 'not_activable';
 
 export function createUnit(
   id: string,
@@ -52,5 +66,7 @@ export function createUnit(
     missiles: Math.floor(spec.missiles * modifiers.ammoFactor),
     torpedoes: Math.floor(spec.torpedoes * modifiers.ammoFactor),
     helicopters: spec.helicopters,
+    activation: initialActivation(side, spec.category),
+    hasMoved: false,
   };
 }
