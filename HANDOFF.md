@@ -2,7 +2,7 @@
 
 Document de passation entre fils de discussion avec Claude Code. Il garde le **contexte de travail** (décisions, préférences, pièges, état d'avancement) que le code et les spécifications ne portent pas. Il ne duplique ni les règles de jeu, ni l'architecture, ni la matrice de traçabilité.
 
-> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #14 fusionnée, avec la première PR de la refonte (convention de nommage) en attente de fusion.
+> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #15 fusionnée (refonte 1/4), avec la refonte 2/4 (réagencement des features) en attente de fusion.
 
 ## Lecture au démarrage d'un nouveau fil
 
@@ -41,6 +41,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - Complexité cyclomatique par fonction : **5 conseillé, 10 maximum**, partout, composants React compris (ESLint `complexity` à 10, vérifié à 5 à la main).
 - **Pas de test d'interface écrit à la main pour l'instant** (`App.test.tsx` supprimé). Tester le comportement de l'interface en code pur (Testing Library) a peu d'intérêt face à un outil dédié comme Cypress : **les tests d'interface seront mis en place avec Cypress, entre les jalons 5 et 6** de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md). D'ici là, tester le moteur et la logique pure, et vérifier l'interface visuellement dans le navigateur. Ne pas en conclure que l'interface n'a pas à être testée.
 - Pas de doublon de données : `Unit` ne porte que l'état courant, les caractéristiques de classe restent dans `ShipSpec` (`GameConfig`).
+- Une feature n'importe une autre feature que par son `index.ts` (règle ESLint). Chaque feature : `components/`, `services/` (hooks et logique pure), `index.ts`.
 - Le moteur ne dépend ni de React, ni de Zustand, ni de MUI, ni d'IndexedDB (règle ESLint). L'UI n'importe que depuis `engine/index.ts`.
 - Valeurs de jeu dans `GameConfig`, jamais en dur dans l'UI. Hasard injecté par graine.
 - Tableaux de `TRACEABILITY.md` : colonne **Code** au format `fichier` → `symbole()`, colonne **Tests** avec le nom du fichier seul, détails en **Remarque**.
@@ -74,7 +75,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Cases occupées | Infranchissables en déplacement, pas seulement interdites comme destination |
 | Journal | Minimal et provisoire : déplacement et ouverture d'un cycle (D-11 ouvert) |
 | Imports | Sous un nom, pour toutes les couches quand l'origine est peu explicite (moteur, libellés, ressources) ; règle ESLint pour ces trois |
-| Règles ESLint à venir | Style des fonctions et interdiction des imports profonds entre features : approuvées, avec leurs PR |
+| Règles ESLint | Imports profonds entre features : interdits (PR 2/4). Style des fonctions : approuvé, avec la PR 4/4 |
 | Réexport de `accept` / `reject` | Refusé : ils restent dans `engine/core/results.ts` |
 | Départ du camp allié | Heuristique provisoire près du bord ouest ; **à valider** avec les zones de départ du scénario |
 | Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
@@ -92,7 +93,8 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #12 | `HANDOFF.md` | Fusionnée |
 | #13 | Moteur : déplacement, activations, cycles | Fusionnée |
 | #14 | Interface du déplacement et des activations | Fusionnée |
-| (suivante) | Refonte 1/4 : convention de nommage, imports sous un nom, `QUALITE-ET-IMPLEMENTATION.md` | Ouverte |
+| #15 | Refonte 1/4 : convention de nommage, imports sous un nom, `QUALITE-ET-IMPLEMENTATION.md` | Fusionnée |
+| (suivante) | Refonte 2/4 : réagencement des features (`components/`, `services/`, `index.ts`), règle ESLint contre les imports profonds | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
@@ -100,8 +102,8 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
 
 - **Persistance IndexedDB** et export JSON (AT-02).
 - **Refonte du code en quatre PR, l'une après l'autre, chacune depuis `main` à jour** (demandée en revue de la PR #14) :
-  1. convention de nommage et d'import (en cours) ;
-  2. réagencement des features : chaque feature a `components/`, `services/` (hooks et logique pure) et un `index.ts` des exports publics ; déplacements avec `git mv` ; règle ESLint interdisant les imports profonds entre features ;
+  1. convention de nommage et d'import (PR #15, fusionnée) ;
+  2. réagencement des features (en cours) : chaque feature a `components/`, `services/` (hooks et logique pure) et un `index.ts` des exports publics ; déplacements avec `git mv` ; règle ESLint interdisant les imports profonds entre features ;
   3. textes du moteur dans `shared/label-core.ts` (sans import du moteur : objets simples, clés vérifiées côté moteur avec `satisfies`) ;
   4. style Google TypeScript : `function` au premier niveau, flèches pour les rappels ; règle ESLint, les gestionnaires typés `Handler<'X'>` restant des constantes annotées.
 - **Tests d'interface avec Cypress**, entre les jalons 5 et 6 ; les dépendances `@testing-library/*` et `jsdom` sont retirées dans cette PR.

@@ -38,6 +38,12 @@ Un développeur doit savoir **d'où vient** une fonction ou un type en lisant un
 - Un hook s'appelle `useXxx`, un store Zustand `useXxxStore` ; un composant React porte un nom de rôle (`UnitPanel`, `MoveBar`).
 - Avant de nommer, chercher les noms déjà proches dans les autres couches et choisir un mot distinct.
 
+## Organisation des features
+
+- Une feature (`src/features/<nom>/`) contient `components/` (composants React), `services/` (hooks et logique pure, avec leurs tests) et un `index.ts` qui exporte uniquement ce que les autres features utilisent. Un sous-dossier vide n'est pas créé.
+- **Une feature n'importe une autre feature que par son `index.ts`**, jamais par un chemin profond (`../../fleet`, pas `../../fleet/components/UnitStats`). Il en va de même pour `app/` et `store/`. ESLint l'impose (`no-restricted-imports`).
+- Dans une feature, les fichiers s'importent par chemin relatif (`../services/…`).
+
 ## Tests
 
 Priorité aux tests unitaires du moteur : commandes et erreurs, calculs de déplacement, contacts et observations filtrées, combat, transitions et conditions terminales selon les règles fonctionnelles.
