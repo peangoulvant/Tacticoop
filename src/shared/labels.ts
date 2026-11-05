@@ -49,6 +49,30 @@ export function errorMessage(error: engine.GameError): string {
   return error.message;
 }
 
+/** Nom de chaque ordre de navigation du porte-avions (G-03.2.3). */
+export const carrierOrderLabel: Record<engine.CarrierOrderKind, string> = {
+  [engine.CarrierOrderKind.CONTINUE]: 'Poursuivre',
+  [engine.CarrierOrderKind.STOP]: 'Stopper',
+  [engine.CarrierOrderKind.REROUTE]: 'Modifier l’itinéraire',
+};
+
+type CarrierEvent = Extract<
+  engine.GameEvent,
+  { type: 'CARRIER_ORDERED' | 'CARRIER_MOVED' | 'MISSION_WON' }
+>;
+
+/** Texte du journal pour les événements du porte-avions et la victoire (catalogue provisoire, D-11). */
+export function carrierEventLabel(event: CarrierEvent): string {
+  switch (event.type) {
+    case 'CARRIER_ORDERED':
+      return `Porte-avions : ordre « ${carrierOrderLabel[event.order.kind]} »`;
+    case 'CARRIER_MOVED':
+      return `Porte-avions : navigation de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
+    case 'MISSION_WON':
+      return 'Mission réussie : le porte-avions est arrivé en B';
+  }
+}
+
 /** État d'activation affiché sur les fiches ; le porte-avions n'en a pas (SF-03.6). */
 export const activationLabel: Record<Exclude<engine.ActivationStatus, 'not_activable'>, string> = {
   available: 'Disponible',

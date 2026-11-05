@@ -29,6 +29,13 @@ export const launchBlockerMessages = {
   BUDGET_EXCEEDED: 'Le budget est dépassé : retirez des bâtiments.',
 };
 
+/** Pourquoi un point de passage de « Modifier l'itinéraire » est refusé (SF-02 §5). */
+export const waypointRefusalMessages = {
+  NOT_NAVIGABLE: 'Ce point de passage n’est pas navigable pour le porte-avions.',
+  SAME_HEX: 'Le porte-avions se trouve déjà sur ce point de passage.',
+  NO_PATH: 'Aucun chemin navigable ne mène à ce point de passage.',
+};
+
 /** Messages des autres refus de commande, présentés tels quels au joueur. */
 export const commandRefusalMessages = {
   UNIT_NOT_FOUND: 'Unité inconnue.',
@@ -37,6 +44,10 @@ export const commandRefusalMessages = {
   SHIP_BUDGET_EXCEEDED: 'Budget insuffisant pour ce bâtiment.',
   NO_SHIP_TO_REMOVE: 'Aucun bâtiment de cette catégorie à retirer.',
   LAUNCH_BLOCKED: 'La composition ne permet pas de lancer la mission.',
+  NOT_ESCORT_MISSION: 'Le porte-avions n’existe que dans la mission d’escorte.',
+  NAVIGATION_QUOTA_USED: 'Un ordre de navigation a déjà été donné ce cycle.',
+  NOT_AT_CYCLE_END: 'Le cycle ne peut être clôturé qu’après la dernière activation.',
+  MISSION_ENDED: 'La mission est terminée.',
 };
 
 /** Message du refus d'un nombre de contraintes hors limites (SF-01 §4). */
