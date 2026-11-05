@@ -2,7 +2,7 @@
 
 Document de passation entre fils de discussion avec Claude Code. Il garde le **contexte de travail** (décisions, préférences, pièges, état d'avancement) que le code et les spécifications ne portent pas. Il ne duplique ni les règles de jeu, ni l'architecture, ni la matrice de traçabilité.
 
-> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #16 fusionnée (refonte 2/4), avec la refonte 3/4 (textes du moteur) en attente de fusion.
+> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #17 fusionnée (refonte 3/4), avec la refonte 4/4 (style des fonctions) en attente de fusion.
 
 ## Lecture au démarrage d'un nouveau fil
 
@@ -46,7 +46,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - Valeurs de jeu dans `GameConfig`, jamais en dur dans l'UI. Hasard injecté par graine.
 - Tableaux de `TRACEABILITY.md` : colonne **Code** au format `fichier` → `symbole()`, colonne **Tests** avec le nom du fichier seul, détails en **Remarque**.
 - **Imports et nommage** (détail dans [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md)) : un module d'une autre couche dont l'origine n'est pas évidente s'importe sous un nom (`import * as engine from '../../engine'`, `engine.planMove(...)`) ; pour le moteur, `shared/labels`, `shared/assets` et `shared/label-engine`, ESLint l'impose. Un mot ne désigne qu'une couche : `plan` = calcul du moteur, `draft` (« brouillon ») = état d'interface d'une action en préparation.
-- **Style des fonctions** (inspiré du *Google TypeScript Style Guide*) : déclarations `function` au niveau des modules, fonctions fléchées pour les expressions et les rappels (`map`, `filter`…). Le nouveau code suit cette règle ; le code existant sera harmonisé dans une PR dédiée.
+- **Style des fonctions** (inspiré du *Google TypeScript Style Guide*) : déclarations `function` au niveau des modules, fonctions fléchées pour les expressions et les rappels (`map`, `filter`…). ESLint l'impose au premier niveau des modules (`no-restricted-syntax`) ; les fonctions imbriquées restent libres (un gestionnaire local peut être une flèche), et une constante annotée d'un type de fonction (`Handler<'X'>`) reste permise.
 - **Commentaires et noms** : chaque fonction non triviale a un commentaire qui dit ce qu'elle fait et pourquoi ; les noms sont explicites (`updateUnitInMission`, pas `withUnit`). Le propriétaire a relevé des commentaires confus et des fonctions sans commentaire.
 - Pas de fonction intermédiaire inutile (un simple enrobage d'une autre fonction) et pas de dépendance circulaire entre modules.
 - Éviter l'excès de découpage, mais respecter la complexité : un composant long se scinde en sous-composants ou en hooks.
@@ -76,7 +76,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Journal | Minimal et provisoire : déplacement et ouverture d'un cycle (D-11 ouvert) |
 | Imports | Sous un nom, pour toutes les couches quand l'origine est peu explicite (moteur, libellés, ressources) ; règle ESLint pour ces trois |
 | Textes du moteur | `shared/label-engine.ts` (et non `label-core`, qui prêtait à confusion avec `engine/core/`). Le moteur peut dépendre de `shared/` ; les libellés de catalogue (`ShipSpec.label`, `description`) restent dans `GameConfig` |
-| Règles ESLint | Imports profonds entre features : interdits (PR 2/4). Style des fonctions : approuvé, avec la PR 4/4 |
+| Règles ESLint | Imports profonds entre features : interdits (PR 2/4). Style des fonctions (premier niveau des modules) : imposé en PR 4/4 |
 | Réexport de `accept` / `reject` | Refusé : ils restent dans `engine/core/results.ts` |
 | Départ du camp allié | Heuristique provisoire près du bord ouest ; **à valider** avec les zones de départ du scénario |
 | Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
@@ -96,7 +96,8 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #14 | Interface du déplacement et des activations | Fusionnée |
 | #15 | Refonte 1/4 : convention de nommage, imports sous un nom, `QUALITE-ET-IMPLEMENTATION.md` | Fusionnée |
 | #16 | Refonte 2/4 : réagencement des features (`components/`, `services/`, `index.ts`), règle ESLint contre les imports profonds | Fusionnée |
-| (suivante) | Refonte 3/4 : textes du moteur dans `shared/label-engine.ts` | Ouverte |
+| #17 | Refonte 3/4 : textes du moteur dans `shared/label-engine.ts` | Fusionnée |
+| (suivante) | Refonte 4/4 : style Google TypeScript (`function` au premier niveau), règle ESLint | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
@@ -106,8 +107,8 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
 - **Refonte du code en quatre PR, l'une après l'autre, chacune depuis `main` à jour** (demandée en revue de la PR #14) :
   1. convention de nommage et d'import (PR #15, fusionnée) ;
   2. réagencement des features (PR #16, fusionnée) : chaque feature a `components/`, `services/` (hooks et logique pure) et un `index.ts` des exports publics ; déplacements avec `git mv` ; règle ESLint interdisant les imports profonds entre features ;
-  3. textes du moteur dans `shared/label-engine.ts` (en cours ; sans import du moteur : objets simples, clés vérifiées côté moteur avec `satisfies`) ;
-  4. style Google TypeScript : `function` au premier niveau, flèches pour les rappels ; règle ESLint, les gestionnaires typés `Handler<'X'>` restant des constantes annotées.
+  3. textes du moteur dans `shared/label-engine.ts` (PR #17, fusionnée ; sans import du moteur : objets simples, clés vérifiées côté moteur avec `satisfies`) ;
+  4. (en cours) style Google TypeScript : `function` au premier niveau, flèches pour les rappels ; règle ESLint, les gestionnaires typés `Handler<'X'>` restant des constantes annotées.
 - **Tests d'interface avec Cypress**, entre les jalons 5 et 6 ; les dépendances `@testing-library/*` et `jsdom` sont retirées dans cette PR.
 
 **Navigation du porte-avions** : bloquée par des points `PROPOSÉ` ou `À DÉFINIR` à arbitrer (persistance des ordres G-03.2.10, quota réinitialisé G-06.5.6, route bloquée G-03.2.11) et par l'arrivée en B, qui dépend de SF-08. Tant qu'elle n'existe pas, le porte-avions ne bouge pas à la clôture du cycle.

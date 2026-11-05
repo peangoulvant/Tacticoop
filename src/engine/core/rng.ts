@@ -12,8 +12,9 @@ export function createRng(seed: number): Rng {
   };
 }
 
-export const randomInt = (rng: Rng, maxExclusive: number): number =>
-  Math.floor(rng() * maxExclusive);
+export function randomInt(rng: Rng, maxExclusive: number): number {
+  return Math.floor(rng() * maxExclusive);
+}
 
 /** Mélange de Fisher-Yates, sans modifier le tableau d'origine. */
 export function shuffle<T>(items: readonly T[], rng: Rng): T[] {

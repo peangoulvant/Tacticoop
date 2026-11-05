@@ -13,10 +13,12 @@ interface GameStore {
   reset: () => void;
 }
 
-const freshState = (): engine.GameState => ({
-  status: 'preparation',
-  setup: engine.initialSetup(),
-});
+function freshState(): engine.GameState {
+  return {
+    status: 'preparation',
+    setup: engine.initialSetup(),
+  };
+}
 
 export const useGameStore = create<GameStore>((set, get) => ({
   state: freshState(),

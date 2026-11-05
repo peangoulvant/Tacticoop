@@ -6,7 +6,9 @@ import { initialSetup } from '../missions/setup';
 import { executeCommand } from './executeCommand';
 import type { GameCommand, GameState, MissionState } from './types';
 
-const prep = (): GameState => ({ status: 'preparation', setup: initialSetup() });
+function prep(): GameState {
+  return { status: 'preparation', setup: initialSetup() };
+}
 
 /** Enchaîne des commandes qui doivent toutes réussir. */
 function run(commands: GameCommand[], from: GameState = prep()): GameState {

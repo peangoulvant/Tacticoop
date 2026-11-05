@@ -22,11 +22,13 @@ type Handler<T extends PreparationCommand['type']> = (
   config: GameConfig,
 ) => CommandResult;
 
-const acceptSetup = (setup: MissionSetup): CommandResult =>
-  accept({ status: 'preparation', setup });
+function acceptSetup(setup: MissionSetup): CommandResult {
+  return accept({ status: 'preparation', setup });
+}
 
-const invalidConstraints = (max: number): CommandResult =>
-  reject('INVALID_CONSTRAINTS', labelEngine.invalidConstraintsMessage(max));
+function invalidConstraints(max: number): CommandResult {
+  return reject('INVALID_CONSTRAINTS', labelEngine.invalidConstraintsMessage(max));
+}
 
 /** Changer de mission conserve la difficulté mais réinitialise contraintes et force (SF-01 §2). */
 const selectMission: Handler<'SELECT_MISSION'> = (setup, { mission }) =>
@@ -53,14 +55,12 @@ const drawRandomConstraints: Handler<'DRAW_RANDOM_CONSTRAINTS'> = (
     : invalidConstraints(max);
 };
 
-const withShipCount = (
-  setup: MissionSetup,
-  shipClass: keyof MissionSetup['force'],
-  delta: number,
-) => ({
-  ...setup,
-  force: { ...setup.force, [shipClass]: setup.force[shipClass] + delta },
-});
+function withShipCount(setup: MissionSetup, shipClass: keyof MissionSetup['force'], delta: number) {
+  return {
+    ...setup,
+    force: { ...setup.force, [shipClass]: setup.force[shipClass] + delta },
+  };
+}
 
 /** On ne peut pas dépasser le budget en ajoutant ; seule une contrainte peut créer un dépassement. */
 const addShip: Handler<'ADD_SHIP'> = (setup, { shipClass }, config) => {
@@ -97,8 +97,9 @@ const handlers: { [T in PreparationCommand['type']]: Handler<T> } = {
   LAUNCH_MISSION: launch,
 };
 
-export const isPreparationCommand = (command: GameCommand): command is PreparationCommand =>
-  Object.hasOwn(handlers, command.type);
+export function isPreparationCommand(command: GameCommand): command is PreparationCommand {
+  return Object.hasOwn(handlers, command.type);
+}
 
 /** Exécute une commande de préparation sur les choix courants. */
 export function executePreparationCommand(

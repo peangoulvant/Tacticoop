@@ -9,7 +9,9 @@ import { LogbookPanel } from '../../logbook';
 import { TacticalMap } from './TacticalMap';
 import { palette } from '../../../app/theme';
 
-const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+function clamp(v: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, v));
+}
 
 /** Largeur de la colonne de droite et hauteur des forces alliées : fixes, non redimensionnables. */
 const SIDE_WIDTH = 'clamp(340px, 28vw, 460px)';

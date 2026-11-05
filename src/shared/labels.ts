@@ -45,7 +45,9 @@ export const briefing: Record<
   },
 };
 
-export const errorMessage = (error: engine.GameError): string => error.message;
+export function errorMessage(error: engine.GameError): string {
+  return error.message;
+}
 
 /** État d'activation affiché sur les fiches ; le porte-avions n'en a pas (SF-03.6). */
 export const activationLabel: Record<Exclude<engine.ActivationStatus, 'not_activable'>, string> = {

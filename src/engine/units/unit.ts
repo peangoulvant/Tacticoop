@@ -40,8 +40,9 @@ export interface UnitModifiers {
 }
 
 /** Seules les unités alliées autres que le porte-avions sont activées par le joueur (G-03.2.4). */
-export const initialActivation = (side: Side, category: NavalCategory): ActivationStatus =>
-  side === 'friend' && category !== 'carrier' ? 'available' : 'not_activable';
+export function initialActivation(side: Side, category: NavalCategory): ActivationStatus {
+  return side === 'friend' && category !== 'carrier' ? 'available' : 'not_activable';
+}
 
 export function createUnit(
   id: string,

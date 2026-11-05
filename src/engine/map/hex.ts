@@ -13,10 +13,16 @@ interface Axial {
   r: number;
 }
 
-const toAxial = ({ col, row }: Hex): Axial => ({ q: col - (row - (row & 1)) / 2, r: row });
-const fromAxial = ({ q, r }: Axial): Hex => ({ col: q + (r - (r & 1)) / 2, row: r });
+function toAxial({ col, row }: Hex): Axial {
+  return { q: col - (row - (row & 1)) / 2, r: row };
+}
+function fromAxial({ q, r }: Axial): Hex {
+  return { col: q + (r - (r & 1)) / 2, row: r };
+}
 
-export const sameHex = (a: Hex, b: Hex): boolean => a.col === b.col && a.row === b.row;
+export function sameHex(a: Hex, b: Hex): boolean {
+  return a.col === b.col && a.row === b.row;
+}
 
 /** Distance en nombre d'hexagones. */
 export function hexDistance(a: Hex, b: Hex): number {

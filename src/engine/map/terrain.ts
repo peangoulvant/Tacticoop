@@ -14,5 +14,6 @@ const NAVIGABLE: Record<Terrain, readonly NavalCategory[]> = {
   mountain: [],
 };
 
-export const isNavigable = (terrain: Terrain, category: NavalCategory): boolean =>
-  NAVIGABLE[terrain].includes(category);
+export function isNavigable(terrain: Terrain, category: NavalCategory): boolean {
+  return NAVIGABLE[terrain].includes(category);
+}

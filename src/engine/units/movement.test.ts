@@ -12,13 +12,17 @@ function seaMap(size: number, overrides: [Hex, Terrain][] = []): GameMap {
   return { width: size, height: size, terrain };
 }
 
-const unit = (
+function unit(
   id: string,
   shipClass: Parameters<typeof createUnit>[2],
   position: Hex,
   movementCap: number | null = null,
-): Unit =>
-  createUnit(id, 'friend', shipClass, position, defaultConfig, { ammoFactor: 1, movementCap });
+): Unit {
+  return createUnit(id, 'friend', shipClass, position, defaultConfig, {
+    ammoFactor: 1,
+    movementCap,
+  });
+}
 
 const centre = { col: 4, row: 4 };
 

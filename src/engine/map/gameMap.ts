@@ -9,21 +9,25 @@ export interface GameMap {
   terrain: readonly Terrain[];
 }
 
-export const indexOf = (map: Pick<GameMap, 'width'>, hex: Hex): number =>
-  hex.row * map.width + hex.col;
+export function indexOf(map: Pick<GameMap, 'width'>, hex: Hex): number {
+  return hex.row * map.width + hex.col;
+}
 
-export const inBounds = (map: Pick<GameMap, 'width' | 'height'>, hex: Hex): boolean =>
-  hex.col >= 0 && hex.col < map.width && hex.row >= 0 && hex.row < map.height;
+export function inBounds(map: Pick<GameMap, 'width' | 'height'>, hex: Hex): boolean {
+  return hex.col >= 0 && hex.col < map.width && hex.row >= 0 && hex.row < map.height;
+}
 
-export const terrainAt = (map: GameMap, hex: Hex): Terrain =>
-  map.terrain[indexOf(map, hex)] as Terrain;
+export function terrainAt(map: GameMap, hex: Hex): Terrain {
+  return map.terrain[indexOf(map, hex)] as Terrain;
+}
 
 /** Tous les hexagones, ligne par ligne : l'ordre fixe rend les égalités déterministes. */
-const allHexes = ({ width, height }: Pick<GameMap, 'width' | 'height'>): Hex[] =>
-  Array.from({ length: width * height }, (_, i) => ({
+function allHexes({ width, height }: Pick<GameMap, 'width' | 'height'>): Hex[] {
+  return Array.from({ length: width * height }, (_, i) => ({
     col: i % width,
     row: Math.floor(i / width),
   }));
+}
 
 /**
  * Hexagone navigable le plus proche d'une cible, hors cases `taken` (indices déjà occupés).
@@ -48,10 +52,12 @@ export function nearestNavigableHex(
 }
 
 /** Hexagone d'indice `index` dans `terrain` (inverse de `indexOf`). */
-export const hexFromIndex = (map: Pick<GameMap, 'width'>, index: number): Hex => ({
-  col: index % map.width,
-  row: Math.floor(index / map.width),
-});
+export function hexFromIndex(map: Pick<GameMap, 'width'>, index: number): Hex {
+  return {
+    col: index % map.width,
+    row: Math.floor(index / map.width),
+  };
+}
 
 /** Prédécesseur de chaque case atteinte ; la case de départ a pour prédécesseur `null`. */
 export type PathTree = ReadonlyMap<number, Hex | null>;

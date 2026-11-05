@@ -18,6 +18,18 @@ const labelEngineImportRule = {
     "Importer les textes du moteur sous un nom : import * as labelEngine from '…/shared/label-engine'.",
 };
 
+// Style des fonctions (Google TypeScript Style Guide) : au premier niveau d'un module, une
+// fonction est une déclaration `function`. Les flèches restent pour les rappels et les
+// expressions. Exception : une constante annotée d'un type de fonction (`Handler<'X'>`).
+const topLevelFunctionStyleRules = [
+  'Program > VariableDeclaration',
+  'Program > ExportNamedDeclaration > VariableDeclaration',
+].map((declaration) => ({
+  selector: `${declaration} > VariableDeclarator:not([id.typeAnnotation]) > :matches(ArrowFunctionExpression, FunctionExpression)`,
+  message:
+    'Au premier niveau d’un module, déclarer la fonction avec `function nom() {}` (une constante annotée d’un type reste permise).',
+}));
+
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'node_modules'] },
   js.configs.recommended,
@@ -49,6 +61,7 @@ export default tseslint.config(
           message: "Importer les libellés sous un nom : import * as labels from '…/shared/labels'.",
         },
         labelEngineImportRule,
+        ...topLevelFunctionStyleRules,
         {
           selector: 'ImportDeclaration[source.value=/\\/shared\\/assets$/] > ImportSpecifier',
           message:
@@ -90,9 +103,12 @@ export default tseslint.config(
     },
   })),
   {
-    // Le moteur importe les textes de shared/label-engine sous un nom (comme les autres couches).
+    // Le moteur importe les textes de shared/label-engine sous un nom (comme les autres couches) ;
+    // il suit aussi le style des fonctions.
     files: ['src/engine/**/*.ts'],
-    rules: { 'no-restricted-syntax': ['error', labelEngineImportRule] },
+    rules: {
+      'no-restricted-syntax': ['error', labelEngineImportRule, ...topLevelFunctionStyleRules],
+    },
   },
   {
     // Le moteur reste indépendant de React, Zustand, MUI et IndexedDB (STRUCTURE.md). Dans

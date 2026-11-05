@@ -11,18 +11,22 @@ export interface LaunchedMission extends ScenarioMap {
 }
 
 /** Classes à placer : le porte-avions du scénario d'abord, puis la force choisie. */
-const rosterOf = (setup: MissionSetup): ShipClass[] => [
-  ...(setup.mission === 'escort' ? (['carrier'] as const) : []),
-  ...PURCHASABLE_CLASSES.flatMap((cls) => Array<ShipClass>(setup.force[cls]).fill(cls)),
-];
+function rosterOf(setup: MissionSetup): ShipClass[] {
+  return [
+    ...(setup.mission === 'escort' ? (['carrier'] as const) : []),
+    ...PURCHASABLE_CLASSES.flatMap((cls) => Array<ShipClass>(setup.force[cls]).fill(cls)),
+  ];
+}
 
 /** Effets des contraintes initiales sur les unités alliées (SF-01 §4). */
-const modifiersOf = (setup: MissionSetup, config: GameConfig): UnitModifiers => ({
-  ammoFactor: setup.constraints.includes('limited_ammo') ? config.constraints.ammoFactor : 1,
-  movementCap: setup.constraints.includes('bad_weather')
-    ? config.constraints.badWeatherMaxMovement
-    : null,
-});
+function modifiersOf(setup: MissionSetup, config: GameConfig): UnitModifiers {
+  return {
+    ammoFactor: setup.constraints.includes('limited_ammo') ? config.constraints.ammoFactor : 1,
+    movementCap: setup.constraints.includes('bad_weather')
+      ? config.constraints.badWeatherMaxMovement
+      : null,
+  };
+}
 
 /** Placement automatique près du point A, sur des hexagones navigables et libres (SF-02 §4). */
 function placeUnits(

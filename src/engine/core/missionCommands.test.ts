@@ -11,11 +11,12 @@ const open: MissionState['map'] = {
   height: SIZE,
   terrain: Array(SIZE * SIZE).fill('sea'),
 };
-const make = (id: string, shipClass: ShipClass, position: Hex): Unit =>
-  createUnit(id, 'friend', shipClass, position, defaultConfig, {
+function make(id: string, shipClass: ShipClass, position: Hex): Unit {
+  return createUnit(id, 'friend', shipClass, position, defaultConfig, {
     ammoFactor: 1,
     movementCap: null,
   });
+}
 
 /** Mission en pleine mer : deux frégates et un porte-avions, au cycle 1. */
 function mission(): MissionState {
@@ -34,8 +35,9 @@ function mission(): MissionState {
   };
 }
 
-const run = (state: GameState, command: GameCommand): CommandResult =>
-  executeCommand(state, command, defaultConfig);
+function run(state: GameState, command: GameCommand): CommandResult {
+  return executeCommand(state, command, defaultConfig);
+}
 
 function accepted(state: GameState, command: GameCommand) {
   const result = run(state, command);
@@ -43,12 +45,16 @@ function accepted(state: GameState, command: GameCommand) {
   return { state: result.state, events: result.events };
 }
 
-const unitOf = (state: MissionState, id: string) => state.units.find((u) => u.id === id)!;
-const move = (unitId: string, col: number, row: number): GameCommand => ({
-  type: 'MOVE_UNIT',
-  unitId,
-  destination: { col, row },
-});
+function unitOf(state: MissionState, id: string) {
+  return state.units.find((u) => u.id === id)!;
+}
+function move(unitId: string, col: number, row: number): GameCommand {
+  return {
+    type: 'MOVE_UNIT',
+    unitId,
+    destination: { col, row },
+  };
+}
 
 describe('activation des unités au lancement', () => {
   it('rend les frégates disponibles et le porte-avions non activable', () => {

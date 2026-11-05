@@ -2,19 +2,24 @@ import type { GameEvent, MissionState } from '../core/types';
 import type { Unit } from '../units/unit';
 
 /** Une unité alliée peut encore recevoir des ordres ce cycle. */
-const isPending = (unit: Unit): boolean =>
-  unit.activation === 'available' || unit.activation === 'in_progress';
+function isPending(unit: Unit): boolean {
+  return unit.activation === 'available' || unit.activation === 'in_progress';
+}
 
-export const hasPendingActivation = (units: readonly Unit[]): boolean => units.some(isPending);
+export function hasPendingActivation(units: readonly Unit[]): boolean {
+  return units.some(isPending);
+}
 
-export const hasActivationInProgress = (units: readonly Unit[]): boolean =>
-  units.some((unit) => unit.activation === 'in_progress');
+export function hasActivationInProgress(units: readonly Unit[]): boolean {
+  return units.some((unit) => unit.activation === 'in_progress');
+}
 
 /** Début d'un cycle : les unités activables redeviennent disponibles, leur déplacement est renouvelé. */
-const reopen = (unit: Unit): Unit =>
-  unit.activation === 'not_activable'
+function reopen(unit: Unit): Unit {
+  return unit.activation === 'not_activable'
     ? unit
     : { ...unit, activation: 'available', hasMoved: false };
+}
 
 export interface Progress {
   state: MissionState;
