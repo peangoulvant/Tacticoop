@@ -27,7 +27,7 @@ function mission(): MissionState {
     start: { col: 0, row: 4 },
     goal: { col: 8, row: 4 },
     cycle: 1,
-    navigation: null,
+    carrierNavigation: null,
     outcome: null,
     units: [
       make('carrier', 'carrier', { col: 0, row: 4 }),

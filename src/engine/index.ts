@@ -43,7 +43,9 @@ export type { MoveBlocker, OrderBlocker } from './missions/activation';
 export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle';
 export { plannedRoute } from './missions/carrier-movement';
 export { WAYPOINT_REFUSAL_MESSAGES } from './missions/carrier-orders';
+export { CarrierOrderKind } from './missions/carrier-orders';
 export type {
+  CarrierMode,
   CarrierNavigation,
   CarrierOrder,
   MissionOutcome,

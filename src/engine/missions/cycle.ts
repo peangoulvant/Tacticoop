@@ -29,9 +29,12 @@ function reopen(unit: Unit): Unit {
  */
 function startNextCycle(mission: MissionState): Progress {
   const cycle = mission.cycle + 1;
-  const navigation = mission.navigation && { ...mission.navigation, orderUsed: false };
+  const carrierNavigation = mission.carrierNavigation && {
+    ...mission.carrierNavigation,
+    orderUsed: false,
+  };
   return {
-    state: { ...mission, cycle, navigation, units: mission.units.map(reopen) },
+    state: { ...mission, cycle, carrierNavigation, units: mission.units.map(reopen) },
     events: [{ type: 'CYCLE_STARTED', cycle }],
   };
 }
@@ -45,8 +48,8 @@ export function isAwaitingFinalOrder(mission: MissionState): boolean {
   return (
     mission.outcome === null &&
     !hasPendingActivation(mission.units) &&
-    mission.navigation !== null &&
-    !mission.navigation.orderUsed
+    mission.carrierNavigation !== null &&
+    !mission.carrierNavigation.orderUsed
   );
 }
 

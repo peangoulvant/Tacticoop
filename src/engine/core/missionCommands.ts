@@ -8,6 +8,7 @@ import {
   orderBlocker,
 } from '../missions/activation';
 import {
+  CarrierOrderKind,
   WAYPOINT_REFUSAL_MESSAGES,
   applyOrder,
   carrierOf,
@@ -153,20 +154,22 @@ function waypointRejection(
  */
 function carrierOrderRejection(
   mission: MissionState,
-  navigation: CarrierNavigation,
+  carrierNavigation: CarrierNavigation,
   order: CarrierOrder,
   config: GameConfig,
 ): CommandResult | null {
   if (hasActivationInProgress(mission.units)) {
     return blockerRejection('OTHER_ACTIVATION_IN_PROGRESS');
   }
-  if (navigation.orderUsed) {
+  if (carrierNavigation.orderUsed) {
     return reject(
       'NAVIGATION_QUOTA_USED',
       labelEngine.commandRefusalMessages.NAVIGATION_QUOTA_USED,
     );
   }
-  return order.kind === 'reroute' ? waypointRejection(mission, order.waypoint, config) : null;
+  return order.kind === CarrierOrderKind.REROUTE
+    ? waypointRejection(mission, order.waypoint, config)
+    : null;
 }
 
 /**
@@ -174,13 +177,13 @@ function carrierOrderRejection(
  * (toutes les activations achevées), il déclenche aussitôt la clôture du cycle.
  */
 const orderCarrier: Handler<'ORDER_CARRIER'> = (mission, { order }, config) => {
-  const { navigation } = mission;
-  if (!navigation) {
+  const { carrierNavigation } = mission;
+  if (!carrierNavigation) {
     return reject('NOT_ESCORT_MISSION', labelEngine.commandRefusalMessages.NOT_ESCORT_MISSION);
   }
-  const rejection = carrierOrderRejection(mission, navigation, order, config);
+  const rejection = carrierOrderRejection(mission, carrierNavigation, order, config);
   if (rejection) return rejection;
-  const ordered = { ...mission, navigation: applyOrder(navigation, order) };
+  const ordered = { ...mission, carrierNavigation: applyOrder(carrierNavigation, order) };
   const closed = closeCycleIfDone(ordered, config);
   return accept(closed.state, [
     { type: 'CARRIER_ORDERED', order, cycle: mission.cycle },

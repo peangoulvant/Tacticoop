@@ -12,24 +12,7 @@ function describe(event: engine.GameEvent): string {
     case 'CYCLE_STARTED':
       return `Cycle ${event.cycle} ouvert`;
     default:
-      return describeCarrierEvent(event);
-  }
-}
-
-type CarrierEvent = Extract<
-  engine.GameEvent,
-  { type: 'CARRIER_ORDERED' | 'CARRIER_MOVED' | 'MISSION_WON' }
->;
-
-/** Texte des événements du porte-avions et de la victoire (journal provisoire, D-11). */
-function describeCarrierEvent(event: CarrierEvent): string {
-  switch (event.type) {
-    case 'CARRIER_ORDERED':
-      return `Porte-avions : ordre « ${labels.carrierOrderLabel[event.order.kind]} »`;
-    case 'CARRIER_MOVED':
-      return `Porte-avions : navigation de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
-    case 'MISSION_WON':
-      return 'Mission réussie : le porte-avions est arrivé en B';
+      return labels.carrierEventLabel(event);
   }
 }
 

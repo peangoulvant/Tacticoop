@@ -34,7 +34,7 @@ export interface MissionState {
   units: Unit[];
   cycle: number;
   /** Navigation du porte-avions ; `null` hors mission d'escorte. */
-  navigation: CarrierNavigation | null;
+  carrierNavigation: CarrierNavigation | null;
   /** Résultat de la mission une fois terminée ; les commandes sont alors refusées. */
   outcome: MissionOutcome | null;
 }

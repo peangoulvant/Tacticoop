@@ -4,7 +4,7 @@ import { indexOf, shortestPath, type GameMap } from '../map/gameMap';
 import { sameHex, type Hex } from '../map/hex';
 import type { NavalCategory } from '../map/terrain';
 import type { Unit } from '../units/unit';
-import { carrierOf, type CarrierNavigation } from './carrier-orders';
+import { CarrierOrderKind, carrierOf, type CarrierNavigation } from './carrier-orders';
 
 /** Enchaîne les plus courts chemins de `from` à chaque étape ; `null` si un tronçon est impossible. */
 function routeThrough(
@@ -34,7 +34,7 @@ function routeThrough(
 export function plannedRoute(mission: MissionState, config: GameConfig): Hex[] | null {
   const carrier = carrierOf(mission.units);
   if (!carrier || !mission.goal) return null;
-  const stops = [mission.navigation?.waypoint, mission.goal].filter((hex) => hex != null);
+  const stops = [mission.carrierNavigation?.waypoint, mission.goal].filter((hex) => hex != null);
   const category = config.ships[carrier.shipClass].category;
   return routeThrough(mission.map, category, carrier.position, stops);
 }
@@ -53,27 +53,29 @@ function freeSteps(mission: MissionState, route: readonly Hex[], movement: numbe
 /** Ce que le porte-avions peut parcourir en fin de cycle. */
 interface Trip {
   carrier: Unit;
-  navigation: CarrierNavigation;
+  carrierNavigation: CarrierNavigation;
   steps: Hex[];
 }
 
 /** Le déplacement du cycle, ou `null` si le porte-avions ne navigue pas (arrêt, lutte navale). */
 function tripOf(mission: MissionState, config: GameConfig): Trip | null {
   const carrier = carrierOf(mission.units);
-  const { navigation } = mission;
-  if (!carrier || navigation?.mode !== 'continue') return null;
+  const { carrierNavigation } = mission;
+  if (!carrier || carrierNavigation?.mode !== CarrierOrderKind.CONTINUE) return null;
   const route = plannedRoute(mission, config);
-  return route ? { carrier, navigation, steps: freeSteps(mission, route, carrier.movement) } : null;
+  return route
+    ? { carrier, carrierNavigation, steps: freeSteps(mission, route, carrier.movement) }
+    : null;
 }
 
 /** Place le porte-avions à destination ; un point de passage franchi est effacé. */
 function relocateCarrier(mission: MissionState, trip: Trip, to: Hex): MissionState {
-  const { waypoint } = trip.navigation;
+  const { waypoint } = trip.carrierNavigation;
   const passed = waypoint !== null && trip.steps.some((hex) => sameHex(hex, waypoint));
   return {
     ...mission,
     units: mission.units.map((u) => (u.id === trip.carrier.id ? { ...u, position: to } : u)),
-    navigation: { ...trip.navigation, waypoint: passed ? null : waypoint },
+    carrierNavigation: { ...trip.carrierNavigation, waypoint: passed ? null : waypoint },
   };
 }
 

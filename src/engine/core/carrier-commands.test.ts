@@ -30,7 +30,7 @@ function escort(): MissionState {
     start: { col: 0, row: 4 },
     goal: { col: 8, row: 4 },
     cycle: 1,
-    navigation: { mode: 'continue', waypoint: null, orderUsed: false },
+    carrierNavigation: { mode: 'continue', waypoint: null, orderUsed: false },
     outcome: null,
     units: [
       make('carrier', 'carrier', { col: 0, row: 4 }),
@@ -99,13 +99,13 @@ describe("lancement d'une mission", () => {
 
   it('donne au porte-avions une navigation qui continue vers B, quota libre, sans issue', () => {
     expect(launched('escort')).toMatchObject({
-      navigation: { mode: 'continue', waypoint: null, orderUsed: false },
+      carrierNavigation: { mode: 'continue', waypoint: null, orderUsed: false },
       outcome: null,
     });
   });
 
   it("n'a pas de navigation en lutte navale", () => {
-    expect(launched('naval_combat').navigation).toBeNull();
+    expect(launched('naval_combat').carrierNavigation).toBeNull();
   });
 });
 
@@ -121,7 +121,7 @@ describe('dernière occasion d’ordre (C3=B)', () => {
     const { state, events } = accepted(afterAllActivations(escort()), { type: 'CLOSE_CYCLE' });
     expect(state.cycle).toBe(2);
     expect(carrierAt(state)).toEqual({ col: 2, row: 4 });
-    expect(state.navigation?.orderUsed).toBe(false);
+    expect(state.carrierNavigation?.orderUsed).toBe(false);
     expect(events.map((e) => e.type)).toEqual(['CARRIER_MOVED', 'CYCLE_STARTED']);
   });
 
@@ -157,7 +157,7 @@ describe('dernière occasion d’ordre (C3=B)', () => {
 describe('ordres et quota', () => {
   it('consomme le quota, refuse un second ordre, et le renouvelle au cycle suivant', () => {
     const { state } = accepted(escort(), order('stop'));
-    expect(state.navigation?.orderUsed).toBe(true);
+    expect(state.carrierNavigation?.orderUsed).toBe(true);
     expect(errorCode(state, order('continue'))).toBe('NAVIGATION_QUOTA_USED');
     const next = accepted(state, { type: 'END_CYCLE_EARLY' }).state;
     expect(errorCode(next, order('continue'))).toBeNull();
@@ -173,7 +173,7 @@ describe('ordres et quota', () => {
   });
 
   it("refuse les ordres hors de la mission d'escorte", () => {
-    const naval: MissionState = { ...escort(), navigation: null };
+    const naval: MissionState = { ...escort(), carrierNavigation: null };
     expect(errorCode(naval, order('stop'))).toBe('NOT_ESCORT_MISSION');
     expect(errorCode(naval, { type: 'CLOSE_CYCLE' })).toBe('NOT_AT_CYCLE_END');
   });
@@ -194,7 +194,7 @@ describe('Poursuivre et Stopper persistent', () => {
     state = accepted(state, { type: 'END_CYCLE_EARLY' }).state;
     expect(state.cycle).toBe(3);
     expect(carrierAt(state)).toEqual({ col: 0, row: 4 });
-    expect(state.navigation?.mode).toBe('stop');
+    expect(state.carrierNavigation?.mode).toBe('stop');
     state = accepted(state, order('continue')).state;
     state = accepted(state, { type: 'END_CYCLE_EARLY' }).state;
     expect(carrierAt(state)).toEqual({ col: 2, row: 4 });
@@ -206,7 +206,10 @@ describe('Poursuivre et Stopper persistent', () => {
     state = accepted(state, order('stop')).state;
     state = accepted(state, { type: 'END_CYCLE_EARLY' }).state;
     state = accepted(state, order('continue')).state;
-    expect(state.navigation).toMatchObject({ mode: 'continue', waypoint: { col: 4, row: 2 } });
+    expect(state.carrierNavigation).toMatchObject({
+      mode: 'continue',
+      waypoint: { col: 4, row: 2 },
+    });
   });
 });
 
@@ -261,7 +264,7 @@ describe("Modifier l'itinéraire", () => {
     const { state } = accepted(escort(), reroute(1, 4));
     const closed = accepted(state, { type: 'END_CYCLE_EARLY' }).state;
     expect(carrierAt(closed)).toEqual({ col: 2, row: 4 });
-    expect(closed.navigation?.waypoint).toBeNull();
+    expect(closed.carrierNavigation?.waypoint).toBeNull();
   });
 
   it('remplace un Stopper : le porte-avions repart', () => {
@@ -278,7 +281,7 @@ describe('route bloquée', () => {
     const blocked = withUnitAt(escort(), 'a', { col: 2, row: 4 });
     const { state, events } = accepted(blocked, { type: 'END_CYCLE_EARLY' });
     expect(carrierAt(state)).toEqual({ col: 1, row: 4 });
-    expect(state.navigation?.mode).toBe('continue');
+    expect(state.carrierNavigation?.mode).toBe('continue');
     expect(events[0]).toMatchObject({ type: 'CARRIER_MOVED', to: { col: 1, row: 4 } });
   });
 
