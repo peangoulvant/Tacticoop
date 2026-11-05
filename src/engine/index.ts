@@ -42,7 +42,7 @@ export { BLOCKER_MESSAGES, moveBlocker, orderBlocker } from './missions/activati
 export type { MoveBlocker, OrderBlocker } from './missions/activation';
 export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle';
 export { plannedRoute } from './missions/carrier-movement';
-export { WAYPOINT_REFUSAL_MESSAGES } from './missions/carrier-orders';
+export { WAYPOINT_REFUSAL_MESSAGES, carrierOf, waypointRefusal } from './missions/carrier-orders';
 export { CarrierOrderKind } from './missions/carrier-orders';
 export type {
   CarrierMode,

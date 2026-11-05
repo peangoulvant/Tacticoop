@@ -29,12 +29,18 @@ function routeThrough(
  * (SF-02 §5, SF-03.15). Chemin le plus court sur le terrain seul, recalculé depuis la position
  * courante : les autres unités ne le modifient jamais, elles ne font que l'interrompre
  * (G-03.2.13). La position courante est le premier hexagone. `null` s'il n'y a pas de porte-avions
- * ou de point B, ou si un tronçon n'a aucun chemin.
+ * ou de point B, ou si un tronçon n'a aucun chemin. `waypoint` permet de prévisualiser un point de
+ * passage à la place de celui de l'état (`null` : aucun), sans rien enregistrer.
  */
-export function plannedRoute(mission: MissionState, config: GameConfig): Hex[] | null {
+export function plannedRoute(
+  mission: MissionState,
+  config: GameConfig,
+  waypoint?: Hex | null,
+): Hex[] | null {
   const carrier = carrierOf(mission.units);
   if (!carrier || !mission.goal) return null;
-  const stops = [mission.carrierNavigation?.waypoint, mission.goal].filter((hex) => hex != null);
+  const via = waypoint === undefined ? mission.carrierNavigation?.waypoint : waypoint;
+  const stops = [via, mission.goal].filter((hex) => hex != null);
   const category = config.ships[carrier.shipClass].category;
   return routeThrough(mission.map, category, carrier.position, stops);
 }
