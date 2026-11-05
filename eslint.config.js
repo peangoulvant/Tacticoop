@@ -12,6 +12,12 @@ const features = readdirSync('src/features', { withFileTypes: true })
 const deepImportMessage = (name) =>
   `Importer la feature « ${name} » uniquement via son index.ts (pas d'import profond).`;
 
+const labelEngineImportRule = {
+  selector: 'ImportDeclaration[source.value=/\\/shared\\/label-engine$/] > ImportSpecifier',
+  message:
+    "Importer les textes du moteur sous un nom : import * as labelEngine from '…/shared/label-engine'.",
+};
+
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'node_modules'] },
   js.configs.recommended,
@@ -42,6 +48,7 @@ export default tseslint.config(
           selector: 'ImportDeclaration[source.value=/\\/shared\\/labels$/] > ImportSpecifier',
           message: "Importer les libellés sous un nom : import * as labels from '…/shared/labels'.",
         },
+        labelEngineImportRule,
         {
           selector: 'ImportDeclaration[source.value=/\\/shared\\/assets$/] > ImportSpecifier',
           message:
@@ -83,7 +90,13 @@ export default tseslint.config(
     },
   })),
   {
-    // Le moteur reste indépendant de React, Zustand, MUI et IndexedDB (STRUCTURE.md).
+    // Le moteur importe les textes de shared/label-engine sous un nom (comme les autres couches).
+    files: ['src/engine/**/*.ts'],
+    rules: { 'no-restricted-syntax': ['error', labelEngineImportRule] },
+  },
+  {
+    // Le moteur reste indépendant de React, Zustand, MUI et IndexedDB (STRUCTURE.md). Dans
+    // shared/, il n'utilise que label-engine : labels et assets dépendent du moteur.
     files: ['src/engine/**/*.ts'],
     rules: {
       'no-restricted-imports': [
@@ -97,6 +110,8 @@ export default tseslint.config(
             '**/store/*',
             '**/features/*',
             '**/persistence/*',
+            '**/shared/labels',
+            '**/shared/assets',
           ],
         },
       ],
