@@ -1,8 +1,9 @@
-import { Button, Paper, Stack, Typography } from '@mui/material';
+import { Button, Typography } from '@mui/material';
 import * as engine from '../../../engine';
 import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
 import { confirmMove } from '../services/commandActions';
 import type { MoveDraft } from '../services/useMoveDraft';
+import { MapBar } from './MapBar';
 
 /** Texte de la barre selon l'avancement de la préparation, et possibilité de confirmer. */
 function describeDraft({ unit, reachable, plan }: MoveDraft): {
@@ -29,33 +30,21 @@ export function MoveBar({ move }: { move: MoveDraft | null }) {
   const { text, warning } = describeDraft(move);
   const { unit, destination, plan } = move;
   return (
-    <Paper
-      sx={{
-        position: 'absolute',
-        bottom: 40,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        px: 2,
-        py: 1,
-        bgcolor: 'rgba(6,15,31,0.92)',
-      }}
-    >
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="body2" color={warning ? 'warning.main' : 'text.primary'}>
-          {text}
-        </Typography>
-        <Button
-          size="small"
-          variant="contained"
-          disabled={!plan?.ok || !destination}
-          onClick={() => destination && confirmMove(unit.id, destination)}
-        >
-          Confirmer
-        </Button>
-        <Button size="small" onClick={cancelDraft}>
-          Annuler
-        </Button>
-      </Stack>
-    </Paper>
+    <MapBar>
+      <Typography variant="body2" color={warning ? 'warning.main' : 'text.primary'}>
+        {text}
+      </Typography>
+      <Button
+        size="small"
+        variant="contained"
+        disabled={!plan?.ok || !destination}
+        onClick={() => destination && confirmMove(unit.id, destination)}
+      >
+        Confirmer
+      </Button>
+      <Button size="small" onClick={cancelDraft}>
+        Annuler
+      </Button>
+    </MapBar>
   );
 }

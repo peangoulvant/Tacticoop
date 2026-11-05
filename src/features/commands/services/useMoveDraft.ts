@@ -20,7 +20,10 @@ export function useMoveDraft(mission: engine.MissionState): MoveDraft | null {
   const unitId = useMoveDraftStore((s) => s.unitId);
   const destination = useMoveDraftStore((s) => s.destination);
   const unit = mission.units.find((u) => u.id === unitId);
-  const possible = unit !== undefined && engine.moveBlocker(mission.units, unit) === null;
+  const possible =
+    unit !== undefined &&
+    mission.outcome === null &&
+    engine.moveBlocker(mission.units, unit) === null;
 
   return useMemo(() => {
     if (!unit || !possible) return null;

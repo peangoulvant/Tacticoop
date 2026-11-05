@@ -3,7 +3,17 @@ import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material';
 import * as engine from '../../../engine';
 import * as labels from '../../../shared/labels';
 import { useGameStore } from '../../../store/useGameStore';
-import { EndCycleButton, MoveBar, NewGameButton, UnitPanel, useMoveDraft } from '../../commands';
+import {
+  CarrierOrderBar,
+  EndCycleButton,
+  MissionResultBanner,
+  MoveBar,
+  NewGameButton,
+  UnitPanel,
+  useCarrierOrderDraft,
+  useCarrierRouteView,
+  useMoveDraft,
+} from '../../commands';
 import { FleetPanel } from '../../fleet';
 import { LogbookPanel } from '../../logbook';
 import { TacticalMap } from './TacticalMap';
@@ -92,6 +102,8 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
   const lastError = useGameStore((s) => s.lastError);
   const clearError = useGameStore((s) => s.clearError);
   const move = useMoveDraft(mission);
+  const carrierDraft = useCarrierOrderDraft(mission);
+  const carrierRoute = useCarrierRouteView(mission, carrierDraft);
   const sideRef = useRef<HTMLDivElement>(null);
   const [unitHeight, setUnitHeight] = useState(420);
   const dragSplitter = useCallback((delta: number) => {
@@ -117,8 +129,10 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
         <TopBar mission={mission} />
       </Box>
       <Paper sx={{ position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-        <TacticalMap mission={mission} move={move} />
+        <TacticalMap mission={mission} move={move} carrierRoute={carrierRoute} />
         <MoveBar move={move} />
+        <CarrierOrderBar mission={mission} draft={carrierDraft} />
+        <MissionResultBanner mission={mission} />
       </Paper>
       <Box
         ref={sideRef}

@@ -7,11 +7,13 @@ import * as engine from '../../../engine';
 import { palette } from '../../../app/theme';
 import * as assets from '../../../shared/assets';
 import * as labels from '../../../shared/labels';
+import { useCarrierOrderDraftStore } from '../../../store/useCarrierOrderDraftStore';
 import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
 import { useSelectionStore } from '../../../store/useSelectionStore';
-import type { MoveDraft } from '../../commands';
+import type { CarrierRouteView, MoveDraft } from '../../commands';
 import { ShipGlyph, terrainFill } from './glyphs';
 import { HEX_POINTS, hexCenter, mapViewBox } from '../services/hexGeometry';
+import { CarrierRouteOverlay } from './CarrierRouteOverlay';
 import { MoveOverlay } from './MoveOverlay';
 import { useMapView } from '../services/useMapView';
 
@@ -134,23 +136,28 @@ function HexCaption({
 export function TacticalMap({
   mission,
   move,
+  carrierRoute,
 }: {
   mission: engine.MissionState;
   move: MoveDraft | null;
+  carrierRoute: CarrierRouteView | null;
 }) {
   const { map, units, start, goal } = mission;
   const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
   const content = mapViewBox(map);
 
   const previewDestination = useMoveDraftStore((s) => s.previewDestination);
+  const previewWaypoint = useCarrierOrderDraftStore((s) => s.previewWaypoint);
 
   // Une unité cliquée est consultée (sa fiche s'affiche). Une case vide choisit la destination du
-  // déplacement en préparation ; sans déplacement en préparation, elle désélectionne l'unité.
+  // déplacement ou le point de passage en préparation ; sans rien en préparation, elle
+  // désélectionne l'unité.
   const onCellClick = (hex: engine.Hex) => {
     selectHex(hex);
     const here = units.find((u) => engine.sameHex(u.position, hex));
     if (here) selectUnit(here.id);
     else if (move) previewDestination(hex);
+    else if (carrierRoute?.picking) previewWaypoint(hex);
     else selectUnit(null);
   };
   const { containerRef, viewport, view, zoomBy, resetView, pointerHandlers } = useMapView(
@@ -186,6 +193,7 @@ export function TacticalMap({
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
               <TerrainLayer map={map} />
               <MoveOverlay move={move} />
+              <CarrierRouteOverlay view={carrierRoute} />
               {selected && (
                 <g transform={`translate(${selected.x} ${selected.y})`} pointerEvents="none">
                   <polygon points={HEX_POINTS} fill="none" stroke="#5fd3ff" strokeWidth="1.6" />

@@ -24,3 +24,13 @@ export const HEX_POINTS = Array.from({ length: 6 }, (_, i) => {
   const angle = (Math.PI / 180) * (60 * i - 30);
   return `${(HEX_SIZE * Math.cos(angle)).toFixed(3)},${(HEX_SIZE * Math.sin(angle)).toFixed(3)}`;
 }).join(' ');
+
+/** Liste de points « x,y » d'un tracé passant par le centre de chaque hexagone. */
+export function pathPoints(path: readonly engine.Hex[]): string {
+  return path
+    .map((hex) => {
+      const { x, y } = hexCenter(hex);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(' ');
+}
