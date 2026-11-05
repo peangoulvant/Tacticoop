@@ -1,6 +1,6 @@
 import { Chip } from '@mui/material';
-import * as engine from '../../engine';
-import * as labels from '../../shared/labels';
+import * as engine from '../../../engine';
+import * as labels from '../../../shared/labels';
 
 const COLORS = { available: 'success', in_progress: 'warning', activated: 'default' } as const;
 

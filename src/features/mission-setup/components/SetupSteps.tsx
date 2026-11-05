@@ -12,10 +12,10 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import * as engine from '../../engine';
-import * as assets from '../../shared/assets';
-import * as labels from '../../shared/labels';
-import { useGameStore } from '../../store/useGameStore';
+import * as engine from '../../../engine';
+import * as assets from '../../../shared/assets';
+import * as labels from '../../../shared/labels';
+import { useGameStore } from '../../../store/useGameStore';
 import { BudgetBar } from './BudgetBar';
 
 const newSeed = () => Math.floor(Math.random() * 2 ** 32);

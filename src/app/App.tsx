@@ -1,6 +1,6 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import { MissionSetupScreen } from '../features/mission-setup/MissionSetupScreen';
-import { TacticalScreen } from '../features/tactical-map/TacticalScreen';
+import { MissionSetupScreen } from '../features/mission-setup';
+import { TacticalScreen } from '../features/tactical-map';
 import { useGameStore } from '../store/useGameStore';
 import { theme } from './theme';
 

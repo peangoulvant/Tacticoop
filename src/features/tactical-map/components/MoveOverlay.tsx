@@ -1,6 +1,6 @@
-import * as engine from '../../engine';
-import type { MoveDraft } from '../commands/useMoveDraft';
-import { HEX_POINTS, hexCenter } from './hexGeometry';
+import * as engine from '../../../engine';
+import type { MoveDraft } from '../../commands';
+import { HEX_POINTS, hexCenter } from '../services/hexGeometry';
 
 const ACCESSIBLE = '#7cfc9a';
 const REFUSED = '#ff5252';

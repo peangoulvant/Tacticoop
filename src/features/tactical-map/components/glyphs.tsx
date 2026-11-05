@@ -1,5 +1,5 @@
-import * as engine from '../../engine';
-import * as assets from '../../shared/assets';
+import * as engine from '../../../engine';
+import * as assets from '../../../shared/assets';
 
 /** Couleurs de fond par terrain (aplats de la maquette, contours conservés). */
 export const terrainFill: Record<engine.Terrain, string> = {

@@ -7,8 +7,8 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import * as engine from '../../engine';
-import { endCycleEarly } from './commandActions';
+import * as engine from '../../../engine';
+import { endCycleEarly } from '../services/commandActions';
 
 /** Texte d'avertissement : les activations non utilisées sont perdues (SF-03.5). */
 function lossWarning(remaining: number): string {

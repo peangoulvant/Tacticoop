@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import * as engine from '../../engine';
+import * as engine from '../../../engine';
 import { clampView, resolveView, zoomAt, type Size, type View } from './viewTransform';
 
 /** Déplacement (px) au-delà duquel un appui devient un glisser et non un clic. */

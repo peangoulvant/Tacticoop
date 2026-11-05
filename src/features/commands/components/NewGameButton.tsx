@@ -7,7 +7,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { abandonMission } from './commandActions';
+import { abandonMission } from '../services/commandActions';
 
 /** Retour à la préparation d'une nouvelle partie, après confirmation de l'abandon. */
 export function NewGameButton() {

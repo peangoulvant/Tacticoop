@@ -3,17 +3,17 @@ import { Box, IconButton, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import FitScreenIcon from '@mui/icons-material/FitScreen';
-import * as engine from '../../engine';
-import { palette } from '../../app/theme';
-import * as assets from '../../shared/assets';
-import * as labels from '../../shared/labels';
-import { useMoveDraftStore } from '../../store/useMoveDraftStore';
-import { useSelectionStore } from '../../store/useSelectionStore';
-import type { MoveDraft } from '../commands/useMoveDraft';
+import * as engine from '../../../engine';
+import { palette } from '../../../app/theme';
+import * as assets from '../../../shared/assets';
+import * as labels from '../../../shared/labels';
+import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
+import { useSelectionStore } from '../../../store/useSelectionStore';
+import type { MoveDraft } from '../../commands';
 import { ShipGlyph, terrainFill } from './glyphs';
-import { HEX_POINTS, hexCenter, mapViewBox } from './hexGeometry';
+import { HEX_POINTS, hexCenter, mapViewBox } from '../services/hexGeometry';
 import { MoveOverlay } from './MoveOverlay';
-import { useMapView } from './useMapView';
+import { useMapView } from '../services/useMapView';
 
 /**
  * Terrain statique : mémoïsé car la carte ne change pas pendant la mission (SF-02 §3).

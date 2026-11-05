@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import * as engine from '../../engine';
-import { useMoveDraftStore } from '../../store/useMoveDraftStore';
+import * as engine from '../../../engine';
+import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
 
 /**
  * Brouillon de déplacement : le déplacement en préparation, pas encore exécuté. Le trajet (`plan`)

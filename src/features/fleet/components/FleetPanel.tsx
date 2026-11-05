@@ -1,8 +1,8 @@
 import { Box, Paper, Stack, Typography } from '@mui/material';
-import * as engine from '../../engine';
-import { palette } from '../../app/theme';
-import { useSelectionStore } from '../../store/useSelectionStore';
-import * as assets from '../../shared/assets';
+import * as engine from '../../../engine';
+import { palette } from '../../../app/theme';
+import { useSelectionStore } from '../../../store/useSelectionStore';
+import * as assets from '../../../shared/assets';
 import { ActivationBadge } from './ActivationBadge';
 import { HpBar, StockLine } from './UnitStats';
 

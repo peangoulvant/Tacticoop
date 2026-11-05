@@ -1,4 +1,4 @@
-import * as engine from '../../engine';
+import * as engine from '../../../engine';
 
 /** Rayon d'un hexagone (pointy-top) dans l'espace du viewBox SVG. */
 export const HEX_SIZE = 10;
