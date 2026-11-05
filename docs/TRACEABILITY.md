@@ -2,7 +2,7 @@
 
 Lien entre les exigences du [Game Design](game-design/README.md) et des [spécifications fonctionnelles](functional-specs/README.md) et le code de `src/`. Document de suivi : il ne définit aucune règle et ne reprend pas le détail des spécifications, qui font autorité.
 
-**État analysé :** `main` au commit `325dcce` (après la PR #18), avec la PR des arbitrages de la navigation du porte-avions (documents seuls). `npm test` donne 74 tests réussis sur 11 fichiers, `npm run lint` et `npm run build` ne signalent rien.
+**État analysé :** `main` au commit `cd1f0f3` (après la PR #19), avec la PR du moteur de navigation du porte-avions. `npm test` donne 102 tests réussis sur 12 fichiers, `npm run lint` et `npm run build` ne signalent rien.
 
 ## Lecture
 
@@ -21,7 +21,7 @@ Lien entre les exigences du [Game Design](game-design/README.md) et des [spécif
 
 ## Synthèse
 
-Le code actuel couvre **la préparation de mission (SF-01), la génération de carte, le déplacement des unités alliées, leurs activations et l'enchaînement des cycles (SF-02 §1 à §6, SF-03.1 à SF-03.8)**, avec l'interface correspondante. Le moteur n'accepte que les commandes de préparation, de lancement, de déplacement et d'activation (`GameCommand`). Il n'existe encore ni unité ennemie, ni détection, ni combat, ni IA, ni action spéciale, ni navigation du porte-avions, ni fin de mission.
+Le code actuel couvre **la préparation de mission (SF-01), la génération de carte, le déplacement des unités alliées, leurs activations et l'enchaînement des cycles (SF-02 §1 à §6, SF-03.1 à SF-03.8)**, avec l'interface correspondante. Le moteur couvre aussi **la navigation du porte-avions et la victoire à l'arrivée en B** (ordres, quota, dernière occasion d'ordre, déplacement automatique), **sans interface** pour l'instant. Le moteur n'accepte que les commandes de préparation, de lancement, de déplacement, d'activation et de navigation (`GameCommand`). Il n'existe encore ni unité ennemie, ni détection, ni combat, ni IA, ni action spéciale, ni défaite, ni écran de fin de mission.
 
 ## SF-01 — Préparation et lancement
 
@@ -64,7 +64,7 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-02 §3 | Nouvelle carte à chaque partie, inchangée pendant la mission | `features/mission-setup/components/Recap.tsx` → `newSeed()`<br>`engine/core/types.ts` → `MissionState.map` | `generate.test.ts` | Non vérifié | Le test vérifie le déterminisme par graine, pas le tirage d'une nouvelle graine à chaque partie. Aucune commande ne modifie la carte. |
 | SF-02 §4 (SF-02.7, SF-02.8) | Alliés placés automatiquement près de leur zone de départ | `engine/missions/launch.ts` → `launchMission()`, `placeUnits()`<br>`engine/map/generate.ts` → `generateEscortMap()`, `generateNavalCombatMap()` | `executeCommand.test.ts`, `gameMap.test.ts` | Partiel | Zones de départ du scénario non spécifiées : heuristique provisoire (ouest, milieu de la carte). |
 | SF-02 §4 | Placement aléatoire des ennemis | — | — | Non implémenté | |
-| SF-02 §5 (SF-02.5, SF-02.6) | Navigation du porte-avions : point de passage, déplacement automatique 0 à 2 | — | — | Non implémenté | Arbitrages AB-05 et AB-06 : ordre par défaut, persistance, route bloquée. |
+| SF-02 §5 (SF-02.5, SF-02.6) | Navigation du porte-avions : point de passage, déplacement automatique 0 à 2 | `engine/missions/carrier-orders.ts` → `waypointRefusal()`, `applyOrder()`<br>`engine/missions/carrier-movement.ts` → `plannedRoute()`, `moveCarrier()` | `carrier-commands.test.ts` | Partiel | Moteur seul (AB-05, AB-06) : point de passage validé ou refusé sans consommer le quota, déplacement automatique en fin de cycle, arrêt avant une case occupée. Aucune interface : ordre, point de passage et trajet ne sont pas affichés. |
 | SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : chemin le plus court déterministe, capacité de mouvement, destinations accessibles, refus motivé | `engine/units/movement.ts` → `planMove()`, `reachableHexes()`<br>`engine/map/gameMap.ts` → `exploreFrom()`, `pathTo()`<br>`engine/core/missionCommands.ts` → `moveUnit()` | `movement.test.ts`, `missionCommands.test.ts` | Implémenté | Motifs de refus : même case, terrain infranchissable, case occupée, hors de portée, aucun chemin. |
 | SF-02 §6 (SF-02.10 à SF-02.14) | Déplacement : destinations mises en évidence, trajet prévisualisé, confirmation ou annulation | `features/commands/services/useMoveDraft.ts` → `useMoveDraft()`<br>`features/tactical-map/components/MoveOverlay.tsx` → `MoveOverlay()`<br>`features/commands/components/MoveBar.tsx` → `MoveBar()`<br>`store/useMoveDraftStore.ts` → `useMoveDraftStore` | — | Non vérifié | Interface : pointillés verts (trajet valide) ou rouges (refus), annulation sans consommation. Non testée. |
 | SF-02 §7 (SF-02.15, SF-02.16) | Obstacle ennemi non détecté | — | — | Non implémenté | |
@@ -75,7 +75,7 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 |---|---|---|---|---|---|
 | SF-03.1, SF-03.2 (§1) | Activation terminée par « Terminer l'activation », y compris sans déplacement ni action | `engine/core/missionCommands.ts` → `endActivation()` | `missionCommands.test.ts` | Implémenté | Pas d'action spéciale : seule la clôture explicite existe. |
 | SF-03.3 (§1) | L'activation reste engagée dès qu'un ordre est exécuté | `engine/core/missionCommands.ts` → `moveUnit()`<br>`engine/units/unit.ts` → `Unit.activation` | `missionCommands.test.ts` | Implémenté | L'abandon de sélection avant ordre relève de l'interface (aucune consommation). |
-| SF-03.4 (§1) | Clôture automatique du cycle quand toutes les activations sont achevées | `engine/missions/cycle.ts` → `closeCycleIfDone()` | `missionCommands.test.ts` | Partiel | Réaction ennemie, progression des projectiles et dernière possibilité d'ordre de navigation du porte-avions absentes. |
+| SF-03.4 (§1) | Clôture automatique du cycle quand toutes les activations sont achevées | `engine/missions/cycle.ts` → `closeCycleIfDone()`, `closeCycle()`, `isAwaitingFinalOrder()` | `missionCommands.test.ts`, `carrier-commands.test.ts` | Partiel | La dernière occasion d'ordre de navigation (C3=B, AB-07) est implémentée, avec la commande `CLOSE_CYCLE`. Réaction ennemie et progression des projectiles absentes. |
 | SF-03.5 (§1) | Fin anticipée entre deux séquences, avec confirmation des activations perdues | `engine/core/missionCommands.ts` → `endCycleEarly()`<br>`features/commands/components/EndCycleButton.tsx` → `EndCycleButton()` | `missionCommands.test.ts` | Implémenté | La règle est testée dans le moteur ; la confirmation d'interface ne l'est pas. Les ennemis restants n'existent pas. |
 | SF-03.6 (§2) | Fiche par unité : PV, composants, état Disponible / En cours / Activée | `features/fleet/components/FleetPanel.tsx` → `FleetPanel()`<br>`features/fleet/components/ActivationBadge.tsx` → `ActivationBadge()`<br>`features/fleet/components/UnitStats.tsx` → `HpBar()`, `StockLine()` | — | Partiel | PV, stocks et état d'activation affichés ; états des composants absents. Le porte-avions n'a pas d'état d'activation. |
 | SF-03.7 (§2) | Sélection sur la carte ou dans la fiche, synchronisée et mise en évidence | `store/useSelectionStore.ts` → `useSelectionStore`<br>`features/tactical-map/components/TacticalMap.tsx` → `TacticalMap()`, `UnitToken()`<br>`features/fleet/components/FleetPanel.tsx` → `FleetPanel()` | — | Non vérifié | |
@@ -83,8 +83,8 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-03.9 (§3) | Commandes indisponibles visibles mais désactivées, avec motif ; « Terminer l'activation » accessible | `features/commands/components/UnitPanel.tsx` → `UnitPanel()`, `CommandButtons()`<br>`engine/missions/activation.ts` → `BLOCKER_MESSAGES` | `activation.test.ts` | Partiel | Déplacement et « Terminer l'activation » suivent le moteur, avec motif affiché. Les actions spéciales restent désactivées en dur, avec une info-bulle générique. L'affichage n'est pas testé. |
 | SF-03.10, SF-03.11 (§3) | Validation, confirmation et annulation des actions spéciales | — | — | Non implémenté | Aucune action spéciale. |
 | SF-03.12 (§3) | Déplacement non confirmé : consultation d'autres unités, ordre conservé pour l'unité active | `store/useMoveDraftStore.ts` → `useMoveDraftStore`<br>`features/tactical-map/components/TacticalMap.tsx` → `TacticalMap()` | — | Non vérifié | Vérifié visuellement, sans test automatisé. |
-| SF-03.13 (§4) | Fin de cycle, bilan, cycle suivant automatique | `engine/missions/cycle.ts` → `startNextCycle()`<br>`engine/core/types.ts` → `MissionState.cycle` | `missionCommands.test.ts` | Partiel | Le cycle suivant s'ouvre automatiquement, les unités redeviennent disponibles. Pas de bilan de cycle (D-11) ni de renouvellement du quota de navigation. |
-| SF-03.14, SF-03.15 (§5) | Ordres de navigation du porte-avions, un par cycle | — | — | Non implémenté | Arbitré (AB-05, AB-07) : quota renouvelé à chaque cycle, dernière occasion avec bouton « Clôturer le cycle ». |
+| SF-03.13 (§4) | Fin de cycle, bilan, cycle suivant automatique | `engine/missions/cycle.ts` → `closeCycle()`<br>`engine/core/types.ts` → `MissionState.cycle` | `missionCommands.test.ts`, `carrier-commands.test.ts` | Partiel | Le cycle suivant s'ouvre automatiquement, les unités redeviennent disponibles et le quota de navigation est renouvelé. Pas de bilan de cycle (D-11) ; une mission gagnée n'ouvre pas de cycle suivant. |
+| SF-03.14, SF-03.15 (§5) | Ordres de navigation du porte-avions, un par cycle | `engine/core/missionCommands.ts` → `orderCarrier()`, `closeCycleWithoutOrder()`<br>`engine/missions/carrier-orders.ts` → `applyOrder()` | `carrier-commands.test.ts` | Partiel | Moteur seul (AB-05, AB-07) : trois ordres, quota par cycle, ordre refusé pendant une activation, persistance de Stopper. L'état et l'itinéraire actif sont dans `MissionState.navigation` et `plannedRoute()` ; aucune interface ne les consulte encore. |
 | SF-03.16 (§4) | Enchaînement automatique sans unité activable | — | — | Non implémenté | |
 
 ## SF-04 — Détection et contacts
@@ -127,7 +127,7 @@ Les paragraphes de SF-07 n'ont pas d'identifiant par exigence.
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
 | SF-07 §1 | Journal de bord sous le bloc « Force » | `features/logbook/components/LogbookPanel.tsx` → `LogbookPanel()`<br>`features/tactical-map/components/TacticalScreen.tsx` → `TacticalScreen()` | — | Non vérifié | SF-07 §1 est aligné sur la maquette : colonne de droite, sous le panneau de l'unité (G-12.1 ne fixe plus d'emplacement). Disposition non testée. |
-| SF-07 §2 | Événements majeurs, synthèse de fin de cycle, ordre chronologique | `engine/core/types.ts` → `GameEvent`<br>`store/useGameStore.ts` → `useGameStore` (`events`) | — | Partiel | Trois événements (`MISSION_LAUNCHED`, `UNIT_MOVED`, `CYCLE_STARTED`), provisoires. Pas de synthèse. Catalogue ouvert (D-11). |
+| SF-07 §2 | Événements majeurs, synthèse de fin de cycle, ordre chronologique | `engine/core/types.ts` → `GameEvent`<br>`store/useGameStore.ts` → `useGameStore` (`events`) | — | Partiel | Six événements (`MISSION_LAUNCHED`, `UNIT_MOVED`, `CYCLE_STARTED`, `CARRIER_ORDERED`, `CARRIER_MOVED`, `MISSION_WON`), provisoires. Pas de synthèse. Catalogue ouvert (D-11). |
 | SF-07 §3 | Confidentialité tactique | — | — | Non implémenté | Aucun événement caché n'existe. |
 | SF-07 §4 | Consultation de tout l'historique, accès direct à un cycle | `features/logbook/components/LogbookPanel.tsx` → `LogbookPanel()` | — | Partiel | Liste complète des événements du store ; pas de navigation par cycle. |
 | SF-07 §5 | Articulation avec le débriefing | — | — | Non implémenté | |
@@ -136,7 +136,7 @@ Les paragraphes de SF-07 n'ont pas d'identifiant par exigence.
 
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
-| SF-08 §1, §2 | Résultat binaire, conditions terminales, arrivée en B | — | — | Non implémenté | `MissionState` n'a ni issue ni évaluation de victoire ou de défaite. |
+| SF-08 §1, §2 | Résultat binaire, conditions terminales, arrivée en B | `engine/missions/cycle.ts` → `closeCycle()`<br>`engine/missions/carrier-movement.ts` → `hasCarrierArrived()`<br>`engine/core/types.ts` → `MissionState.outcome` | `carrier-commands.test.ts` | Partiel | Victoire à l'arrivée en B (AB-01), puis toute commande est refusée. Aucune défaite (pas de dégâts), aucun écran de fin. |
 | SF-08 §3 à §5 | Écran de fin, bilan opérationnel, débriefing collectif | — | — | Non implémenté | Indicateurs à définir (D-12). |
 | SF-08.P4 (§6) | Retour à la préparation d'une nouvelle partie après le débriefing | `features/tactical-map/components/TacticalScreen.tsx` → `TopBar()` (bouton « Nouvelle partie » et confirmation)<br>`store/useGameStore.ts` → `reset()` | — | Partiel | Le retour est possible pendant la mission, après confirmation (boîte de dialogue « Abandonner la mission ? »). L'écran de fin et le débriefing n'existent pas. |
 
@@ -151,13 +151,13 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | G-01.3 | Le joueur commande une force | `engine/core/preparationCommands.ts` → `addShip()` | `executeCommand.test.ts` | Partiel | Composition seulement, aucune commande tactique. |
 | G-01.4, G-01.5 | Adversaire IA, activations alternées ; brouillard de guerre | — | — | Non implémenté | |
 | G-01.6, G-01.7 | Solo contre l'IA (`PROPOSÉ`) ; difficulté, sauvegardes, rejouabilité (`À DÉFINIR`) | — | — | Non implémenté (ouvert) | |
-| G-02.1 à G-02.6 | Conditions de victoire et de défaite | — | — | Non implémenté | Voir SF-08. |
+| G-02.1 à G-02.6 | Conditions de victoire et de défaite | `engine/missions/carrier-movement.ts` → `hasCarrierArrived()` | `carrier-commands.test.ts` | Partiel | Seule la victoire d'escorte par arrivée en B. Voir SF-08. |
 | G-02.7, G-02.8 | Porte-avions immobilisé ; limite de cycles | — | — | Non implémenté (ouvert) | |
 | G-03.1.1 à G-03.1.3 | Lutte navale : flotte ennemie inconnue de 2 frégates ou 1 frégate et 1 sous-marin | — | — | Non implémenté | La mission se lance sans aucun ennemi. |
 | G-03.1.4 | Force alliée, placement et répartition ennemie | — | — | Non implémenté (ouvert) | |
-| G-03.2.1 | Escorter le porte-avions de A à B | `engine/map/generate.ts` → `generateEscortMap()`<br>`engine/missions/launch.ts` → `rosterOf()` | `gameMap.test.ts` | Partiel | Porte-avions et points A et B placés ; ni navigation, ni objectif évalué. |
-| G-03.2.2 à G-03.2.9 | Contrôle hybride, ordres, vitesse, navigation automatique, victoire et défaite | — | — | Non implémenté | Voir SF-02 §5 et SF-03.14. |
-| G-03.2.10, G-03.2.13 | Persistance des ordres, route bloquée | — | — | Non implémenté | Arbitrés (AB-05, AB-06), à implémenter avec la navigation. |
+| G-03.2.1 | Escorter le porte-avions de A à B | `engine/map/generate.ts` → `generateEscortMap()`<br>`engine/missions/launch.ts` → `rosterOf()`<br>`engine/missions/carrier-movement.ts` → `moveCarrier()` | `gameMap.test.ts`, `carrier-commands.test.ts` | Partiel | Porte-avions, points A et B, navigation et arrivée en B dans le moteur ; aucune interface de pilotage. |
+| G-03.2.2 à G-03.2.9 | Contrôle hybride, ordres, vitesse, navigation automatique, victoire et défaite | `engine/core/missionCommands.ts` → `orderCarrier()`<br>`engine/missions/carrier-movement.ts` → `moveCarrier()` | `carrier-commands.test.ts` | Partiel | Moteur seul : trois ordres, un par cycle, 2 hexagones, navigation une fois en fin de cycle, victoire à l'arrivée. Défaite non implémentée ; pas d'interface. |
+| G-03.2.10, G-03.2.13 | Persistance des ordres, route bloquée | `engine/missions/carrier-orders.ts` → `applyOrder()`<br>`engine/missions/carrier-movement.ts` → `moveCarrier()` | `carrier-commands.test.ts` | Implémenté | Arbitrés (AB-05, AB-06). Moteur seul. |
 | G-03.2.11, G-03.2.12 | Vitesse réduite par dégâts, immobilisation définitive, forces d'interception | — | — | Non implémenté (ouvert) | Restent à définir avec le combat et l'IA. |
 | G-04.1 | Carte 2D d'hexagones, procédurale | `engine/map/generate.ts` → `generateTerrain()` | `generate.test.ts` | Implémenté | |
 | G-04.2 | Hexagone (0,0) en haut à gauche | `engine/map/gameMap.ts` → `indexOf()`<br>`features/tactical-map/services/hexGeometry.ts` → `hexCenter()` | — | Non vérifié | |
@@ -175,10 +175,10 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | G-06.2.3, G-06.2.4 | Une action spéciale facultative, dans l'ordre choisi | — | — | Non implémenté | Aucune action spéciale. |
 | G-06.3.1, G-06.3.2 | Réaction ennemie sans contre-réaction | — | — | Non implémenté | |
 | G-06.3.3, G-06.3.4, G-06.4.5 | Règles `PROPOSÉ` : renseignements de l'IA, réaction passée, une activation ennemie par cycle | — | — | Non implémenté (ouvert) | |
-| G-06.5.6 | Quota d'ordre de navigation réinitialisé au début du cycle | — | — | Non implémenté | Arbitré (AB-05), à implémenter avec la navigation. |
+| G-06.5.6 | Quota d'ordre de navigation réinitialisé au début du cycle | `engine/missions/cycle.ts` → `startNextCycle()` | `carrier-commands.test.ts` | Implémenté | Arbitré (AB-05). |
 | G-06.4.1 à G-06.4.3 | Fin anticipée après une séquence complète ; unités non activées perdues | `engine/core/missionCommands.ts` → `endCycleEarly()`<br>`engine/missions/cycle.ts` → `startNextCycle()` | `missionCommands.test.ts` | Implémenté | |
 | G-06.4.4 | Les unités ennemies restantes achèvent leurs activations | — | — | Non implémenté | Aucun ennemi. |
-| G-06.5.1 à G-06.5.5 | Ordre de navigation, navigation automatique | — | — | Non implémenté | |
+| G-06.5.1 à G-06.5.5 | Ordre de navigation, navigation automatique | `engine/core/missionCommands.ts` → `orderCarrier()`<br>`engine/missions/carrier-movement.ts` → `moveCarrier()` | `carrier-commands.test.ts` | Implémenté | Moteur seul. Le rapport avec les activations ennemies est sans objet tant qu'il n'y a aucun ennemi. |
 | G-07.1 | Un déplacement et une action spéciale facultative par activation, dans n'importe quel ordre | `engine/core/missionCommands.ts` → `moveUnit()` | `missionCommands.test.ts` | Partiel | Le déplacement seul est implémenté. |
 | G-07.2, G-07.3 | Actions envisagées ; recherche active | — | — | Non implémenté | |
 | G-07.4 à G-07.6 | Préconditions, catalogue, effets d'échec | — | — | Non implémenté (ouvert) | |
@@ -239,4 +239,4 @@ Hypothèses d'interprétation **validées** lors de la mise en place du déplace
 10. **Porte-avions non activable.** G-03.2.4 distingue l'ordre de navigation des activations, et G-06 parle d'« unité standard » : le porte-avions ne reçoit pas d'activation et n'a pas d'état d'activation sur sa fiche (SF-03.6).
 11. **Case occupée infranchissable.** SF-02 §2 impose une seule unité navale par hexagone y compris en déplacement, et SF-02 §6 parle d'« occupations connues » : une unité ne traverse pas une case occupée.
 12. **Journal minimal provisoire.** Le catalogue des événements est ouvert (D-11) : seuls le déplacement et l'ouverture d'un cycle sont journalisés, d'après la maquette.
-13. **Clôture du cycle incomplète — Arbitrée, à implémenter.** La dernière occasion d'ordre est précisée (AB-07). La clôture automatique n'offre pas encore la dernière possibilité d'ordre de navigation du porte-avions (SF-03.4, §5) ni les phases de fin de cycle : le porte-avions ne bouge pas.
+13. **Clôture du cycle incomplète — Résolue côté moteur.** La dernière occasion d'ordre (AB-07) et la navigation automatique du porte-avions sont dans le moteur. Les phases de fin de cycle ennemies (réaction, veille passive, bilan) restent absentes.
