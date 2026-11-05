@@ -26,7 +26,7 @@ src/
                          # Chaque feature : components/, services/ (hooks et logique pure), index.ts
   store/                 # Zustand et coordination de l'application
   persistence/           # IndexedDB, import et export JSON
-  shared/                # Utilitaires réellement communs ; label-engine.ts : textes du moteur
+  shared/                # Utilitaires réellement communs
 ```
 
 ## Responsabilités et dépendances
