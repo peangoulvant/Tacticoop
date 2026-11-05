@@ -16,6 +16,7 @@ Appliquer les principes **SOLID** de manière pragmatique :
 - TypeScript `strict`, sans `any` injustifié ; types et noms explicites.
 - ESLint et formatage automatique (par exemple Prettier) ; compilation, lint et tests sans erreurs.
 - Fonctions focalisées, imbrication limitée, pas de duplication inutile ni d'effets de bord cachés.
+- **Style des fonctions** (inspiré du *Google TypeScript Style Guide*) : au premier niveau d'un module, une fonction est une déclaration `function nom() {}`. Les flèches servent aux rappels (`map`, `filter`, gestionnaires) et aux expressions, y compris les petites fonctions locales imbriquées. Exception : une constante annotée d'un type de fonction, comme les gestionnaires `Handler<'X'>`. ESLint l'impose au premier niveau (`no-restricted-syntax`).
 - Complexité cyclomatique par fonction : **5 conseillé, 10 au maximum** (règle ESLint `complexity`, valable pour tout le code source, composants React compris).
 - Commentaires expliquant **pourquoi** une décision ou une règle est appliquée ; ne pas paraphraser les instructions évidentes.
 - JSDoc ciblé pour les interfaces publiques et les comportements délicats.
