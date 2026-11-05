@@ -2,11 +2,13 @@ import { defaultConfig } from '../config/gameConfig';
 import { createUnit } from './unit';
 
 const position = { col: 0, row: 0 };
-const make = (
+function make(
   shipClass: Parameters<typeof createUnit>[2],
   movementCap: number | null,
   config = defaultConfig,
-) => createUnit('u', 'friend', shipClass, position, config, { ammoFactor: 1, movementCap });
+) {
+  return createUnit('u', 'friend', shipClass, position, config, { ammoFactor: 1, movementCap });
+}
 
 describe('createUnit — plafond de déplacement (Météo défavorable)', () => {
   it('plafonne une frégate à 2 hexagones et laisse inchangée une unité déjà à 2', () => {

@@ -27,19 +27,23 @@ export interface MissionSetup {
   force: Record<PurchasableShipClass, number>;
 }
 
-export const emptyForce = (): Record<PurchasableShipClass, number> => ({
-  fremm: 0,
-  frigate_da: 0,
-  frigate_asm: 0,
-  submarine: 0,
-});
+export function emptyForce(): Record<PurchasableShipClass, number> {
+  return {
+    fremm: 0,
+    frigate_da: 0,
+    frigate_asm: 0,
+    submarine: 0,
+  };
+}
 
-export const initialSetup = (): MissionSetup => ({
-  mission: 'escort',
-  difficulty: 'classic',
-  constraints: [],
-  force: emptyForce(),
-});
+export function initialSetup(): MissionSetup {
+  return {
+    mission: 'escort',
+    difficulty: 'classic',
+    constraints: [],
+    force: emptyForce(),
+  };
+}
 
 export interface Budget {
   total: number;
@@ -66,8 +70,9 @@ export function computeBudget(setup: MissionSetup, config: GameConfig): Budget {
   };
 }
 
-export const shipCount = (setup: MissionSetup): number =>
-  PURCHASABLE_CLASSES.reduce((sum, cls) => sum + setup.force[cls], 0);
+export function shipCount(setup: MissionSetup): number {
+  return PURCHASABLE_CLASSES.reduce((sum, cls) => sum + setup.force[cls], 0);
+}
 
 export type LaunchBlocker = 'NO_SHIP' | 'BUDGET_EXCEEDED';
 
@@ -86,11 +91,15 @@ export function launchBlockers(setup: MissionSetup, config: GameConfig): LaunchB
 }
 
 /** De 0 à `max` contraintes (2 en V1), toutes distinctes (SF-01 §4). */
-export const areConstraintsValid = (constraints: readonly Constraint[], max: number): boolean =>
-  constraints.length <= max &&
-  new Set(constraints).size === constraints.length &&
-  constraints.every((c) => CONSTRAINTS.includes(c));
+export function areConstraintsValid(constraints: readonly Constraint[], max: number): boolean {
+  return (
+    constraints.length <= max &&
+    new Set(constraints).size === constraints.length &&
+    constraints.every((c) => CONSTRAINTS.includes(c))
+  );
+}
 
 /** Tirage aléatoire : le joueur fixe le nombre, le système tire des contraintes distinctes. */
-export const drawConstraints = (count: number, rng: Rng): Constraint[] =>
-  shuffle(CONSTRAINTS, rng).slice(0, count);
+export function drawConstraints(count: number, rng: Rng): Constraint[] {
+  return shuffle(CONSTRAINTS, rng).slice(0, count);
+}
