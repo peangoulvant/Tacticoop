@@ -82,9 +82,16 @@ const launch: Handler<'LAUNCH_MISSION'> = (setup, { seed }, config) => {
       blockers,
     });
   }
-  return accept({ status: 'in_progress', setup, cycle: 1, ...launchMission(setup, config, seed) }, [
-    { type: 'MISSION_LAUNCHED', mission: setup.mission, cycle: 1 },
-  ]);
+  return accept(
+    {
+      status: 'in_progress',
+      setup,
+      cycle: 1,
+      outcome: null,
+      ...launchMission(setup, config, seed),
+    },
+    [{ type: 'MISSION_LAUNCHED', mission: setup.mission, cycle: 1 }],
+  );
 };
 
 const handlers: { [T in PreparationCommand['type']]: Handler<T> } = {

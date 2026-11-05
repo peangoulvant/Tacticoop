@@ -4,10 +4,12 @@ import { createRng } from '../core/rng';
 import { generateEscortMap, generateNavalCombatMap, type ScenarioMap } from '../map/generate';
 import { indexOf, nearestNavigableHex } from '../map/gameMap';
 import { createUnit, type Unit, type UnitModifiers } from '../units/unit';
+import { initialNavigation, type CarrierNavigation } from './carrier-orders';
 import type { MissionSetup } from './setup';
 
 export interface LaunchedMission extends ScenarioMap {
   units: Unit[];
+  navigation: CarrierNavigation | null;
 }
 
 /** Classes à placer : le porte-avions du scénario d'abord, puis la force choisie. */
@@ -62,5 +64,5 @@ export function launchMission(
       ? generateEscortMap(width, height, rng)
       : generateNavalCombatMap(width, height, rng);
   const units = placeUnits(rosterOf(setup), scenario, config, modifiersOf(setup, config));
-  return { ...scenario, units };
+  return { ...scenario, units, navigation: initialNavigation(setup.mission) };
 }

@@ -40,5 +40,13 @@ export type { ActivationStatus, Unit } from './units/unit';
 export { MOVE_REFUSAL_MESSAGES, planMove, reachableHexes } from './units/movement';
 export { BLOCKER_MESSAGES, moveBlocker, orderBlocker } from './missions/activation';
 export type { MoveBlocker, OrderBlocker } from './missions/activation';
-export { hasActivationInProgress } from './missions/cycle';
+export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle';
+export { plannedRoute } from './missions/carrier-movement';
+export { WAYPOINT_REFUSAL_MESSAGES } from './missions/carrier-orders';
+export type {
+  CarrierNavigation,
+  CarrierOrder,
+  MissionOutcome,
+  WaypointRefusal,
+} from './missions/carrier-orders';
 export type { MovePlan, MoveRefusal } from './units/movement';

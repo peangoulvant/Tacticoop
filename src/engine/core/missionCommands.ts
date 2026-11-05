@@ -1,12 +1,26 @@
 import * as labelEngine from '../../shared/label-engine';
 import type { GameConfig } from '../config/gameConfig';
+import type { Hex } from '../map/hex';
 import {
   type MoveBlocker,
   BLOCKER_MESSAGES,
   moveBlocker,
   orderBlocker,
 } from '../missions/activation';
-import { closeCycleIfDone, hasActivationInProgress, startNextCycle } from '../missions/cycle';
+import {
+  WAYPOINT_REFUSAL_MESSAGES,
+  applyOrder,
+  carrierOf,
+  waypointRefusal,
+  type CarrierNavigation,
+  type CarrierOrder,
+} from '../missions/carrier-orders';
+import {
+  closeCycle,
+  closeCycleIfDone,
+  hasActivationInProgress,
+  isAwaitingFinalOrder,
+} from '../missions/cycle';
 import { MOVE_REFUSAL_MESSAGES, planMove } from '../units/movement';
 import type { Unit } from '../units/unit';
 import { accept, reject } from './results';
@@ -102,20 +116,84 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
  * La réaction ennemie et la progression des projectiles, qui suivent normalement une activation
  * (G-06.6), n'existent pas encore.
  */
-const endActivation: Handler<'END_ACTIVATION'> = (mission, { unitId }) => {
+const endActivation: Handler<'END_ACTIVATION'> = (mission, { unitId }, config) => {
   const found = findOrderableUnit(mission, unitId);
   if ('rejection' in found) return found.rejection;
   const ended = updateUnitInMission(mission, unitId, { activation: 'activated' });
-  const { state, events } = closeCycleIfDone(ended);
+  const { state, events } = closeCycleIfDone(ended, config);
   return accept(state, events);
 };
 
 /** Fin anticipée : possible entre deux séquences complètes, jamais pendant une activation (SF-03.5). */
-const endCycleEarly: Handler<'END_CYCLE_EARLY'> = (mission) => {
+const endCycleEarly: Handler<'END_CYCLE_EARLY'> = (mission, _command, config) => {
   if (hasActivationInProgress(mission.units)) {
     return blockerRejection('OTHER_ACTIVATION_IN_PROGRESS');
   }
-  const { state, events } = startNextCycle(mission);
+  const { state, events } = closeCycle(mission, config);
+  return accept(state, events);
+};
+
+/** Refus d'un point de passage invalide : motif connu, sans consommer le quota (SF-02 §5). */
+function waypointRejection(
+  mission: MissionState,
+  waypoint: Hex,
+  config: GameConfig,
+): CommandResult | null {
+  const carrier = carrierOf(mission.units);
+  const reason = carrier && waypointRefusal(mission.map, carrier, waypoint, config);
+  return reason
+    ? reject('WAYPOINT_REFUSED', WAYPOINT_REFUSAL_MESSAGES[reason], { waypointRefusal: reason })
+    : null;
+}
+
+/**
+ * Motif de refus d'un ordre de navigation, ou `null` s'il est acceptable : aucun ordre ne peut
+ * interrompre une activation (G-06.5.3), un seul ordre par cycle (G-03.2.4), point de passage
+ * valide.
+ */
+function carrierOrderRejection(
+  mission: MissionState,
+  navigation: CarrierNavigation,
+  order: CarrierOrder,
+  config: GameConfig,
+): CommandResult | null {
+  if (hasActivationInProgress(mission.units)) {
+    return blockerRejection('OTHER_ACTIVATION_IN_PROGRESS');
+  }
+  if (navigation.orderUsed) {
+    return reject(
+      'NAVIGATION_QUOTA_USED',
+      labelEngine.commandRefusalMessages.NAVIGATION_QUOTA_USED,
+    );
+  }
+  return order.kind === 'reroute' ? waypointRejection(mission, order.waypoint, config) : null;
+}
+
+/**
+ * Ordre de navigation du porte-avions : consomme le quota du cycle. Donné en dernière occasion
+ * (toutes les activations achevées), il déclenche aussitôt la clôture du cycle.
+ */
+const orderCarrier: Handler<'ORDER_CARRIER'> = (mission, { order }, config) => {
+  const { navigation } = mission;
+  if (!navigation) {
+    return reject('NOT_ESCORT_MISSION', labelEngine.commandRefusalMessages.NOT_ESCORT_MISSION);
+  }
+  const rejection = carrierOrderRejection(mission, navigation, order, config);
+  if (rejection) return rejection;
+  const ordered = { ...mission, navigation: applyOrder(navigation, order) };
+  const closed = closeCycleIfDone(ordered, config);
+  return accept(closed.state, [
+    { type: 'CARRIER_ORDERED', order, cycle: mission.cycle },
+    ...closed.events,
+  ]);
+};
+
+/** « Clôturer le cycle » : décline la dernière occasion d'ordre ; le porte-avions suit son ordre. */
+const closeCycleWithoutOrder: Handler<'CLOSE_CYCLE'> = (mission, _command, config) => {
+  if (!isAwaitingFinalOrder(mission)) {
+    return reject('NOT_AT_CYCLE_END', labelEngine.commandRefusalMessages.NOT_AT_CYCLE_END);
+  }
+  const { state, events } = closeCycle(mission, config);
   return accept(state, events);
 };
 
@@ -123,6 +201,8 @@ const handlers: { [T in MissionCommand['type']]: Handler<T> } = {
   MOVE_UNIT: moveUnit,
   END_ACTIVATION: endActivation,
   END_CYCLE_EARLY: endCycleEarly,
+  ORDER_CARRIER: orderCarrier,
+  CLOSE_CYCLE: closeCycleWithoutOrder,
 };
 
 export function isMissionCommand(command: GameCommand): command is MissionCommand {
@@ -135,6 +215,9 @@ export function executeMissionCommand(
   command: MissionCommand,
   config: GameConfig,
 ): CommandResult {
+  if (mission.outcome) {
+    return reject('MISSION_ENDED', labelEngine.commandRefusalMessages.MISSION_ENDED);
+  }
   // Même lien commande → gestionnaire que pour la préparation, garanti par le type de `handlers`.
   const handler = handlers[command.type] as Handler<MissionCommand['type']>;
   return handler(mission, command, config);

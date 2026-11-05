@@ -2,6 +2,12 @@ import type { PurchasableShipClass, ShipClass } from '../config/gameConfig';
 import type { GameMap } from '../map/gameMap';
 import type { Hex } from '../map/hex';
 import type {
+  CarrierNavigation,
+  CarrierOrder,
+  MissionOutcome,
+  WaypointRefusal,
+} from '../missions/carrier-orders';
+import type {
   Constraint,
   Difficulty,
   LaunchBlocker,
@@ -27,6 +33,10 @@ export interface MissionState {
   goal: Hex | null;
   units: Unit[];
   cycle: number;
+  /** Navigation du porte-avions ; `null` hors mission d'escorte. */
+  navigation: CarrierNavigation | null;
+  /** Résultat de la mission une fois terminée ; les commandes sont alors refusées. */
+  outcome: MissionOutcome | null;
 }
 
 export type GameState = PreparationState | MissionState;
@@ -45,14 +55,19 @@ export type PreparationCommand =
 export type MissionCommand =
   | { type: 'MOVE_UNIT'; unitId: string; destination: Hex }
   | { type: 'END_ACTIVATION'; unitId: string }
-  | { type: 'END_CYCLE_EARLY' };
+  | { type: 'END_CYCLE_EARLY' }
+  | { type: 'ORDER_CARRIER'; order: CarrierOrder }
+  | { type: 'CLOSE_CYCLE' };
 
 export type GameCommand = PreparationCommand | MissionCommand;
 
 export type GameEvent =
   | { type: 'MISSION_LAUNCHED'; mission: MissionKind; cycle: number }
   | { type: 'UNIT_MOVED'; unitId: string; shipClass: ShipClass; from: Hex; to: Hex; cycle: number }
-  | { type: 'CYCLE_STARTED'; cycle: number };
+  | { type: 'CYCLE_STARTED'; cycle: number }
+  | { type: 'CARRIER_ORDERED'; order: CarrierOrder; cycle: number }
+  | { type: 'CARRIER_MOVED'; from: Hex; to: Hex; cycle: number }
+  | { type: 'MISSION_WON'; cycle: number };
 
 export type GameErrorCode =
   | 'WRONG_PHASE'
@@ -65,7 +80,12 @@ export type GameErrorCode =
   | 'UNIT_ALREADY_ACTIVATED'
   | 'ACTIVATION_IN_PROGRESS'
   | 'ALREADY_MOVED'
-  | 'MOVE_REFUSED';
+  | 'MOVE_REFUSED'
+  | 'NOT_ESCORT_MISSION'
+  | 'NAVIGATION_QUOTA_USED'
+  | 'WAYPOINT_REFUSED'
+  | 'NOT_AT_CYCLE_END'
+  | 'MISSION_ENDED';
 
 /** Erreur métier explicite ; une commande rejetée ne modifie jamais l'état. */
 export interface GameError {
@@ -75,7 +95,15 @@ export interface GameError {
   blockers?: LaunchBlocker[];
   /** Renseigné pour MOVE_REFUSED : le motif connu du refus. */
   moveRefusal?: MoveRefusal;
+  /** Renseigné pour WAYPOINT_REFUSED : le motif connu du refus. */
+  waypointRefusal?: WaypointRefusal;
 }
 
 export type CommandResult =
   { ok: true; state: GameState; events: GameEvent[] } | { ok: false; error: GameError };
+
+/** Résultat d'une transition automatique : le nouvel état et les événements produits. */
+export interface Progress {
+  state: MissionState;
+  events: GameEvent[];
+}

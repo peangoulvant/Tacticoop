@@ -49,6 +49,13 @@ export function errorMessage(error: engine.GameError): string {
   return error.message;
 }
 
+/** Nom de chaque ordre de navigation du porte-avions (G-03.2.3). */
+export const carrierOrderLabel: Record<engine.CarrierOrder['kind'], string> = {
+  continue: 'Poursuivre',
+  stop: 'Stopper',
+  reroute: 'Modifier l’itinéraire',
+};
+
 /** État d'activation affiché sur les fiches ; le porte-avions n'en a pas (SF-03.6). */
 export const activationLabel: Record<Exclude<engine.ActivationStatus, 'not_activable'>, string> = {
   available: 'Disponible',
