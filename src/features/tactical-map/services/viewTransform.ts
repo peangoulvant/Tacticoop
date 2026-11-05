@@ -13,8 +13,9 @@ export interface Size {
 export const MAX_ZOOM_FACTOR = 8;
 
 /** Échelle minimale : la carte couvre toute la zone, sans bande vide (tronquée si besoin). */
-export const coverScale = (viewport: Size, content: Size): number =>
-  Math.max(viewport.width / content.width, viewport.height / content.height);
+export function coverScale(viewport: Size, content: Size): number {
+  return Math.max(viewport.width / content.width, viewport.height / content.height);
+}
 
 /** Garde l'échelle dans ses bornes et la carte alignée sur les bords de la zone. */
 export function clampView(view: View, viewport: Size, content: Size): View {

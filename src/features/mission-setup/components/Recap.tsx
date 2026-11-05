@@ -7,7 +7,9 @@ import * as labels from '../../../shared/labels';
 import { useGameStore } from '../../../store/useGameStore';
 import { BudgetBar } from './BudgetBar';
 
-const newSeed = () => Math.floor(Math.random() * 2 ** 32);
+function newSeed() {
+  return Math.floor(Math.random() * 2 ** 32);
+}
 
 function ShipLine({
   shipClass,

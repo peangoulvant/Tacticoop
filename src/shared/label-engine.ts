@@ -40,5 +40,6 @@ export const commandRefusalMessages = {
 };
 
 /** Message du refus d'un nombre de contraintes hors limites (SF-01 §4). */
-export const invalidConstraintsMessage = (max: number): string =>
-  `Choisir entre 0 et ${max} contraintes distinctes.`;
+export function invalidConstraintsMessage(max: number): string {
+  return `Choisir entre 0 et ${max} contraintes distinctes.`;
+}

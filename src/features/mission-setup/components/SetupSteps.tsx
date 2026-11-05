@@ -18,7 +18,9 @@ import * as labels from '../../../shared/labels';
 import { useGameStore } from '../../../store/useGameStore';
 import { BudgetBar } from './BudgetBar';
 
-const newSeed = () => Math.floor(Math.random() * 2 ** 32);
+function newSeed() {
+  return Math.floor(Math.random() * 2 ** 32);
+}
 
 /** Contenu des étapes de préparation (SF-01) ; chaque étape envoie ses choix au moteur. */
 export function MissionStep({ setup }: { setup: engine.MissionSetup }) {
