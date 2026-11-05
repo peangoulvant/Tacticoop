@@ -29,8 +29,8 @@ Un développeur doit savoir **d'où vient** une fonction ou un type en lisant un
 **Importer sous un nom ce dont l'origine n'est pas évidente.**
 - Par défaut, un module d'une autre couche s'importe sous un nom : `import * as engine from '../../engine'`, puis `engine.planMove(...)`, `engine.MoveBlocker`. Même principe pour `shared/labels` (`labels`) et `shared/assets` (`assets`).
 - L'import nommé reste accepté quand le nom porte déjà son origine : composant React (`UnitPanel`), hook ou store (`useGameStore`), fonction du même dossier.
-- Le moteur (`src/engine`) importe ses propres modules par chemin relatif, sans espace de noms.
-- ESLint impose cette règle pour le moteur, `shared/labels` et `shared/assets` (`no-restricted-syntax`). Pour les autres cas, la relecture tranche : dans le doute, importer sous un nom.
+- Le moteur (`src/engine`) importe ses propres modules par chemin relatif, sans espace de noms. Il importe `shared/label-engine` (textes du moteur) sous un nom : `import * as labelEngine from '../../shared/label-engine'`.
+- ESLint impose cette règle pour le moteur, `shared/labels`, `shared/assets` et `shared/label-engine` (`no-restricted-syntax`). Il interdit aussi au moteur d'importer `shared/labels` et `shared/assets` (dépendance circulaire). Pour les autres cas, la relecture tranche : dans le doute, importer sous un nom.
 
 **Un mot, une couche.** Deux éléments de couches différentes ne portent pas des noms voisins.
 - `plan` désigne le calcul du moteur : `engine.planMove`, `engine.MovePlan`.

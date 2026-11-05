@@ -1,3 +1,4 @@
+import * as labelEngine from '../../shared/label-engine';
 import type { Unit } from '../units/unit';
 
 /** Pourquoi une unité ne peut pas recevoir d'ordre maintenant (SF-03.1, SF-03.8). */
@@ -7,12 +8,10 @@ export type OrderBlocker = 'NOT_ACTIVABLE' | 'ALREADY_ACTIVATED' | 'OTHER_ACTIVA
 export type MoveBlocker = OrderBlocker | 'ALREADY_MOVED';
 
 /** Messages présentés au joueur, communs aux refus du moteur et à l'interface. */
-export const BLOCKER_MESSAGES: Record<MoveBlocker, string> = {
-  NOT_ACTIVABLE: 'Cette unité ne reçoit pas d’activation.',
-  ALREADY_ACTIVATED: 'Cette unité a déjà été activée pendant ce cycle.',
-  OTHER_ACTIVATION_IN_PROGRESS: 'Une autre unité est en cours d’activation : terminez-la d’abord.',
-  ALREADY_MOVED: 'Cette unité s’est déjà déplacée pendant son activation.',
-};
+export const BLOCKER_MESSAGES = labelEngine.moveBlockerMessages satisfies Record<
+  MoveBlocker,
+  string
+>;
 
 /**
  * Motif pour lequel l'unité ne peut pas recevoir d'ordre, ou `null` si elle le peut. Ne reçoivent

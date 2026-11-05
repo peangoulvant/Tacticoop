@@ -18,6 +18,7 @@ export {
   DIFFICULTIES,
   MISSIONS,
   computeBudget,
+  LAUNCH_BLOCKER_MESSAGES,
   initialSetup,
   launchBlockers,
   shipCount,

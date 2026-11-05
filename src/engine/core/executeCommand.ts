@@ -1,3 +1,4 @@
+import * as labelEngine from '../../shared/label-engine';
 import type { GameConfig } from '../config/gameConfig';
 import { executeMissionCommand, isMissionCommand } from './missionCommands';
 import { executePreparationCommand, isPreparationCommand } from './preparationCommands';
@@ -17,9 +18,9 @@ export function executeCommand(
   if (state.status === 'preparation') {
     return isPreparationCommand(command)
       ? executePreparationCommand(state.setup, command, config)
-      : reject('WRONG_PHASE', 'Cette commande n’est disponible qu’une fois la mission lancée.');
+      : reject('WRONG_PHASE', labelEngine.commandRefusalMessages.MISSION_NOT_LAUNCHED);
   }
   return isMissionCommand(command)
     ? executeMissionCommand(state, command, config)
-    : reject('WRONG_PHASE', 'Les choix de préparation sont verrouillés après le lancement.');
+    : reject('WRONG_PHASE', labelEngine.commandRefusalMessages.PREPARATION_LOCKED);
 }

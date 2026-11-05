@@ -35,7 +35,7 @@ src/
 - `features/` : composants React, présentation et interactions ; aucune règle métier dupliquée. Chaque feature range ses composants dans `components/`, ses hooks et sa logique pure dans `services/`, et exporte ce qui est public par son `index.ts` (dossiers créés au besoin).
 - `store/` : état applicatif, sélection et transmission des commandes ; ne réimplémente pas le moteur.
 - `persistence/` : sérialisation, validation et stockage ; ne décide d'aucune règle de jeu.
-- `shared/` : éléments transversaux uniquement ; éviter d'en faire un dossier fourre-tout.
+- `shared/` : éléments transversaux uniquement ; éviter d'en faire un dossier fourre-tout. Toutes les couches peuvent l'utiliser, le moteur compris, pour récupérer des éléments sans dépendance. `shared/label-engine.ts` rassemble les textes que le moteur présente au joueur (refus, motifs de blocage) : objets simples sans import du moteur, dont le moteur vérifie les clés avec `satisfies`. `shared/labels.ts` et `shared/assets.ts` dépendent du moteur : celui-ci ne les importe pas.
 
 Dépendances usuelles : `features → store → engine` et `store → persistence`. Les modules du moteur se composent sans dépendances circulaires. Éviter les abstractions de type microservices, plugin system ou backend fictif.
 

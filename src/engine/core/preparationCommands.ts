@@ -1,3 +1,4 @@
+import * as labelEngine from '../../shared/label-engine';
 import type { GameConfig } from '../config/gameConfig';
 import { launchMission } from '../missions/launch';
 import {
@@ -25,7 +26,7 @@ const acceptSetup = (setup: MissionSetup): CommandResult =>
   accept({ status: 'preparation', setup });
 
 const invalidConstraints = (max: number): CommandResult =>
-  reject('INVALID_CONSTRAINTS', `Choisir entre 0 et ${max} contraintes distinctes.`);
+  reject('INVALID_CONSTRAINTS', labelEngine.invalidConstraintsMessage(max));
 
 /** Changer de mission conserve la difficulté mais réinitialise contraintes et force (SF-01 §2). */
 const selectMission: Handler<'SELECT_MISSION'> = (setup, { mission }) =>
@@ -65,19 +66,19 @@ const withShipCount = (
 const addShip: Handler<'ADD_SHIP'> = (setup, { shipClass }, config) => {
   const next = withShipCount(setup, shipClass, 1);
   return computeBudget(next, config).overrun > 0
-    ? reject('BUDGET_EXCEEDED', 'Budget insuffisant pour ce bâtiment.')
+    ? reject('BUDGET_EXCEEDED', labelEngine.commandRefusalMessages.SHIP_BUDGET_EXCEEDED)
     : acceptSetup(next);
 };
 
 const removeShip: Handler<'REMOVE_SHIP'> = (setup, { shipClass }) =>
   setup.force[shipClass] < 1
-    ? reject('NO_SHIP_TO_REMOVE', 'Aucun bâtiment de cette catégorie à retirer.')
+    ? reject('NO_SHIP_TO_REMOVE', labelEngine.commandRefusalMessages.NO_SHIP_TO_REMOVE)
     : acceptSetup(withShipCount(setup, shipClass, -1));
 
 const launch: Handler<'LAUNCH_MISSION'> = (setup, { seed }, config) => {
   const blockers = launchBlockers(setup, config);
   if (blockers.length > 0) {
-    return reject('LAUNCH_BLOCKED', 'La composition ne permet pas de lancer la mission.', {
+    return reject('LAUNCH_BLOCKED', labelEngine.commandRefusalMessages.LAUNCH_BLOCKED, {
       blockers,
     });
   }

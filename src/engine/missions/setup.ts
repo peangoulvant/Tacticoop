@@ -1,3 +1,4 @@
+import * as labelEngine from '../../shared/label-engine';
 import {
   type GameConfig,
   PURCHASABLE_CLASSES,
@@ -69,6 +70,12 @@ export const shipCount = (setup: MissionSetup): number =>
   PURCHASABLE_CLASSES.reduce((sum, cls) => sum + setup.force[cls], 0);
 
 export type LaunchBlocker = 'NO_SHIP' | 'BUDGET_EXCEEDED';
+
+/** Messages présentés au joueur pour chaque motif de blocage du lancement. */
+export const LAUNCH_BLOCKER_MESSAGES = labelEngine.launchBlockerMessages satisfies Record<
+  LaunchBlocker,
+  string
+>;
 
 /** Raisons pour lesquelles le lancement est refusé (SF-01 §5) ; liste vide = lancement possible. */
 export function launchBlockers(setup: MissionSetup, config: GameConfig): LaunchBlocker[] {
