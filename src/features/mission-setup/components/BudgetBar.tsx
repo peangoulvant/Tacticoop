@@ -1,5 +1,5 @@
 import { Box, LinearProgress, Stack, Typography } from '@mui/material';
-import * as engine from '../../engine';
+import * as engine from '../../../engine';
 
 export function BudgetBar({ setup }: { setup: engine.MissionSetup }) {
   const budget = engine.computeBudget(setup, engine.defaultConfig);

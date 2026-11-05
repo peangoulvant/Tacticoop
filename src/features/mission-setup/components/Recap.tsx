@@ -1,10 +1,10 @@
 import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import * as engine from '../../engine';
-import { palette } from '../../app/theme';
-import * as assets from '../../shared/assets';
-import * as labels from '../../shared/labels';
-import { useGameStore } from '../../store/useGameStore';
+import * as engine from '../../../engine';
+import { palette } from '../../../app/theme';
+import * as assets from '../../../shared/assets';
+import * as labels from '../../../shared/labels';
+import { useGameStore } from '../../../store/useGameStore';
 import { BudgetBar } from './BudgetBar';
 
 const newSeed = () => Math.floor(Math.random() * 2 ** 32);

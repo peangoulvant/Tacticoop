@@ -1,8 +1,8 @@
 import { Button, Paper, Stack, Typography } from '@mui/material';
-import * as engine from '../../engine';
-import { useMoveDraftStore } from '../../store/useMoveDraftStore';
-import { confirmMove } from './commandActions';
-import type { MoveDraft } from './useMoveDraft';
+import * as engine from '../../../engine';
+import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
+import { confirmMove } from '../services/commandActions';
+import type { MoveDraft } from '../services/useMoveDraft';
 
 /** Texte de la barre selon l'avancement de la préparation, et possibilité de confirmer. */
 function describeDraft({ unit, reachable, plan }: MoveDraft): {

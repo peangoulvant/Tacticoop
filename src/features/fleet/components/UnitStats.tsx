@@ -1,7 +1,7 @@
 import { Box, LinearProgress, Stack, Typography } from '@mui/material';
-import * as engine from '../../engine';
-import { palette } from '../../app/theme';
-import * as assets from '../../shared/assets';
+import * as engine from '../../../engine';
+import { palette } from '../../../app/theme';
+import * as assets from '../../../shared/assets';
 
 /** Barre de PV : lit l'état de l'unité, sans le copier. */
 export function HpBar({ unit }: { unit: engine.Unit }) {

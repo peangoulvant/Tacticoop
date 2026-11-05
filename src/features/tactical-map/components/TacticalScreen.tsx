@@ -1,17 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material';
-import * as engine from '../../engine';
-import * as labels from '../../shared/labels';
-import { useGameStore } from '../../store/useGameStore';
-import { EndCycleButton } from '../commands/EndCycleButton';
-import { MoveBar } from '../commands/MoveBar';
-import { NewGameButton } from '../commands/NewGameButton';
-import { UnitPanel } from '../commands/UnitPanel';
-import { useMoveDraft } from '../commands/useMoveDraft';
-import { FleetPanel } from '../fleet/FleetPanel';
-import { LogbookPanel } from '../logbook/LogbookPanel';
+import * as engine from '../../../engine';
+import * as labels from '../../../shared/labels';
+import { useGameStore } from '../../../store/useGameStore';
+import { EndCycleButton, MoveBar, NewGameButton, UnitPanel, useMoveDraft } from '../../commands';
+import { FleetPanel } from '../../fleet';
+import { LogbookPanel } from '../../logbook';
 import { TacticalMap } from './TacticalMap';
-import { palette } from '../../app/theme';
+import { palette } from '../../../app/theme';
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 

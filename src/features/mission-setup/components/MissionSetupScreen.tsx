@@ -10,9 +10,9 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import * as engine from '../../engine';
-import * as labels from '../../shared/labels';
-import { useGameStore } from '../../store/useGameStore';
+import * as engine from '../../../engine';
+import * as labels from '../../../shared/labels';
+import { useGameStore } from '../../../store/useGameStore';
 import { Recap } from './Recap';
 import { BriefingStep, ConstraintsStep, ForceStep, MissionStep } from './SetupSteps';
 

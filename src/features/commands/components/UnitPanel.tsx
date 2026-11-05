@@ -1,12 +1,11 @@
 import { Box, Button, IconButton, Paper, Stack, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import * as engine from '../../engine';
-import * as assets from '../../shared/assets';
-import { useMoveDraftStore } from '../../store/useMoveDraftStore';
-import { useSelectionStore } from '../../store/useSelectionStore';
-import { ActivationBadge } from '../fleet/ActivationBadge';
-import { HpBar, StockLine } from '../fleet/UnitStats';
-import { endActivation } from './commandActions';
+import * as engine from '../../../engine';
+import * as assets from '../../../shared/assets';
+import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
+import { useSelectionStore } from '../../../store/useSelectionStore';
+import { ActivationBadge, HpBar, StockLine } from '../../fleet';
+import { endActivation } from '../services/commandActions';
 
 /** Commandes de la maquette encore sans règle d'exécution (actions spéciales : D-04, D-05). */
 const UNAVAILABLE_COMMANDS = [

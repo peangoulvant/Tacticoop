@@ -23,6 +23,7 @@ src/
     commands/            # Interface des commandes
     logbook/             # Journal
     debriefing/          # Bilan
+                         # Chaque feature : components/, services/ (hooks et logique pure), index.ts
   store/                 # Zustand et coordination de l'application
   persistence/           # IndexedDB, import et export JSON
   shared/                # Utilitaires réellement communs
@@ -31,7 +32,7 @@ src/
 ## Responsabilités et dépendances
 
 - `engine/` : règles et calculs métier en TypeScript ; aucune dépendance à React, Zustand, Material UI ou IndexedDB.
-- `features/` : composants React, présentation et interactions ; aucune règle métier dupliquée.
+- `features/` : composants React, présentation et interactions ; aucune règle métier dupliquée. Chaque feature range ses composants dans `components/`, ses hooks et sa logique pure dans `services/`, et exporte ce qui est public par son `index.ts` (dossiers créés au besoin).
 - `store/` : état applicatif, sélection et transmission des commandes ; ne réimplémente pas le moteur.
 - `persistence/` : sérialisation, validation et stockage ; ne décide d'aucune règle de jeu.
 - `shared/` : éléments transversaux uniquement ; éviter d'en faire un dossier fourre-tout.

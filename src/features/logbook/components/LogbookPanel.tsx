@@ -1,6 +1,6 @@
 import { Box, Paper, Typography } from '@mui/material';
-import * as engine from '../../engine';
-import * as labels from '../../shared/labels';
+import * as engine from '../../../engine';
+import * as labels from '../../../shared/labels';
 
 /** Texte d'un événement ; le catalogue complet du journal reste à arbitrer (D-11). */
 function describe(event: engine.GameEvent): string {
