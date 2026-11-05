@@ -2,7 +2,7 @@
 
 Lien entre les exigences du [Game Design](game-design/README.md) et des [spécifications fonctionnelles](functional-specs/README.md) et le code de `src/`. Document de suivi : il ne définit aucune règle et ne reprend pas le détail des spécifications, qui font autorité.
 
-**État analysé :** `main` au commit `d322cdd` (après la PR #15), avec la PR de réagencement des features (`components/`, `services/`, `index.ts`). `npm test` donne 74 tests réussis sur 11 fichiers, `npm run lint` et `npm run build` ne signalent rien.
+**État analysé :** `main` au commit `73bd1b3` (après la PR #16), avec la PR des textes du moteur (`shared/label-engine.ts`). `npm test` donne 74 tests réussis sur 11 fichiers, `npm run lint` et `npm run build` ne signalent rien.
 
 ## Lecture
 
