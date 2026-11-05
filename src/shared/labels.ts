@@ -45,11 +45,6 @@ export const briefing: Record<
   },
 };
 
-export const blockerLabel: Record<engine.LaunchBlocker, string> = {
-  NO_SHIP: 'Sélectionnez au moins un bâtiment.',
-  BUDGET_EXCEEDED: 'Le budget est dépassé : retirez des bâtiments.',
-};
-
 export const errorMessage = (error: engine.GameError): string => error.message;
 
 /** État d'activation affiché sur les fiches ; le porte-avions n'en a pas (SF-03.6). */

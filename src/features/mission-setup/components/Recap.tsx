@@ -109,7 +109,7 @@ export function Recap({ setup }: { setup: engine.MissionSetup }) {
 
       {blockers.map((b) => (
         <Alert key={b} severity="warning" sx={{ mt: 2 }}>
-          {labels.blockerLabel[b]}
+          {engine.LAUNCH_BLOCKER_MESSAGES[b]}
         </Alert>
       ))}
       <Button

@@ -1,3 +1,4 @@
+import * as labelEngine from '../../shared/label-engine';
 import type { GameConfig } from '../config/gameConfig';
 import {
   type MoveBlocker,
@@ -47,7 +48,10 @@ function findOrderableUnit(
   unitId: string,
 ): { unit: Unit } | { rejection: CommandResult } {
   const unit = mission.units.find((u) => u.id === unitId);
-  if (!unit) return { rejection: reject('UNIT_NOT_FOUND', 'Unité inconnue.') };
+  if (!unit)
+    return {
+      rejection: reject('UNIT_NOT_FOUND', labelEngine.commandRefusalMessages.UNIT_NOT_FOUND),
+    };
   const blocker = orderBlocker(mission.units, unit);
   return blocker ? { rejection: blockerRejection(blocker) } : { unit };
 }
