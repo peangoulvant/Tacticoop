@@ -13,6 +13,10 @@ Ces décisions sont retenues pour la V1 ; les chiffres sont des **paramètres pr
 - **D-04 — Porte-avions :** passif, sans action spéciale ni défense automatique propre ; protection assurée par les escortes. Les autres actions existantes sont conservées.
 - **D-06 — Propulsion du porte-avions :** panne = immobilisation, sans défaite immédiate ; réparation automatique au cycle suivant, sans action du joueur et sans récupération de PV ; reprise de la navigation en fin de ce cycle. La règle s'applique à nouveau en cas de nouvelle panne. Les conditions de défaite déjà définies restent applicables.
 
+## Arbitrages — novembre 2026
+
+- **Navigation du porte-avions (AB-05 à AB-07) :** ordres et quota (G-03.2.10, G-06.5.6) validés ; route bloquée (G-03.2.13) : arrêt avant la case occupée ; dernière occasion d'ordre : pause du cycle et bouton « Clôturer le cycle ». Les dégâts de vitesse et l'immobilisation définitive (G-03.2.11) restent à définir avec le combat. Détail dans le [registre Game Design](../game-design/DECISIONS.md).
+
 Les éléments non précisés ci-dessus (autonomies, probabilités de panne/interception, leurres, cas limites de l'IA et de la détection) ne sont pas automatiquement validés.
 
 ## Priorité 1 — Cohérence des règles et version jouable
