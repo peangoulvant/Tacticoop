@@ -1,7 +1,16 @@
+import { readdirSync } from 'node:fs';
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
+
+// Features de l'application : chacune n'expose que son index.ts aux autres.
+const features = readdirSync('src/features', { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
+
+const deepImportMessage = (name) =>
+  `Importer la feature « ${name} » uniquement via son index.ts (pas d'import profond).`;
 
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'node_modules'] },
@@ -41,6 +50,38 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Hors features (app, store…) : seul l'index.ts d'une feature est importable.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/features/**', 'src/engine/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/features/*/**'],
+              message: "Importer une feature uniquement via son index.ts (pas d'import profond).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Dans chaque feature : les autres features ne s'importent que par leur index.ts.
+  ...features.map((feature) => ({
+    files: [`src/features/${feature}/**/*.{ts,tsx}`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: features
+            .filter((other) => other !== feature)
+            .map((other) => ({ group: [`**/${other}/**`], message: deepImportMessage(other) })),
+        },
+      ],
+    },
+  })),
   {
     // Le moteur reste indépendant de React, Zustand, MUI et IndexedDB (STRUCTURE.md).
     files: ['src/engine/**/*.ts'],
