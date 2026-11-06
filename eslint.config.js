@@ -12,6 +12,9 @@ const features = readdirSync('src/features', { withFileTypes: true })
 const deepImportMessage = (name) =>
   `Importer la feature « ${name} » uniquement via son index.ts (pas d'import profond).`;
 
+const persistenceMessage =
+  'Les features n’utilisent pas la persistance directement : elle passe par le store.';
+
 const labelEngineImportRule = {
   selector: 'ImportDeclaration[source.value=/\\/shared\\/label-engine$/] > ImportSpecifier',
   message:
@@ -88,16 +91,20 @@ export default tseslint.config(
       ],
     },
   },
-  // Dans chaque feature : les autres features ne s'importent que par leur index.ts.
+  // Dans chaque feature : les autres features ne s'importent que par leur index.ts, et la
+  // persistance n'est utilisée que par le store (features → store → persistence, STRUCTURE.md).
   ...features.map((feature) => ({
     files: [`src/features/${feature}/**/*.{ts,tsx}`],
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          patterns: features
-            .filter((other) => other !== feature)
-            .map((other) => ({ group: [`**/${other}/**`], message: deepImportMessage(other) })),
+          patterns: [
+            ...features
+              .filter((other) => other !== feature)
+              .map((other) => ({ group: [`**/${other}/**`], message: deepImportMessage(other) })),
+            { group: ['**/persistence', '**/persistence/**'], message: persistenceMessage },
+          ],
         },
       ],
     },
