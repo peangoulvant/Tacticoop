@@ -2,13 +2,20 @@ import type { GameConfig, ShipClass } from '../config/gameConfig';
 import type { Hex } from '../map/hex';
 import type { NavalCategory } from '../map/terrain';
 
-export type Side = 'friend' | 'hostile';
+export const SIDES = ['friend', 'hostile'] as const;
+export type Side = (typeof SIDES)[number];
 
 /**
  * État d'activation dans le cycle (SF-03.6). « En cours » commence au premier ordre exécuté
  * (SF-03.3). Le porte-avions et les unités hostiles ne reçoivent pas d'activation du joueur.
  */
-export type ActivationStatus = 'available' | 'in_progress' | 'activated' | 'not_activable';
+export const ACTIVATION_STATUSES = [
+  'available',
+  'in_progress',
+  'activated',
+  'not_activable',
+] as const;
+export type ActivationStatus = (typeof ACTIVATION_STATUSES)[number];
 
 /**
  * Unité navale : seulement l'état courant. Les caractéristiques fixes de sa classe (PV maximum,
