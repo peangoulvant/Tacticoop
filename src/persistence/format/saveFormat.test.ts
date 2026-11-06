@@ -1,4 +1,4 @@
-import * as engine from '../engine';
+import * as engine from '../../engine';
 import { SAVE_SCHEMA_VERSION, SaveErrorCode, parseSave, serializeSave } from './saveFormat';
 
 /** Joue une mission avec le moteur, comme l'application : lancement, déplacement, ordre, cycle. */

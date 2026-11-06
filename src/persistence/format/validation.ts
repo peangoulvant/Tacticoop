@@ -1,4 +1,4 @@
-import * as engine from '../engine';
+import * as engine from '../../engine';
 import { isCount, isHex, isHexOn, isOneOf, isPositive, isRecord, isShipClass } from './guards';
 import type { Json } from './guards';
 

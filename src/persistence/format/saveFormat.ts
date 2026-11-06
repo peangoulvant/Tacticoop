@@ -1,4 +1,4 @@
-import * as engine from '../engine';
+import * as engine from '../../engine';
 import { isRecord } from './guards';
 import { checkEvents, checkMissionState } from './validation';
 

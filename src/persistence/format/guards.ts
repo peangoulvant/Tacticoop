@@ -1,4 +1,4 @@
-import * as engine from '../engine';
+import * as engine from '../../engine';
 
 /** Objet JSON quelconque : les valeurs lues dans un fichier ne sont jamais fiables avant validation. */
 export type Json = Record<string, unknown>;

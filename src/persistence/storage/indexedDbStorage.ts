@@ -39,7 +39,8 @@ function inTransaction(
 
 /**
  * Stockage IndexedDB de la partie en cours. La connexion s'ouvre au premier usage ; si
- * l'ouverture échoue (navigation privée, stockage bloqué), elle sera retentée à l'usage suivant.
+ * l'ouverture échoue (navigation privée, stockage bloqué), ou si le navigateur la ferme ensuite
+ * (données du site effacées depuis un autre onglet, éviction), elle est rouverte à l'usage suivant.
  */
 export function createIndexedDbStorage(
   factory: IDBFactory | undefined = globalThis.indexedDB,
@@ -47,12 +48,26 @@ export function createIndexedDbStorage(
 ): SaveStorage {
   let connection: Promise<IDBDatabase> | null = null;
 
+  /** Oublie la connexion mise en cache dès qu'elle n'est plus utilisable. */
+  function forgetWhenClosed(database: IDBDatabase): IDBDatabase {
+    database.onclose = () => {
+      connection = null;
+    };
+    database.onversionchange = () => {
+      database.close();
+      connection = null;
+    };
+    return database;
+  }
+
   function connect(): Promise<IDBDatabase> {
     if (!factory) return Promise.reject(new Error('IndexedDB n’est pas disponible.'));
-    connection ??= openDatabase(factory, name).catch((error: unknown) => {
-      connection = null;
-      throw error;
-    });
+    connection ??= openDatabase(factory, name)
+      .then(forgetWhenClosed)
+      .catch((error: unknown) => {
+        connection = null;
+        throw error;
+      });
     return connection;
   }
 
