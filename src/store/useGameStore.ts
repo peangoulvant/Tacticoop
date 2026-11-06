@@ -11,6 +11,8 @@ interface GameStore {
   dispatch: (command: engine.GameCommand) => boolean;
   clearError: () => void;
   reset: () => void;
+  /** Remplace la partie par une sauvegarde déjà validée (reprise) : simple mutation, sans règle de jeu. */
+  restore: (state: engine.MissionState, events: engine.GameEvent[]) => void;
 }
 
 function freshState(): engine.GameState {
@@ -35,4 +37,5 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   clearError: () => set({ lastError: null }),
   reset: () => set({ state: freshState(), events: [], lastError: null }),
+  restore: (state, events) => set({ state, events, lastError: null }),
 }));

@@ -18,6 +18,7 @@ import {
   useCarrierRouteView,
 } from '../../fleet';
 import { LogbookPanel } from '../../logbook';
+import { SaveStatus } from './SaveStatus';
 import { TacticalMap } from './TacticalMap';
 import { palette } from '../../../app/theme';
 
@@ -89,6 +90,7 @@ function TopBar({ mission }: { mission: engine.MissionState }) {
         </Typography>
         <Typography variant="body2">{labels.difficultyLabel[setup.difficulty]}</Typography>
       </Stack>
+      <SaveStatus />
       <EndCycleButton mission={mission} />
       <NewGameButton />
     </Paper>

@@ -1,4 +1,5 @@
 import * as engine from '../../engine';
+import * as labelPersistence from '../../shared/label-persistence';
 import { isRecord } from './guards';
 import { checkEvents, checkMissionState } from './validation';
 
@@ -12,6 +13,12 @@ export const SaveErrorCode = {
   INVALID_DATA: 'INVALID_DATA',
 } as const;
 export type SaveErrorCode = (typeof SaveErrorCode)[keyof typeof SaveErrorCode];
+
+/** Message présenté au joueur pour chaque motif de refus (textes dans `shared/label-persistence`). */
+export const SAVE_ERROR_MESSAGES = labelPersistence.saveErrorMessages satisfies Record<
+  SaveErrorCode,
+  string
+>;
 
 /**
  * Sauvegarde d'une mission en cours : l'état de la partie et le journal de bord. La sélection et
