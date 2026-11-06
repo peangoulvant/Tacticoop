@@ -25,10 +25,11 @@ Décidé avec le propriétaire en novembre 2026 (AB-08) ; les interprétations n
 - **Un seul emplacement** : la « partie en cours », écrasée après chaque séquence complète. Seule une **mission en cours** est sauvegardée, jamais la préparation. Une mission gagnée est sauvegardée aussi ; la sauvegarde est effacée au retour à la préparation (« Nouvelle partie » ou abandon).
 - **Reprise au démarrage** : si une partie existe, l'écran de préparation propose « Reprendre la partie en cours » ou « Nouvelle partie ». Rien n'est restauré sans accord. Lancer une nouvelle mission écrase la sauvegarde sans avertissement.
 - **Contenu** : l'état de la partie et le journal de bord. La sélection et les brouillons d'action relèvent de l'interface et ne sont jamais sauvegardés.
-- **Version incompatible ou données invalides** : refus total avec un message clair, rien n'est chargé à moitié. Aucune migration en V1.
+- **Version incompatible ou données invalides** : aucune migration en V1, et rien n'est jamais chargé à moitié. Le **refus avec un message clair** vaut pour un **fichier importé** (C3). Une **sauvegarde automatique** illisible ou incompatible au démarrage est traitée comme **absente** : aucun message, aucun bouton de suppression, et elle n'est **pas effacée** (décision du propriétaire, pour éviter une complexité inutile). Elle est écrasée au lancement de la mission suivante.
 - **Export et import JSON** : l'export est proposé pendant la mission, désactivé pendant une activation en cours (l'état serait incomplet). L'import n'est proposé que depuis l'écran de préparation, jamais pendant une mission. Fichier exporté : `tacticoop-AAAAMMJJ-HHMM.json`.
-- **Échec de stockage** (IndexedDB indisponible, navigation privée) : avertissement non bloquant, la partie continue et l'export manuel reste possible. Une sauvegarde n'est annoncée réussie qu'après confirmation de l'écriture.
+- **Échec de stockage** (IndexedDB indisponible, quota, navigation privée) : avertissement non bloquant dans la barre du haut, jusqu'à la prochaine écriture réussie ; la partie continue et l'export manuel reste possible. « Sauvegardée à HH:MM » n'est affiché qu'après confirmation de l'écriture. Aucun repli en mémoire.
 - Une commande refusée par le moteur ne modifie pas l'état et ne déclenche aucune écriture.
+- **« Nouvelle partie » sur le bandeau de reprise** masque le bandeau mais garde la sauvegarde jusqu'au lancement suivant (rechargée, elle est de nouveau proposée). Le bandeau indique mission, cycle, date et heure locales, et n'apparaît qu'une fois la lecture terminée.
 
 ## Format et module `src/persistence/`
 
@@ -47,4 +48,26 @@ Le module sépare trois responsabilités, une par dossier ou fichier, derrière 
 
 Le stockage ne connaît ni le format ni le moteur : il reçoit et rend du JSON. Il n'existe **aucun repli en mémoire** : si IndexedDB est indisponible, l'écriture échoue et le store avertit le joueur (AB-08), au lieu de faire passer pour réussie une sauvegarde perdue au rechargement.
 
-Le module n'est utilisé que par le store (`features → store → persistence`) : une règle ESLint interdit à tout le reste (features, `app/`, `shared/`) de l'importer, et lui interdit d'importer le store, les features et l'app. Au sein du store, un module dédié à la sauvegarde s'abonne à l'état du jeu et parle à la persistance : `useGameStore` n'en dépend pas. Le module n'est pas encore raccordé (PR C2).
+Le module n'est utilisé que par le store (`features → store → persistence`) : une règle ESLint interdit à tout le reste (features, `app/`, `shared/`) de l'importer, et lui interdit d'importer le store, les features et l'app. Au sein du store, un module dédié à la sauvegarde s'abonne à l'état du jeu et parle à la persistance : `useGameStore` n'en dépend pas. 
+
+## Branchement dans le store (C2)
+
+Tout est dans `src/store/` ; `useGameStore` ne dépend pas de la persistance.
+
+| Fichier | Rôle |
+|---|---|
+| `autoSave.ts` | `startAutoSave()` s'abonne à `useGameStore`. Écriture quand `state` change, que la mission est en cours et qu'**aucune activation n'est en cours** ; effacement au passage d'une mission à la préparation ; changements de `lastError` ou du seul journal ignorés. Les travaux passent par une file : un seul s'exécute, un seul attend, et le plus récent remplace celui qui attend. |
+| `useSaveStore.ts` | sauvegarde trouvée au démarrage (`found`), échec d'écriture (`writeFailed`), heure de la dernière écriture **confirmée** (`lastSavedAt`) |
+| `startPersistence.ts` | appelée par `app/main.tsx` : branche la sauvegarde automatique, lit et valide la sauvegarde. Une proposition n'est publiée que si le joueur n'a pas lancé de mission pendant la lecture |
+| `resumeSavedGame.ts` | action « Reprendre » : `useGameStore.restore()` (simple mutation), puis sélection et brouillons réinitialisés |
+
+Interface : `ResumeBanner` (écran de préparation) et `SaveStatus` (barre du haut). Les textes sont dans `shared/labels.ts` (`saveText`) ; les messages de refus de `persistence` sont dans `shared/label-persistence.ts`, vérifiés par `satisfies` côté `persistence` (`SAVE_ERROR_MESSAGES`) et destinés à l'import (C3).
+
+## Évolution du format : point de vigilance
+
+- Les validateurs de `format/` sont **écrits à la main** : un champ ajouté à l'état du moteur n'y est pas contrôlé tant qu'on ne les met pas à jour (risque de dérive).
+- Tout changement de la **forme de l'état** (`MissionState`, `Unit`, `GameEvent`…) impose de **monter `schemaVersion`** et d'**arbitrer le sort des anciennes sauvegardes** : migration, message ou suppression. Comme une sauvegarde automatique incompatible est traitée comme absente sans message, elle serait sinon perdue en silence au prochain lancement.
+
+## Limite connue
+
+Deux onglets ouverts sur la même partie s'écrasent : **le dernier qui écrit gagne**. Aucune détection en V1 (pas de multi-utilisateur, voir « Conservation et limites »).
