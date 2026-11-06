@@ -2,7 +2,7 @@
 
 Lien entre les exigences du [Game Design](game-design/README.md) et des [spécifications fonctionnelles](functional-specs/README.md) et le code de `src/`. Document de suivi : il ne définit aucune règle et ne reprend pas le détail des spécifications, qui font autorité.
 
-**État analysé :** `main` au commit `add948d` (après la PR #21), avec la PR C1 du jalon 4 (module de persistance). `npm test` donne 149 tests réussis sur 15 fichiers, `npm run lint` et `npm run build` ne signalent rien.
+**État analysé :** `main` au commit `add948d` (après la PR #21), avec la PR C1 du jalon 4 (module de persistance). `npm test` donne 146 tests réussis sur 15 fichiers, `npm run lint` et `npm run build` ne signalent rien.
 
 ## Lecture
 
@@ -150,7 +150,7 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | G-01.2 | Carte procédurale et aléatoire | `engine/map/generate.ts` → `generateTerrain()` | `generate.test.ts` | Implémenté | |
 | G-01.3 | Le joueur commande une force | `engine/core/preparationCommands.ts` → `addShip()` | `executeCommand.test.ts` | Partiel | Composition seulement, aucune commande tactique. |
 | G-01.4, G-01.5 | Adversaire IA, activations alternées ; brouillard de guerre | — | — | Non implémenté | |
-| G-01.6, G-01.7 | Solo contre l'IA (`PROPOSÉ`) ; difficulté, sauvegardes, rejouabilité (`À DÉFINIR`) | `persistence/saveFormat.ts` → `serializeSave()`, `parseSave()` | `saveFormat.test.ts`, `saveStorage.test.ts` | Partiel (ouvert) | Sauvegardes arbitrées (AB-08) ; module de persistance seul : aucune sauvegarde automatique, reprise, export ni import dans l'application (PR C2). Les autres sujets de G-01.7 restent à définir. |
+| G-01.6, G-01.7 | Solo contre l'IA (`PROPOSÉ`) ; difficulté, sauvegardes, rejouabilité (`À DÉFINIR`) | `persistence/format/saveFormat.ts` → `serializeSave()`, `parseSave()` | `saveFormat.test.ts`, `indexedDbStorage.test.ts` | Partiel (ouvert) | Sauvegardes arbitrées (AB-08) ; module de persistance seul : aucune sauvegarde automatique, reprise, export ni import dans l'application (PR C2). Les autres sujets de G-01.7 restent à définir. |
 | G-02.1 à G-02.6 | Conditions de victoire et de défaite | `engine/missions/carrier-movement.ts` → `hasCarrierArrived()` | `carrier-commands.test.ts` | Partiel | Seule la victoire d'escorte par arrivée en B. Voir SF-08. |
 | G-02.7, G-02.8 | Porte-avions immobilisé ; limite de cycles | — | — | Non implémenté (ouvert) | |
 | G-03.1.1 à G-03.1.3 | Lutte navale : flotte ennemie inconnue de 2 frégates ou 1 frégate et 1 sous-marin | — | — | Non implémenté | La mission se lance sans aucun ennemi. |
@@ -219,7 +219,7 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | SF-01 (registre GD) | Quatre contraintes, budget 70, 0 à 2 distinctes | Voir SF-01 §4 | `executeCommand.test.ts` | Partiel | « Capteurs dégradés » sans effet. |
 | SF-02 (registre GD) | Carte 35×35, six terrains, A→B garanti | Voir SF-02 §1 à §3 | `generate.test.ts`, `gameConfig.test.ts` | Implémenté | |
 | SF-03 (registre GD) | Activation, navigation du porte-avions | — | — | Non implémenté | |
-| AT-02 | IndexedDB avec export/import JSON | `persistence/saveFormat.ts` → `serializeSave()`, `parseSave()`<br>`persistence/validation.ts` → `checkMissionState()`, `checkEvents()`<br>`persistence/indexedDbStorage.ts` → `createIndexedDbStorage()`<br>`persistence/saveStorage.ts` → `createMemoryStorage()` | `saveFormat.test.ts`, `saveStorage.test.ts` | Partiel | Format versionné, validation stricte et stockage IndexedDB testés (avec `fake-indexeddb`). Pas encore branchés au store ni à l'interface (PR C2) : aucune sauvegarde automatique, reprise, export ni import. |
+| AT-02 | IndexedDB avec export/import JSON | `persistence/format/saveFormat.ts` → `serializeSave()`, `parseSave()`<br>`persistence/format/validation.ts` → `checkMissionState()`, `checkEvents()`<br>`persistence/storage/saveStorage.ts` → `SaveStorage`<br>`persistence/storage/indexedDbStorage.ts` → `createIndexedDbStorage()` | `saveFormat.test.ts`, `indexedDbStorage.test.ts` | Partiel | Format versionné, validation stricte et stockage IndexedDB testés (avec `fake-indexeddb`), sans repli en mémoire (AB-08). Pas encore branchés au store ni à l'interface (PR C2) : aucune sauvegarde automatique, reprise, export ni import. |
 
 ## Ambiguïtés et points d'attention
 

@@ -36,11 +36,15 @@ Fichier JSON : `{ schemaVersion: 1, savedAt, state, events }`, avec `state` une 
 
 La validation est écrite à la main et refuse la sauvegarde au premier problème : JSON illisible, version inconnue, valeurs inconnues (terrains, classes de bâtiment, états d'activation, types d'événement, ordres du porte-avions), tableau de terrains de taille inattendue, cases hors carte, identifiants ou cases en double, porte-avions absent en escorte ou présent hors escorte, navigation du porte-avions incohérente, activation en cours. Elle ne vérifie ni l'équilibrage (PV, stocks) ni la navigabilité des cases, qui dépendent de valeurs provisoires.
 
-| Fichier | Rôle |
-|---|---|
-| `saveFormat.ts` | version, codes d'erreur, `serializeSave()`, `parseSave()` |
-| `validation.ts`, `guards.ts` | contrôles de l'état et du journal |
-| `saveStorage.ts` | interface `SaveStorage` (lire, écrire, effacer) et stockage en mémoire |
-| `indexedDbStorage.ts` | stockage IndexedDB natif, confirmé à la fin de la transaction |
+Le module sépare trois responsabilités, une par dossier ou fichier, derrière un seul point d'entrée (`index.ts`) :
 
-Le module n'est utilisé que par le store (`features → store → persistence`).
+| Responsabilité | Fichier | Rôle |
+|---|---|---|
+| Format et validation | `format/saveFormat.ts` | version, codes d'erreur, `serializeSave()`, `parseSave()` |
+| | `format/validation.ts`, `format/guards.ts` | contrôles de l'état et du journal (internes au dossier) |
+| Contrat de stockage | `storage/saveStorage.ts` | interface `SaveStorage` (lire, écrire, effacer), sans implémentation |
+| Stockage IndexedDB | `storage/indexedDbStorage.ts` | implémentation native, confirmée à la fin de la transaction ; la connexion est rouverte si le navigateur la ferme |
+
+Le stockage ne connaît ni le format ni le moteur : il reçoit et rend du JSON. Il n'existe **aucun repli en mémoire** : si IndexedDB est indisponible, l'écriture échoue et le store avertit le joueur (AB-08), au lieu de faire passer pour réussie une sauvegarde perdue au rechargement.
+
+Le module n'est utilisé que par le store (`features → store → persistence`) : une règle ESLint interdit aux features de l'importer. Il n'est pas encore raccordé au store (PR C2).
