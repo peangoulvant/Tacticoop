@@ -112,7 +112,7 @@ export function carrierEventLabel(event: CarrierEvent): string {
     case 'CARRIER_MOVED':
       return `Porte-avions : navigation de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
     case 'MISSION_WON':
-      return 'Mission réussie : le porte-avions est arrivé en B';
+      return 'Mission réussie : le porte-avions est arrivé à destination';
   }
 }
 
