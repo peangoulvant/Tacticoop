@@ -25,7 +25,7 @@ src/
     debriefing/          # Bilan
                          # Chaque feature : components/, services/ (hooks et logique pure), index.ts
   store/                 # Zustand et coordination de l'application
-  persistence/           # IndexedDB, import et export JSON
+  persistence/           # IndexedDB, format et validation des sauvegardes JSON
   shared/                # Utilitaires réellement communs
 ```
 
