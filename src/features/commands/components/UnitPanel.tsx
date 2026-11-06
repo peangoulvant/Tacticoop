@@ -4,9 +4,8 @@ import * as engine from '../../../engine';
 import * as assets from '../../../shared/assets';
 import * as labelEngine from '../../../shared/label-engine';
 import { useSelectionStore } from '../../../store/useSelectionStore';
-import { ActivationBadge, HpBar, StockLine } from '../../fleet';
+import { ActivationBadge, CarrierPanel, HpBar, StockLine } from '../../fleet';
 import { endActivation, startMoveDraft } from '../services/commandActions';
-import { CarrierPanel } from './CarrierPanel';
 
 /** Commandes de la maquette encore sans règle d'exécution (actions spéciales : D-04, D-05). */
 const UNAVAILABLE_COMMANDS = [

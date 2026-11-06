@@ -6,20 +6,23 @@ import type { NavalCategory } from '../map/terrain';
 import type { Unit } from '../units/unit';
 import { CarrierOrderKind, carrierOf, type CarrierNavigation } from './carrier-orders';
 
-/** Enchaîne les plus courts chemins de `from` à chaque étape ; `null` si un tronçon est impossible. */
+/**
+ * Trajet de `from` jusqu'à la dernière étape, en passant par chaque étape (`checkpoints`) dans
+ * l'ordre : un plus court chemin par tronçon. `null` si un tronçon n'a aucun chemin.
+ */
 function routeThrough(
   map: GameMap,
   category: NavalCategory,
   from: Hex,
-  stops: readonly Hex[],
+  checkpoints: readonly Hex[],
 ): Hex[] | null {
   const route: Hex[] = [from];
-  let at = from;
-  for (const stop of stops) {
-    const leg = shortestPath(map, at, stop, category);
+  let current = from;
+  for (const checkpoint of checkpoints) {
+    const leg = shortestPath(map, current, checkpoint, category);
     if (!leg) return null;
     route.push(...leg.slice(1));
-    at = stop;
+    current = checkpoint;
   }
   return route;
 }
@@ -39,10 +42,12 @@ export function plannedRoute(
 ): Hex[] | null {
   const carrier = carrierOf(mission.units);
   if (!carrier || !mission.goal) return null;
-  const via = waypoint === undefined ? mission.carrierNavigation?.waypoint : waypoint;
-  const stops = [via, mission.goal].filter((hex) => hex != null);
+  // Point de passage pris en compte : celui demandé pour l'aperçu, sinon celui de l'état.
+  const waypointInUse = waypoint === undefined ? mission.carrierNavigation?.waypoint : waypoint;
+  // Étapes obligatoires, dans l'ordre : le point de passage éventuel, puis l'arrivée en B.
+  const checkpoints = [waypointInUse, mission.goal].filter((hex) => hex != null);
   const category = config.ships[carrier.shipClass].category;
-  return routeThrough(mission.map, category, carrier.position, stops);
+  return routeThrough(mission.map, category, carrier.position, checkpoints);
 }
 
 /** Hexagones que le porte-avions franchit : au plus `movement`, arrêt avant une case occupée. */

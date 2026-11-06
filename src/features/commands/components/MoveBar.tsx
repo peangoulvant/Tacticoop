@@ -3,7 +3,7 @@ import * as engine from '../../../engine';
 import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
 import { confirmMove } from '../services/commandActions';
 import type { MoveDraft } from '../services/useMoveDraft';
-import { MapBar } from './MapBar';
+import { MapBar } from '../../../shared/MapBar';
 
 /** Texte de la barre selon l'avancement de la préparation, et possibilité de confirmer. */
 function describeDraft({ unit, reachable, plan }: MoveDraft): {

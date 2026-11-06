@@ -4,17 +4,19 @@ import * as engine from '../../../engine';
 import * as labels from '../../../shared/labels';
 import { useGameStore } from '../../../store/useGameStore';
 import {
-  CarrierOrderBar,
   EndCycleButton,
   MissionResultBanner,
   MoveBar,
   NewGameButton,
   UnitPanel,
-  useCarrierOrderDraft,
-  useCarrierRouteView,
   useMoveDraft,
 } from '../../commands';
-import { FleetPanel } from '../../fleet';
+import {
+  CarrierOrderBar,
+  FleetPanel,
+  useCarrierOrderDraft,
+  useCarrierRouteView,
+} from '../../fleet';
 import { LogbookPanel } from '../../logbook';
 import { TacticalMap } from './TacticalMap';
 import { palette } from '../../../app/theme';

@@ -1,7 +1,7 @@
 import { Button, Paper, Stack, Typography } from '@mui/material';
 import * as engine from '../../../engine';
 import * as labels from '../../../shared/labels';
-import { abandonMission } from '../services/commandActions';
+import { closeMission } from '../services/commandActions';
 
 /**
  * Bandeau de résultat sur la carte quand la mission est gagnée (SF-08 §1). Ni bilan ni
@@ -30,7 +30,7 @@ export function MissionResultBanner({ mission }: { mission: engine.MissionState 
           {labels.carrierText.victoryTitle}
         </Typography>
         <Typography variant="body2">{labels.carrierText.victoryText}</Typography>
-        <Button size="small" variant="contained" onClick={abandonMission}>
+        <Button size="small" variant="contained" onClick={closeMission}>
           {labels.carrierText.newGame}
         </Button>
       </Stack>

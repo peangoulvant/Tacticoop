@@ -3,7 +3,7 @@ import * as engine from '../../../engine';
 import * as labels from '../../../shared/labels';
 import { useCarrierOrderDraftStore } from '../../../store/useCarrierOrderDraftStore';
 import { carrierOrderUnavailability } from '../services/carrierOrderDraft';
-import { startCarrierOrderDraft } from '../services/commandActions';
+import { startCarrierOrderDraft } from '../services/carrierActions';
 
 /** Les trois ordres de navigation, dans l'ordre de G-03.2.3. */
 const ORDERS = [

@@ -1,4 +1,4 @@
-import type { CarrierRouteView } from '../../commands';
+import type { CarrierRouteView } from '../../fleet';
 import { HEX_POINTS, hexCenter, pathPoints } from '../services/hexGeometry';
 
 const ROUTE = '#5fd3ff';

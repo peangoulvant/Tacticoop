@@ -1,11 +1,11 @@
 import { Button, Typography } from '@mui/material';
 import * as engine from '../../../engine';
 import * as labels from '../../../shared/labels';
+import { MapBar } from '../../../shared/MapBar';
 import { useCarrierOrderDraftStore } from '../../../store/useCarrierOrderDraftStore';
 import { useSelectionStore } from '../../../store/useSelectionStore';
 import type { CarrierOrderDraft } from '../services/carrierOrderDraft';
-import { closeCycle, confirmCarrierOrder } from '../services/commandActions';
-import { MapBar } from './MapBar';
+import { closeCycle, confirmCarrierOrder } from '../services/carrierActions';
 
 /** Confirmation ou annulation de l'ordre en préparation ; l'annulation ne consomme pas le quota. */
 function DraftBar({ draft }: { draft: CarrierOrderDraft }) {
