@@ -37,7 +37,7 @@ src/
 - `persistence/` : sérialisation, validation et stockage ; ne décide d'aucune règle de jeu.
 - `shared/` : éléments transversaux uniquement ; éviter d'en faire un dossier fourre-tout. Toutes les couches peuvent l'utiliser, le moteur compris, pour récupérer des éléments sans dépendance. `shared/label-engine.ts` rassemble les textes que le moteur présente au joueur (refus, motifs de blocage) : objets simples sans import du moteur, dont le moteur vérifie les clés avec `satisfies`. `shared/labels.ts` et `shared/assets.ts` dépendent du moteur : celui-ci ne les importe pas.
 
-Dépendances usuelles : `features → store → engine` et `store → persistence`. Les modules du moteur se composent sans dépendances circulaires. Éviter les abstractions de type microservices, plugin system ou backend fictif.
+Dépendances usuelles : `features → store → engine` et `store → persistence`. **Seul `store/` importe `persistence`** (règle ESLint : ni les features, ni `app/`, ni `shared/`) ; le démarrage de l'application appelle une action du store. `persistence/` ne dépend que du moteur (règle ESLint : ni store, ni features, ni app), ce qui garde le sens unique et exclut tout cycle. Les modules du moteur se composent sans dépendances circulaires. Éviter les abstractions de type microservices, plugin system ou backend fictif.
 
 ## Terminologie
 

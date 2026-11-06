@@ -47,4 +47,4 @@ Le module sépare trois responsabilités, une par dossier ou fichier, derrière 
 
 Le stockage ne connaît ni le format ni le moteur : il reçoit et rend du JSON. Il n'existe **aucun repli en mémoire** : si IndexedDB est indisponible, l'écriture échoue et le store avertit le joueur (AB-08), au lieu de faire passer pour réussie une sauvegarde perdue au rechargement.
 
-Le module n'est utilisé que par le store (`features → store → persistence`) : une règle ESLint interdit aux features de l'importer. Il n'est pas encore raccordé au store (PR C2).
+Le module n'est utilisé que par le store (`features → store → persistence`) : une règle ESLint interdit à tout le reste (features, `app/`, `shared/`) de l'importer, et lui interdit d'importer le store, les features et l'app. Au sein du store, un module dédié à la sauvegarde s'abonne à l'état du jeu et parle à la persistance : `useGameStore` n'en dépend pas. Le module n'est pas encore raccordé (PR C2).
