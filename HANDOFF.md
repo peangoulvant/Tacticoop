@@ -2,7 +2,7 @@
 
 Document de passation entre fils de discussion avec Claude Code. Il garde le **contexte de travail** (décisions, préférences, pièges, état d'avancement) que le code et les spécifications ne portent pas. Il ne duplique ni les règles de jeu, ni l'architecture, ni la matrice de traçabilité.
 
-> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #20 fusionnée (moteur de navigation), avec la PR B du jalon 4 (interface de navigation du porte-avions) en attente de fusion.
+> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #21 fusionnée (interface de navigation), avec la PR C1 du jalon 4 (module de persistance) en attente de fusion.
 
 ## Lecture au démarrage d'un nouveau fil
 
@@ -13,7 +13,7 @@ Document de passation entre fils de discussion avec Claude Code. Il garde le **c
 
 ## Projet en bref
 
-Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Zustand ; IndexedDB prévu, **non implémenté**). Démarche **Spec-Driven Development** : le GDD et les SF font autorité sur le gameplay, l'architecture sur les choix techniques. Aucune règle ne s'invente : un point ouvert se signale et s'arbitre avec le propriétaire.
+Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Zustand ; IndexedDB : module de persistance fait, branchement à venir). Démarche **Spec-Driven Development** : le GDD et les SF font autorité sur le gameplay, l'architecture sur les choix techniques. Aucune règle ne s'invente : un point ouvert se signale et s'arbitre avec le propriétaire.
 
 ## Façon de travailler avec le propriétaire
 
@@ -49,6 +49,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - **Style des fonctions** (inspiré du *Google TypeScript Style Guide*) : déclarations `function` au niveau des modules, fonctions fléchées pour les expressions et les rappels (`map`, `filter`…). ESLint l'impose au premier niveau des modules (`no-restricted-syntax`) ; les fonctions imbriquées restent libres (un gestionnaire local peut être une flèche), et une constante annotée d'un type de fonction (`Handler<'X'>`) reste permise.
 - **Commentaires et noms** : chaque fonction non triviale a un commentaire qui dit ce qu'elle fait et pourquoi ; les noms sont explicites (`updateUnitInMission`, pas `withUnit`). Le propriétaire a relevé des commentaires confus et des fonctions sans commentaire.
 - **Navigation du porte-avions** : fichiers `missions/carrier-orders.ts` (ordres, quota, validation) et `missions/carrier-movement.ts` (trajet, déplacement automatique), nommés pour ne pas être confondus avec `units/movement.ts`. Les types d'ordre passent par l'énumération `CarrierOrderKind` (`continue`, `stop`, `reroute`), jamais par des chaînes en dur ; l'état s'appelle `MissionState.carrierNavigation`.
+- **Persistance** : `src/persistence/` sépare le format et la validation (`format/`), le contrat de stockage et son implémentation IndexedDB (`storage/`), derrière `index.ts`. Il n'est utilisé que par le store (règle ESLint : ni les features, ni `app/`, ni `shared/` ne l'importent ; lui-même ne dépend que du moteur). Le démarrage appelle une action du store ; un module du store dédié à la sauvegarde s'abonne à l'état du jeu, `useGameStore` ne dépend pas de la persistance. Les valeurs lues dans un fichier ne sont jamais fiables avant `parseSave()` (validation stricte, refus total). Les erreurs de stockage sont des rejets de promesse, à signaler sans bloquer la partie ; aucun repli en mémoire. Les validateurs sont écrits à la main : un champ ajouté au moteur n'est pas contrôlé tant qu'on ne les met pas à jour (risque connu, à traiter si l'état évolue).
 - **Interface de navigation** : tous les textes de l'interface du porte-avions sont dans `shared/labels.ts` (`carrierText`, `carrierDraftLabel()`…). Les fichiers du porte-avions vivent dans `features/fleet` (le porte-avions fait partie de la flotte). Un seul brouillon à la fois (déplacement ou ordre de navigation) : `store/dispatchAndCloseDrafts.ts` est partagé par `commands` et `fleet`, qui ne s'importent pas l'une l'autre. Les barres flottantes de la carte passent par `shared/MapBar.tsx`. `closeMission()` termine la mission, abandonnée ou réussie.
 - Pas de fonction intermédiaire inutile (un simple enrobage d'une autre fonction) et pas de dépendance circulaire entre modules.
 - Éviter l'excès de découpage, mais respecter la complexité : un composant long se scinde en sous-composants ou en hooks.
@@ -72,7 +73,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Journal | Colonne de droite, sous le panneau d'unité (SF-07 et G-12.1 alignés, PR #11) |
 | « Nouvelle partie » | Demande confirmation avant d'abandonner la mission (PR #11) |
 | Tests d'interface | Cypress, à démarrer entre les jalons 5 et 6 ; pas d'autre test d'interface d'ici là |
-| Dépendances de test | `@testing-library/*` et `jsdom`, sans usage, sont retirées **dans la PR qui introduit Cypress** |
+| Dépendances de test | `@testing-library/*` et `jsdom`, sans usage, sont retirées **dans la PR qui introduit Cypress**. `fake-indexeddb` (développement) sert aux tests du stockage IndexedDB |
 | Porte-avions | Non activable : il n'a pas d'état d'activation, il se pilote par ordres de navigation (à venir) |
 | Cases occupées | Infranchissables en déplacement, pas seulement interdites comme destination |
 | Journal | Minimal et provisoire : déplacement et ouverture d'un cycle (D-11 ouvert) |
@@ -82,6 +83,8 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Réexport de `accept` / `reject` | Refusé : ils restent dans `engine/core/results.ts` |
 | Départ du camp allié | Heuristique provisoire près du bord ouest ; **à valider** avec les zones de départ du scénario |
 | Navigation du porte-avions | Arbitrée (AB-05 à AB-07) : ordres et quota validés tels que rédigés (ordre par défaut Poursuivre vers B, Stopper persistant) ; route bloquée = arrêt avant la case occupée, sans contournement ; dernière occasion d'ordre = pause du cycle et bouton « Clôturer le cycle » (nom proche de « Terminer le cycle » de la fin anticipée : à vérifier à l'implémentation de l'interface) |
+| Sauvegardes (AB-08) | Un seul emplacement, reprise proposée au démarrage, état et journal, version incompatible refusée ; export désactivé pendant une activation, import depuis la préparation seulement ; mission gagnée sauvegardée, effacée au retour à la préparation (détail : `PERSISTANCE.md`) |
+| Route du porte-avions bloquée (AB-09) | Comportement voulu : le porte-avions s'arrête devant un navire et le joueur modifie la route ; aucun indicateur ni contournement |
 | Interface de navigation | Ordres dans la fiche du porte-avions, confirmation par une barre sur la carte, un seul brouillon à la fois, « Terminer le cycle » désactivé pendant la dernière occasion d'ordre, bandeau de victoire avec « Nouvelle partie » sans confirmation, commandes désactivées ensuite |
 | Périmètre de la navigation | Navigation et victoire à l'arrivée en B (résultat binaire, commandes ensuite refusées), avec un simple bandeau de résultat ; ni bilan ni débriefing (D-12 ouvert) |
 | Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
@@ -105,13 +108,14 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #18 | Refonte 4/4 : style Google TypeScript (`function` au premier niveau), règle ESLint | Fusionnée |
 | #19 | Arbitrages de la navigation du porte-avions (documents seuls) | Fusionnée |
 | #20 | Jalon 4, PR A : moteur de navigation du porte-avions (ordres, quota, déplacement automatique, victoire à l'arrivée) | Fusionnée |
-| (suivante) | Jalon 4, PR B : interface de navigation du porte-avions (ordres, point de passage sur la carte, dernière occasion, bandeau de victoire) | Ouverte |
+| #21 | Jalon 4, PR B : interface de navigation du porte-avions (ordres, point de passage sur la carte, dernière occasion, bandeau de victoire) | Fusionnée |
+| (suivante) | Jalon 4, PR C1 : module de persistance (format versionné, validation, stockage IndexedDB), sans interface ni store | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
 Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md) donnent l'ordre. Sans dépendre de règles ouvertes :
 
-- **Persistance IndexedDB** et export JSON (AT-02).
+- **Persistance IndexedDB** et export JSON (AT-02) : PR C1 (module) puis C2 (branchement et interface).
 - **Refonte du code en quatre PR, l'une après l'autre, chacune depuis `main` à jour** (demandée en revue de la PR #14) :
   1. convention de nommage et d'import (PR #15, fusionnée) ;
   2. réagencement des features (PR #16, fusionnée) : chaque feature a `components/`, `services/` (hooks et logique pure) et un `index.ts` des exports publics ; déplacements avec `git mv` ; règle ESLint interdisant les imports profonds entre features ;
@@ -119,7 +123,7 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
   4. (PR #18, fusionnée) style Google TypeScript : `function` au premier niveau, flèches pour les rappels ; règle ESLint, les gestionnaires typés `Handler<'X'>` restant des constantes annotées.
 - **Tests d'interface avec Cypress**, entre les jalons 5 et 6 ; les dépendances `@testing-library/*` et `jsdom` sont retirées dans cette PR.
 
-**Navigation du porte-avions** : faite (PR A moteur, PR B interface). Reste le jalon 4 : la persistance (PR C, IndexedDB et export JSON, avec l'arbitrage de G-01.7 sur le comportement des sauvegardes). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
+**Navigation du porte-avions** : faite (PR A moteur, PR B interface). **Persistance (jalon 4, PR C)** : en deux PR. C1 : module `persistence/` (fait, sans interface ; revu pour séparer format, contrat de stockage et IndexedDB). C2 : store, sauvegarde automatique, reprise au démarrage, export et import, interface (à faire). Le comportement est arbitré (AB-08, voir `PERSISTANCE.md`). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
 
 Restent aussi bloquants (voir les registres `DECISIONS.md`) : composition et zones de départ ennemies, génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
 

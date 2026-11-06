@@ -12,6 +12,19 @@ const features = readdirSync('src/features', { withFileTypes: true })
 const deepImportMessage = (name) =>
   `Importer la feature « ${name} » uniquement via son index.ts (pas d'import profond).`;
 
+const persistenceMessage =
+  'Seul le store utilise la persistance : passer par une action du store (STRUCTURE.md).';
+
+const featureIndexOnlyPattern = {
+  group: ['**/features/*/**'],
+  message: "Importer une feature uniquement via son index.ts (pas d'import profond).",
+};
+
+const persistencePattern = {
+  group: ['**/persistence', '**/persistence/**'],
+  message: persistenceMessage,
+};
+
 const labelEngineImportRule = {
   selector: 'ImportDeclaration[source.value=/\\/shared\\/label-engine$/] > ImportSpecifier',
   message:
@@ -71,33 +84,62 @@ export default tseslint.config(
     },
   },
   {
-    // Hors features (app, store…) : seul l'index.ts d'une feature est importable.
+    // App, shared… : seul l'index.ts d'une feature est importable, et la persistance est réservée
+    // au store (le démarrage appelle une action du store, il n'importe pas `persistence`).
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/features/**', 'src/engine/**'],
+    ignores: ['src/features/**', 'src/engine/**', 'src/store/**', 'src/persistence/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [featureIndexOnlyPattern, persistencePattern] },
+      ],
+    },
+  },
+  {
+    // Le store est la seule couche qui utilise la persistance (features → store → persistence).
+    files: ['src/store/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [featureIndexOnlyPattern] }] },
+  },
+  {
+    // La persistance ne dépend que du moteur : jamais du store, des features ni de l'app, ce qui
+    // garde le sens unique store → persistence et exclut tout cycle.
+    files: ['src/persistence/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['**/features/*/**'],
-              message: "Importer une feature uniquement via son index.ts (pas d'import profond).",
+              group: [
+                '**/store',
+                '**/store/**',
+                '**/features',
+                '**/features/**',
+                '**/app',
+                '**/app/**',
+              ],
+              message:
+                'La persistance ne dépend que du moteur : ni store, ni features, ni app (STRUCTURE.md).',
             },
           ],
         },
       ],
     },
   },
-  // Dans chaque feature : les autres features ne s'importent que par leur index.ts.
+  // Dans chaque feature : les autres features ne s'importent que par leur index.ts, et la
+  // persistance est réservée au store (features → store → persistence, STRUCTURE.md).
   ...features.map((feature) => ({
     files: [`src/features/${feature}/**/*.{ts,tsx}`],
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          patterns: features
-            .filter((other) => other !== feature)
-            .map((other) => ({ group: [`**/${other}/**`], message: deepImportMessage(other) })),
+          patterns: [
+            ...features
+              .filter((other) => other !== feature)
+              .map((other) => ({ group: [`**/${other}/**`], message: deepImportMessage(other) })),
+            persistencePattern,
+          ],
         },
       ],
     },
