@@ -1,19 +1,8 @@
-import * as engine from '../../../engine';
 import type { MoveDraft } from '../../commands';
-import { HEX_POINTS, hexCenter } from '../services/hexGeometry';
+import { HEX_POINTS, hexCenter, pathPoints } from '../services/hexGeometry';
 
 const ACCESSIBLE = '#7cfc9a';
 const REFUSED = '#ff5252';
-
-/** Liste de points « x,y » d'un tracé passant par le centre de chaque hexagone. */
-function pointsOf(path: readonly engine.Hex[]): string {
-  return path
-    .map((hex) => {
-      const { x, y } = hexCenter(hex);
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(' ');
-}
 
 /** Tracé en pointillés : vert si l'itinéraire est valide, rouge s'il est bloqué ou interdit. */
 function PathLine({ move }: { move: MoveDraft }) {
@@ -25,7 +14,7 @@ function PathLine({ move }: { move: MoveDraft }) {
   return (
     <g pointerEvents="none">
       <polyline
-        points={pointsOf(path)}
+        points={pathPoints(path)}
         fill="none"
         stroke={color}
         strokeWidth="1.4"

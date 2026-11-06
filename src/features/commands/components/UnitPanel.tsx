@@ -2,10 +2,10 @@ import { Box, Button, IconButton, Paper, Stack, Typography } from '@mui/material
 import CloseIcon from '@mui/icons-material/Close';
 import * as engine from '../../../engine';
 import * as assets from '../../../shared/assets';
-import { useMoveDraftStore } from '../../../store/useMoveDraftStore';
+import * as labelEngine from '../../../shared/label-engine';
 import { useSelectionStore } from '../../../store/useSelectionStore';
-import { ActivationBadge, HpBar, StockLine } from '../../fleet';
-import { endActivation } from '../services/commandActions';
+import { ActivationBadge, CarrierPanel, HpBar, StockLine } from '../../fleet';
+import { endActivation, startMoveDraft } from '../services/commandActions';
 
 /** Commandes de la maquette encore sans règle d'exécution (actions spéciales : D-04, D-05). */
 const UNAVAILABLE_COMMANDS = [
@@ -19,6 +19,7 @@ const UNAVAILABLE_COMMANDS = [
 
 /** Motif d'indisponibilité à afficher sous les boutons (SF-03.9), ou `null`. */
 function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): string | null {
+  if (mission.outcome) return labelEngine.commandRefusalMessages.MISSION_ENDED;
   const blocker = engine.moveBlocker(mission.units, unit);
   if (!blocker) return null;
   const prefix = blocker === 'ALREADY_MOVED' ? 'Déplacement indisponible' : 'Ordres indisponibles';
@@ -26,15 +27,15 @@ function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): 
 }
 
 function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
-  const startDraft = useMoveDraftStore((s) => s.startDraft);
   const reason = unavailabilityReason(mission, unit);
+  const ended = mission.outcome !== null;
   return (
     <>
       <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: '1fr 1fr' }}>
         <Button
           variant="outlined"
-          disabled={engine.moveBlocker(mission.units, unit) !== null}
-          onClick={() => startDraft(unit.id)}
+          disabled={ended || engine.moveBlocker(mission.units, unit) !== null}
+          onClick={() => startMoveDraft(unit.id)}
         >
           Déplacement
         </Button>
@@ -45,7 +46,7 @@ function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit:
         ))}
         <Button
           variant="outlined"
-          disabled={engine.orderBlocker(mission.units, unit) !== null}
+          disabled={ended || engine.orderBlocker(mission.units, unit) !== null}
           onClick={() => endActivation(unit.id)}
         >
           Terminer l’activation
@@ -108,10 +109,16 @@ export function UnitPanel({ mission }: { mission: engine.MissionState }) {
             Déplacement maximal : {unit.movement} hexagone{unit.movement > 1 ? 's' : ''} — position
             ({unit.position.col}, {unit.position.row})
           </Typography>
-          <CommandButtons mission={mission} unit={unit} />
-          <Typography variant="caption" color="text.secondary">
-            Les actions spéciales seront activées avec leurs règles d’exécution.
-          </Typography>
+          {unit.shipClass === 'carrier' ? (
+            <CarrierPanel mission={mission} />
+          ) : (
+            <>
+              <CommandButtons mission={mission} unit={unit} />
+              <Typography variant="caption" color="text.secondary">
+                Les actions spéciales seront activées avec leurs règles d’exécution.
+              </Typography>
+            </>
+          )}
         </Stack>
       ) : (
         <Typography color="text.secondary">

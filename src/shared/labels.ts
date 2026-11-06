@@ -56,6 +56,49 @@ export const carrierOrderLabel: Record<engine.CarrierOrderKind, string> = {
   [engine.CarrierOrderKind.REROUTE]: 'Modifier l’itinéraire',
 };
 
+/** Ce que fait le porte-avions en fin de cycle, affiché sur sa fiche (SF-03.15). */
+export const carrierModeLabel: Record<engine.CarrierMode, string> = {
+  [engine.CarrierOrderKind.CONTINUE]: 'Poursuit sa route vers B',
+  [engine.CarrierOrderKind.STOP]: 'À l’arrêt',
+};
+
+/** Textes de l'interface de navigation du porte-avions (SF-03 §5). */
+export const carrierText = {
+  title: 'Navigation',
+  quotaFree: 'Un ordre peut être donné ce cycle.',
+  quotaUsed: 'Ordre de navigation déjà donné ce cycle.',
+  chooseWaypoint: 'Choisissez un point de passage sur la carte.',
+  confirm: 'Confirmer',
+  cancel: 'Annuler',
+  finalOrder:
+    'Toutes les activations sont terminées : donnez un ordre de navigation du porte-avions ou clôturez le cycle.',
+  giveOrder: 'Donner un ordre',
+  closeCycle: 'Clôturer le cycle',
+  endCycleDuringFinalOrder:
+    'Utilisez « Clôturer le cycle » : plus aucune activation n’est possible.',
+  victoryTitle: 'Mission réussie',
+  victoryText: 'Le porte-avions est arrivé à destination.',
+  newGame: 'Nouvelle partie',
+};
+
+/** Point de passage actif du porte-avions, ou mention de son absence. */
+export function carrierWaypointLabel(waypoint: engine.Hex | null): string {
+  return waypoint
+    ? `Point de passage : (${waypoint.col}, ${waypoint.row})`
+    : 'Aucun point de passage';
+}
+
+/** Consigne de la barre de confirmation d'un ordre de navigation en préparation. */
+export function carrierDraftLabel(
+  kind: engine.CarrierOrderKind,
+  waypoint: engine.Hex | null,
+  refusal: engine.WaypointRefusal | null,
+): string {
+  if (refusal) return engine.WAYPOINT_REFUSAL_MESSAGES[refusal];
+  if (kind === engine.CarrierOrderKind.REROUTE && !waypoint) return carrierText.chooseWaypoint;
+  return `Ordre « ${carrierOrderLabel[kind]} » : confirmez pour l’exécuter.`;
+}
+
 type CarrierEvent = Extract<
   engine.GameEvent,
   { type: 'CARRIER_ORDERED' | 'CARRIER_MOVED' | 'MISSION_WON' }
@@ -69,7 +112,7 @@ export function carrierEventLabel(event: CarrierEvent): string {
     case 'CARRIER_MOVED':
       return `Porte-avions : navigation de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
     case 'MISSION_WON':
-      return 'Mission réussie : le porte-avions est arrivé en B';
+      return 'Mission réussie : le porte-avions est arrivé à destination';
   }
 }
 

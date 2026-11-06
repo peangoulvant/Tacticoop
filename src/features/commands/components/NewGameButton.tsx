@@ -7,7 +7,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { abandonMission } from '../services/commandActions';
+import { closeMission } from '../services/commandActions';
 
 /** Retour à la préparation d'une nouvelle partie, après confirmation de l'abandon. */
 export function NewGameButton() {
@@ -27,7 +27,7 @@ export function NewGameButton() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Continuer la mission</Button>
-          <Button color="error" onClick={abandonMission}>
+          <Button color="error" onClick={closeMission}>
             Abandonner
           </Button>
         </DialogActions>

@@ -254,6 +254,15 @@ describe("Modifier l'itinéraire", () => {
     expect(route.at(-1)).toEqual({ col: 8, row: 4 });
   });
 
+  it("prévisualise un point de passage sans l'enregistrer, ou l'ignore avec null", () => {
+    const state = accepted(escort(), reroute(4, 2)).state;
+    const direct = plannedRoute(state, defaultConfig, null)!;
+    expect(direct).toEqual(Array.from({ length: 9 }, (_, col) => ({ col, row: 4 })));
+    const preview = plannedRoute(escort(), defaultConfig, { col: 4, row: 2 })!;
+    expect(preview).toContainEqual({ col: 4, row: 2 });
+    expect(escort().carrierNavigation?.waypoint).toBeNull();
+  });
+
   it('prévoit le chemin le plus court vers B sans point de passage', () => {
     expect(plannedRoute(escort(), defaultConfig)).toEqual(
       Array.from({ length: 9 }, (_, col) => ({ col, row: 4 })),

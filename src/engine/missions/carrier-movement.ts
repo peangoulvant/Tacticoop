@@ -6,20 +6,23 @@ import type { NavalCategory } from '../map/terrain';
 import type { Unit } from '../units/unit';
 import { CarrierOrderKind, carrierOf, type CarrierNavigation } from './carrier-orders';
 
-/** Enchaîne les plus courts chemins de `from` à chaque étape ; `null` si un tronçon est impossible. */
+/**
+ * Trajet de `from` jusqu'à la dernière étape, en passant par chaque étape (`checkpoints`) dans
+ * l'ordre : un plus court chemin par tronçon. `null` si un tronçon n'a aucun chemin.
+ */
 function routeThrough(
   map: GameMap,
   category: NavalCategory,
   from: Hex,
-  stops: readonly Hex[],
+  checkpoints: readonly Hex[],
 ): Hex[] | null {
   const route: Hex[] = [from];
-  let at = from;
-  for (const stop of stops) {
-    const leg = shortestPath(map, at, stop, category);
+  let current = from;
+  for (const checkpoint of checkpoints) {
+    const leg = shortestPath(map, current, checkpoint, category);
     if (!leg) return null;
     route.push(...leg.slice(1));
-    at = stop;
+    current = checkpoint;
   }
   return route;
 }
@@ -29,14 +32,22 @@ function routeThrough(
  * (SF-02 §5, SF-03.15). Chemin le plus court sur le terrain seul, recalculé depuis la position
  * courante : les autres unités ne le modifient jamais, elles ne font que l'interrompre
  * (G-03.2.13). La position courante est le premier hexagone. `null` s'il n'y a pas de porte-avions
- * ou de point B, ou si un tronçon n'a aucun chemin.
+ * ou de point B, ou si un tronçon n'a aucun chemin. `waypoint` permet de prévisualiser un point de
+ * passage à la place de celui de l'état (`null` : aucun), sans rien enregistrer.
  */
-export function plannedRoute(mission: MissionState, config: GameConfig): Hex[] | null {
+export function plannedRoute(
+  mission: MissionState,
+  config: GameConfig,
+  waypoint?: Hex | null,
+): Hex[] | null {
   const carrier = carrierOf(mission.units);
   if (!carrier || !mission.goal) return null;
-  const stops = [mission.carrierNavigation?.waypoint, mission.goal].filter((hex) => hex != null);
+  // Point de passage pris en compte : celui demandé pour l'aperçu, sinon celui de l'état.
+  const waypointInUse = waypoint === undefined ? mission.carrierNavigation?.waypoint : waypoint;
+  // Étapes obligatoires, dans l'ordre : le point de passage éventuel, puis l'arrivée en B.
+  const checkpoints = [waypointInUse, mission.goal].filter((hex) => hex != null);
   const category = config.ships[carrier.shipClass].category;
-  return routeThrough(mission.map, category, carrier.position, stops);
+  return routeThrough(mission.map, category, carrier.position, checkpoints);
 }
 
 /** Hexagones que le porte-avions franchit : au plus `movement`, arrêt avant une case occupée. */

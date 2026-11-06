@@ -2,7 +2,7 @@
 
 Document de passation entre fils de discussion avec Claude Code. Il garde le **contexte de travail** (décisions, préférences, pièges, état d'avancement) que le code et les spécifications ne portent pas. Il ne duplique ni les règles de jeu, ni l'architecture, ni la matrice de traçabilité.
 
-> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #19 fusionnée (arbitrages de la navigation), avec la PR A du jalon 4 (moteur de navigation du porte-avions) en attente de fusion.
+> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #20 fusionnée (moteur de navigation), avec la PR B du jalon 4 (interface de navigation du porte-avions) en attente de fusion.
 
 ## Lecture au démarrage d'un nouveau fil
 
@@ -49,6 +49,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - **Style des fonctions** (inspiré du *Google TypeScript Style Guide*) : déclarations `function` au niveau des modules, fonctions fléchées pour les expressions et les rappels (`map`, `filter`…). ESLint l'impose au premier niveau des modules (`no-restricted-syntax`) ; les fonctions imbriquées restent libres (un gestionnaire local peut être une flèche), et une constante annotée d'un type de fonction (`Handler<'X'>`) reste permise.
 - **Commentaires et noms** : chaque fonction non triviale a un commentaire qui dit ce qu'elle fait et pourquoi ; les noms sont explicites (`updateUnitInMission`, pas `withUnit`). Le propriétaire a relevé des commentaires confus et des fonctions sans commentaire.
 - **Navigation du porte-avions** : fichiers `missions/carrier-orders.ts` (ordres, quota, validation) et `missions/carrier-movement.ts` (trajet, déplacement automatique), nommés pour ne pas être confondus avec `units/movement.ts`. Les types d'ordre passent par l'énumération `CarrierOrderKind` (`continue`, `stop`, `reroute`), jamais par des chaînes en dur ; l'état s'appelle `MissionState.carrierNavigation`.
+- **Interface de navigation** : tous les textes de l'interface du porte-avions sont dans `shared/labels.ts` (`carrierText`, `carrierDraftLabel()`…). Les fichiers du porte-avions vivent dans `features/fleet` (le porte-avions fait partie de la flotte). Un seul brouillon à la fois (déplacement ou ordre de navigation) : `store/dispatchAndCloseDrafts.ts` est partagé par `commands` et `fleet`, qui ne s'importent pas l'une l'autre. Les barres flottantes de la carte passent par `shared/MapBar.tsx`. `closeMission()` termine la mission, abandonnée ou réussie.
 - Pas de fonction intermédiaire inutile (un simple enrobage d'une autre fonction) et pas de dépendance circulaire entre modules.
 - Éviter l'excès de découpage, mais respecter la complexité : un composant long se scinde en sous-composants ou en hooks.
 
@@ -81,12 +82,13 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Réexport de `accept` / `reject` | Refusé : ils restent dans `engine/core/results.ts` |
 | Départ du camp allié | Heuristique provisoire près du bord ouest ; **à valider** avec les zones de départ du scénario |
 | Navigation du porte-avions | Arbitrée (AB-05 à AB-07) : ordres et quota validés tels que rédigés (ordre par défaut Poursuivre vers B, Stopper persistant) ; route bloquée = arrêt avant la case occupée, sans contournement ; dernière occasion d'ordre = pause du cycle et bouton « Clôturer le cycle » (nom proche de « Terminer le cycle » de la fin anticipée : à vérifier à l'implémentation de l'interface) |
+| Interface de navigation | Ordres dans la fiche du porte-avions, confirmation par une barre sur la carte, un seul brouillon à la fois, « Terminer le cycle » désactivé pendant la dernière occasion d'ordre, bandeau de victoire avec « Nouvelle partie » sans confirmation, commandes désactivées ensuite |
 | Périmètre de la navigation | Navigation et victoire à l'arrivée en B (résultat binaire, commandes ensuite refusées), avec un simple bandeau de résultat ; ni bilan ni débriefing (D-12 ouvert) |
 | Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
 
 ## État d'avancement
 
-Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. Navigation du porte-avions dans le **moteur seulement** (pas d'interface). **Rien** côté ennemis, détection, combat, IA, actions spéciales, écran de fin de mission, persistance.
+Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. Navigation du porte-avions et victoire à l'arrivée en B, moteur et interface. **Rien** côté ennemis, détection, combat, IA, actions spéciales, écran de fin de mission, persistance.
 
 | PR | Contenu | État |
 |---|---|---|
@@ -102,7 +104,8 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #17 | Refonte 3/4 : textes du moteur dans `shared/label-engine.ts` | Fusionnée |
 | #18 | Refonte 4/4 : style Google TypeScript (`function` au premier niveau), règle ESLint | Fusionnée |
 | #19 | Arbitrages de la navigation du porte-avions (documents seuls) | Fusionnée |
-| (suivante) | Jalon 4, PR A : moteur de navigation du porte-avions (ordres, quota, déplacement automatique, victoire à l'arrivée) | Ouverte |
+| #20 | Jalon 4, PR A : moteur de navigation du porte-avions (ordres, quota, déplacement automatique, victoire à l'arrivée) | Fusionnée |
+| (suivante) | Jalon 4, PR B : interface de navigation du porte-avions (ordres, point de passage sur la carte, dernière occasion, bandeau de victoire) | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
@@ -116,7 +119,7 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
   4. (PR #18, fusionnée) style Google TypeScript : `function` au premier niveau, flèches pour les rappels ; règle ESLint, les gestionnaires typés `Handler<'X'>` restant des constantes annotées.
 - **Tests d'interface avec Cypress**, entre les jalons 5 et 6 ; les dépendances `@testing-library/*` et `jsdom` sont retirées dans cette PR.
 
-**Navigation du porte-avions** : moteur fait (PR A), interface à faire (PR B : trois ordres, choix du point de passage sur la carte, bouton « Clôturer le cycle », bandeau de résultat). Ensuite la persistance (PR C). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
+**Navigation du porte-avions** : faite (PR A moteur, PR B interface). Reste le jalon 4 : la persistance (PR C, IndexedDB et export JSON, avec l'arbitrage de G-01.7 sur le comportement des sauvegardes). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
 
 Restent aussi bloquants (voir les registres `DECISIONS.md`) : composition et zones de départ ennemies, génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
 
