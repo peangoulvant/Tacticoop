@@ -71,13 +71,13 @@ export const carrierText = {
   confirm: 'Confirmer',
   cancel: 'Annuler',
   finalOrder:
-    'Toutes les activations sont terminées : donnez un ordre de navigation ou clôturez le cycle.',
+    'Toutes les activations sont terminées : donnez un ordre de navigation du porte-avions ou clôturez le cycle.',
   giveOrder: 'Donner un ordre',
   closeCycle: 'Clôturer le cycle',
   endCycleDuringFinalOrder:
     'Utilisez « Clôturer le cycle » : plus aucune activation n’est possible.',
   victoryTitle: 'Mission réussie',
-  victoryText: 'Le porte-avions est arrivé en B.',
+  victoryText: 'Le porte-avions est arrivé à destination.',
   newGame: 'Nouvelle partie',
 };
 
