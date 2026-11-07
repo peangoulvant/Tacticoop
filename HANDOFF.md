@@ -141,6 +141,8 @@ Restent aussi bloquants (voir les registres `DECISIONS.md`) : composition et zon
 
 ## Commandes
 
+La CI GitHub Actions (`.github/workflows/ci.yml`) rejoue lint, format:check, tests et build sur chaque PR vers `main`.
+
 ```bash
 npm install
 npm run dev

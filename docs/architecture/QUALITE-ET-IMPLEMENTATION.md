@@ -46,6 +46,10 @@ Un développeur doit savoir **d'où vient** une fonction ou un type en lisant un
 - **Une feature n'importe une autre feature que par son `index.ts`**, jamais par un chemin profond (`../../fleet`, pas `../../fleet/components/UnitStats`). Il en va de même pour `app/` et `store/`. ESLint l'impose (`no-restricted-imports`).
 - Dans une feature, les fichiers s'importent par chemin relatif (`../services/…`).
 
+## Intégration continue
+
+Le workflow `.github/workflows/ci.yml` s'exécute à chaque Pull Request vers `main` (Node.js 22) : `npm ci`, `npm run lint`, `npm run format:check`, `npm test`, `npm run build`. Une PR n'est mergeable qu'avec ces contrôles au vert ; ils sont identiques à ceux à lancer en local. Aucun autre outil ni service n'est utilisé.
+
 ## Tests
 
 Priorité aux tests unitaires du moteur : commandes et erreurs, calculs de déplacement, contacts et observations filtrées, combat, transitions et conditions terminales selon les règles fonctionnelles.
