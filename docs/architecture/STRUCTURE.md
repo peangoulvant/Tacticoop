@@ -23,7 +23,7 @@ src/
     commands/            # Interface des commandes
     logbook/             # Journal
     debriefing/          # Bilan
-                         # Chaque feature : components/, services/ (hooks et logique pure), index.ts
+                         # Chaque feature : components/, services/ (hooks et logique pure, tests dans tests/), index.ts
   store/                 # Zustand et coordination de l'application
   persistence/           # IndexedDB, format et validation des sauvegardes JSON
   shared/                # Utilitaires réellement communs
@@ -35,7 +35,7 @@ src/
 - `features/` : composants React, présentation et interactions ; aucune règle métier dupliquée. Chaque feature range ses composants dans `components/`, ses hooks et sa logique pure dans `services/`, et exporte ce qui est public par son `index.ts` (dossiers créés au besoin).
 - `store/` : état applicatif, sélection et transmission des commandes ; ne réimplémente pas le moteur.
 - `persistence/` : sérialisation, validation et stockage ; ne décide d'aucune règle de jeu.
-- `shared/` : éléments transversaux uniquement ; éviter d'en faire un dossier fourre-tout. Toutes les couches peuvent l'utiliser, le moteur compris, pour récupérer des éléments sans dépendance. `shared/label-engine.ts` rassemble les textes que le moteur présente au joueur (refus, motifs de blocage) : objets simples sans import du moteur, dont le moteur vérifie les clés avec `satisfies`. `shared/labels.ts` et `shared/assets.ts` dépendent du moteur : celui-ci ne les importe pas.
+- `shared/` : éléments transversaux uniquement ; éviter d'en faire un dossier fourre-tout. Toutes les couches peuvent l'utiliser, le moteur compris, pour récupérer des éléments sans dépendance. `shared/engine.label.ts` rassemble les textes que le moteur présente au joueur (refus, motifs de blocage) : objets simples sans import du moteur, dont le moteur vérifie les clés avec `satisfies`. `shared/ui.label.ts` et `shared/assets.config.ts` dépendent du moteur : celui-ci ne les importe pas.
 
 Dépendances usuelles : `features → store → engine` et `store → persistence`. **Seul `store/` importe `persistence`** (règle ESLint : ni les features, ni `app/`, ni `shared/`) ; le démarrage de l'application appelle une action du store. `persistence/` ne dépend que du moteur (règle ESLint : ni store, ni features, ni app), ce qui garde le sens unique et exclut tout cycle. Les modules du moteur se composent sans dépendances circulaires. Éviter les abstractions de type microservices, plugin system ou backend fictif.
 
@@ -45,5 +45,5 @@ Les nouveaux noms de types et fonctions métier utilisent **`Friend`** (camp ami
 
 ## Conventions techniques
 
-**Coordonnées hexagonales.** Hexagones « pointy-top » (pointe en haut), coordonnées de type *offset* `(col, row)` avec **décalage des lignes impaires** d'une demi-largeur vers la droite ; l'origine `(0,0)` est en haut à gauche. Les distances, voisins et lignes sont calculés en coordonnées axiales, converties en interne (`engine/map/hex.ts`). Les coordonnées présentées au joueur et dans le journal sont les coordonnées *offset*. Ce choix est technique et n'ajoute aucune règle de jeu.
+**Coordonnées hexagonales.** Hexagones « pointy-top » (pointe en haut), coordonnées de type *offset* `(col, row)` avec **décalage des lignes impaires** d'une demi-largeur vers la droite ; l'origine `(0,0)` est en haut à gauche. Les distances, voisins et lignes sont calculés en coordonnées axiales, converties en interne (`engine/map/hex.service.ts`). Les coordonnées présentées au joueur et dans le journal sont les coordonnées *offset*. Ce choix est technique et n'ajoute aucune règle de jeu.
 

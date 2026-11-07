@@ -1,5 +1,5 @@
 /** API publique du moteur : le reste de l'application n'importe que depuis ce module. */
-export { executeCommand } from './core/executeCommand';
+export { executeCommand } from './core/execute-command.service';
 export type {
   CommandResult,
   GameCommand,
@@ -10,9 +10,9 @@ export type {
   GameState,
   MissionState,
   PreparationState,
-} from './core/types';
-export { defaultConfig, PURCHASABLE_CLASSES } from './config/gameConfig';
-export type { GameConfig, PurchasableShipClass, ShipClass, ShipSpec } from './config/gameConfig';
+} from './core/game.types';
+export { defaultConfig, PURCHASABLE_CLASSES } from './config/game.config';
+export type { GameConfig, PurchasableShipClass, ShipClass, ShipSpec } from './config/game.config';
 export {
   CONSTRAINTS,
   DIFFICULTIES,
@@ -22,7 +22,7 @@ export {
   initialSetup,
   launchBlockers,
   shipCount,
-} from './missions/setup';
+} from './missions/setup.service';
 export type {
   Budget,
   Constraint,
@@ -30,27 +30,31 @@ export type {
   LaunchBlocker,
   MissionKind,
   MissionSetup,
-} from './missions/setup';
-export type { GameMap } from './map/gameMap';
-export { terrainAt, indexOf } from './map/gameMap';
-export type { Hex } from './map/hex';
-export { hexDistance, sameHex } from './map/hex';
-export { TERRAINS } from './map/terrain';
-export type { Terrain } from './map/terrain';
-export { ACTIVATION_STATUSES, SIDES } from './units/unit';
-export type { ActivationStatus, Side, Unit } from './units/unit';
-export { MOVE_REFUSAL_MESSAGES, planMove, reachableHexes } from './units/movement';
-export { BLOCKER_MESSAGES, moveBlocker, orderBlocker } from './missions/activation';
-export type { MoveBlocker, OrderBlocker } from './missions/activation';
-export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle';
-export { plannedRoute } from './missions/carrier-movement';
-export { WAYPOINT_REFUSAL_MESSAGES, carrierOf, waypointRefusal } from './missions/carrier-orders';
-export { CarrierOrderKind } from './missions/carrier-orders';
+} from './missions/setup.service';
+export type { GameMap } from './map/game-map.service';
+export { terrainAt, indexOf } from './map/game-map.service';
+export type { Hex } from './map/hex.service';
+export { hexDistance, sameHex } from './map/hex.service';
+export { TERRAINS } from './map/terrain.model';
+export type { Terrain } from './map/terrain.model';
+export { ACTIVATION_STATUSES, SIDES } from './units/unit.model';
+export type { ActivationStatus, Side, Unit } from './units/unit.model';
+export { MOVE_REFUSAL_MESSAGES, planMove, reachableHexes } from './units/unit-movement.service';
+export { BLOCKER_MESSAGES, moveBlocker, orderBlocker } from './missions/activation.service';
+export type { MoveBlocker, OrderBlocker } from './missions/activation.service';
+export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle.service';
+export { plannedRoute } from './missions/carrier-movement.service';
+export {
+  WAYPOINT_REFUSAL_MESSAGES,
+  carrierOf,
+  waypointRefusal,
+} from './missions/carrier-orders.service';
+export { CarrierOrderKind } from './missions/carrier-orders.service';
 export type {
   CarrierMode,
   CarrierNavigation,
   CarrierOrder,
   MissionOutcome,
   WaypointRefusal,
-} from './missions/carrier-orders';
-export type { MovePlan, MoveRefusal } from './units/movement';
+} from './missions/carrier-orders.service';
+export type { MovePlan, MoveRefusal } from './units/unit-movement.service';

@@ -40,10 +40,10 @@ Le module sépare trois responsabilités, une par dossier ou fichier, derrière 
 
 | Responsabilité | Fichier | Rôle |
 |---|---|---|
-| Format et validation | `format/saveFormat.ts` | version, codes d'erreur, `serializeSave()`, `parseSave()` |
-| | `format/validation.ts`, `format/guards.ts` | contrôles de l'état et du journal (internes au dossier) |
-| Contrat de stockage | `storage/saveStorage.ts` | interface `SaveStorage` (lire, écrire, effacer), sans implémentation |
-| Stockage IndexedDB | `storage/indexedDbStorage.ts` | implémentation native, confirmée à la fin de la transaction ; la connexion est rouverte si le navigateur la ferme |
+| Format et validation | `format/save-format.service.ts` | version, codes d'erreur, `serializeSave()`, `parseSave()` |
+| | `format/save.validator.ts`, `format/guards.validator.ts` | contrôles de l'état et du journal (internes au dossier) |
+| Contrat de stockage | `storage/save-storage.types.ts` | interface `SaveStorage` (lire, écrire, effacer), sans implémentation |
+| Stockage IndexedDB | `storage/indexed-db-storage.service.ts` | implémentation native, confirmée à la fin de la transaction ; la connexion est rouverte si le navigateur la ferme |
 
 Le stockage ne connaît ni le format ni le moteur : il reçoit et rend du JSON. Il n'existe **aucun repli en mémoire** : si IndexedDB est indisponible, l'écriture échoue et le store avertit le joueur (AB-08), au lieu de faire passer pour réussie une sauvegarde perdue au rechargement.
 
@@ -55,12 +55,12 @@ Tout est dans `src/store/` ; `useGameStore` ne dépend pas de la persistance.
 
 | Fichier | Rôle |
 |---|---|
-| `autoSave.ts` | `startAutoSave()` s'abonne à `useGameStore`. Écriture quand `state` change, que la mission est en cours et qu'**aucune activation n'est en cours** ; effacement au passage d'une mission à la préparation ; changements de `lastError` ou du seul journal ignorés. Les travaux passent par une file : un seul s'exécute, un seul attend, et le plus récent remplace celui qui attend. |
-| `useSaveStore.ts` | sauvegarde trouvée au démarrage (`found`), échec d'écriture (`writeFailed`), heure de la dernière écriture **confirmée** (`lastSavedAt`) |
-| `startPersistence.ts` | appelée par `app/main.tsx` : branche la sauvegarde automatique, lit et valide la sauvegarde. Une proposition n'est publiée que si le joueur n'a pas lancé de mission pendant la lecture |
-| `resumeSavedGame.ts` | action « Reprendre » : `useGameStore.restore()` (simple mutation), puis sélection et brouillons réinitialisés |
+| `auto-save.service.ts` | `startAutoSave()` s'abonne à `useGameStore`. Écriture quand `state` change, que la mission est en cours et qu'**aucune activation n'est en cours** ; effacement au passage d'une mission à la préparation ; changements de `lastError` ou du seul journal ignorés. Les travaux passent par une file : un seul s'exécute, un seul attend, et le plus récent remplace celui qui attend. |
+| `save.store.ts` | sauvegarde trouvée au démarrage (`found`), échec d'écriture (`writeFailed`), heure de la dernière écriture **confirmée** (`lastSavedAt`) |
+| `start-persistence.service.ts` | appelée par `app/main.tsx` : branche la sauvegarde automatique, lit et valide la sauvegarde. Une proposition n'est publiée que si le joueur n'a pas lancé de mission pendant la lecture |
+| `resume-saved-game.service.ts` | action « Reprendre » : `useGameStore.restore()` (simple mutation), puis sélection et brouillons réinitialisés |
 
-Interface : `ResumeBanner` (écran de préparation) et `SaveStatus` (barre du haut). Les textes sont dans `shared/labels.ts` (`saveText`).
+Interface : `ResumeBanner` (écran de préparation) et `SaveStatus` (barre du haut). Les textes sont dans `shared/ui.label.ts` (`saveText`).
 
 ## Évolution du format : point de vigilance
 

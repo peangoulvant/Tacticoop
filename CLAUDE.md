@@ -15,6 +15,10 @@ Tacticoop est un wargame naval tactique web destiné à la réflexion et au déb
 
 Les contrats du moteur, la persistance et les exigences de qualité sont documentés dans [docs/architecture/](docs/architecture/README.md). Les SF/GDD définissent les règles ; les questions fonctionnelles non résolues nécessitent une décision explicite.
 
+## Convention de nommage des fichiers
+
+Tout nouveau fichier `.ts` / `.tsx` suit **`nom-du-fichier.categorie.ts`** (kebab-case, suffixe `.model`, `.types`, `.service`, `.store`, `.component`, `.validator`, `.config`, `.label` ou `.test`), avec les exceptions et l'organisation des tests décrites dans [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md#nommage-des-fichiers). Cette convention s'applique à toutes les contributions futures.
+
 ## À la fin d'une intervention
 
 Fournir un récapitulatif des fichiers modifiés, des tests/lint/build réellement exécutés et des points bloquants. Ne pas annoncer de vérifications non effectuées.

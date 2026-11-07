@@ -7,6 +7,6 @@ export {
   serializeSave,
   type ParseResult,
   type SaveFile,
-} from './format/saveFormat';
-export { createIndexedDbStorage } from './storage/indexedDbStorage';
-export type { SaveStorage } from './storage/saveStorage';
+} from './format/save-format.service';
+export { createIndexedDbStorage } from './storage/indexed-db-storage.service';
+export type { SaveStorage } from './storage/save-storage.types';

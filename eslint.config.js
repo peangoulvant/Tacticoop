@@ -26,9 +26,9 @@ const persistencePattern = {
 };
 
 const labelEngineImportRule = {
-  selector: 'ImportDeclaration[source.value=/\\/shared\\/label-engine$/] > ImportSpecifier',
+  selector: 'ImportDeclaration[source.value=/\\/shared\\/engine\\.label$/] > ImportSpecifier',
   message:
-    "Importer les textes du moteur sous un nom : import * as labelEngine from '…/shared/label-engine'.",
+    "Importer les textes du moteur sous un nom : import * as labelEngine from '…/shared/engine.label'.",
 };
 
 // Style des fonctions (Google TypeScript Style Guide) : au premier niveau d'un module, une
@@ -70,15 +70,17 @@ export default tseslint.config(
           message: "Importer le moteur sous un nom : import * as engine from '…/engine'.",
         },
         {
-          selector: 'ImportDeclaration[source.value=/\\/shared\\/labels$/] > ImportSpecifier',
-          message: "Importer les libellés sous un nom : import * as labels from '…/shared/labels'.",
+          selector: 'ImportDeclaration[source.value=/\\/shared\\/ui\\.label$/] > ImportSpecifier',
+          message:
+            "Importer les libellés sous un nom : import * as labels from '…/shared/ui.label'.",
         },
         labelEngineImportRule,
         ...topLevelFunctionStyleRules,
         {
-          selector: 'ImportDeclaration[source.value=/\\/shared\\/assets$/] > ImportSpecifier',
+          selector:
+            'ImportDeclaration[source.value=/\\/shared\\/assets\\.config$/] > ImportSpecifier',
           message:
-            "Importer les ressources sous un nom : import * as assets from '…/shared/assets'.",
+            "Importer les ressources sous un nom : import * as assets from '…/shared/assets.config'.",
         },
       ],
     },
@@ -145,7 +147,7 @@ export default tseslint.config(
     },
   })),
   {
-    // Le moteur importe les textes de shared/label-engine sous un nom (comme les autres couches) ;
+    // Le moteur importe les textes de shared/engine.label sous un nom (comme les autres couches) ;
     // il suit aussi le style des fonctions.
     files: ['src/engine/**/*.ts'],
     rules: {
@@ -154,7 +156,7 @@ export default tseslint.config(
   },
   {
     // Le moteur reste indépendant de React, Zustand, MUI et IndexedDB (STRUCTURE.md). Dans
-    // shared/, il n'utilise que label-engine : labels et assets dépendent du moteur.
+    // shared/, il n'utilise que engine.label : ui.label et assets.config dépendent du moteur.
     files: ['src/engine/**/*.ts'],
     rules: {
       'no-restricted-imports': [
@@ -168,8 +170,8 @@ export default tseslint.config(
             '**/store/*',
             '**/features/*',
             '**/persistence/*',
-            '**/shared/labels',
-            '**/shared/assets',
+            '**/shared/ui.label',
+            '**/shared/assets.config',
           ],
         },
       ],
