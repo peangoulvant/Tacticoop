@@ -13,7 +13,7 @@ Le moteur métier reste indépendant de React, Zustand et de la persistance. Les
 | ID | Décision |
 |---|---|
 | AT-01 | Moteur fonctionnel à état explicite |
-| AT-02 | IndexedDB avec export/import JSON |
+| AT-02 | IndexedDB pour la sauvegarde automatique (export/import manuel JSON retiré de la V1, AB-10) |
 | AT-03 | `GameState` unique structuré par domaines, stores Zustand spécialisés |
 | AT-04 | Point d'entrée unique `executeCommand()` |
 
@@ -21,7 +21,7 @@ Le moteur métier reste indépendant de React, Zustand et de la persistance. Les
 
 - [STRUCTURE.md](STRUCTURE.md) — modules, arborescence et dépendances.
 - [MOTEUR-ET-ETAT.md](MOTEUR-ET-ETAT.md) — état métier, Zustand, commandes, observations et IA.
-- [PERSISTANCE.md](PERSISTANCE.md) — sauvegarde IndexedDB et export/import JSON.
+- [PERSISTANCE.md](PERSISTANCE.md) — sauvegarde automatique IndexedDB.
 - [QUALITE-ET-IMPLEMENTATION.md](QUALITE-ET-IMPLEMENTATION.md) — SOLID, conventions, tests et progression de développement.
 
 **Règle de conception :** documenter ici les responsabilités, interfaces et contraintes techniques, pas le déroulement détaillé des cycles, des combats ou des missions. Les décisions fonctionnelles non validées ne doivent pas être inventées pendant l'implémentation.

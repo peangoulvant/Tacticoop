@@ -50,7 +50,7 @@ Un développeur doit savoir **d'où vient** une fonction ou un type en lisant un
 
 Priorité aux tests unitaires du moteur : commandes et erreurs, calculs de déplacement, contacts et observations filtrées, combat, transitions et conditions terminales selon les règles fonctionnelles.
 
-Compléter par des tests de persistance (validation, export/import, reprise) et quelques tests d'intégration des parcours critiques. Les tirages aléatoires doivent être contrôlables dans les tests. Ne pas tester des règles non encore arbitrées.
+Compléter par des tests de persistance (validation, reprise) et quelques tests d'intégration des parcours critiques. Les tirages aléatoires doivent être contrôlables dans les tests. Ne pas tester des règles non encore arbitrées.
 
 ## Progression de développement
 
@@ -59,7 +59,7 @@ Compléter par des tests de persistance (validation, export/import, reprise) et 
 3. **Préparation et carte** : génération, affichage et premières interactions.
 4. **Première séquence jouable** : commandes, résolution et sauvegarde.
 5. **Fonctionnalités métier complémentaires** : détection, combat, IA, missions, selon les arbitrages disponibles.
-6. **Fiabilisation** : débriefing, cas limites, export/import et tests d'intégration.
+6. **Fiabilisation** : débriefing, cas limites et tests d'intégration.
 
 Chaque incrément doit être testable. Les décisions fonctionnelles ouvertes dans [DECISIONS.md](../functional-specs/DECISIONS.md) nécessitent un arbitrage avant l'implémentation concernée.
 

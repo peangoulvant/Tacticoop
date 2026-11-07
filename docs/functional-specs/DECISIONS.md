@@ -16,7 +16,7 @@ Ces décisions sont retenues pour la V1 ; les chiffres sont des **paramètres pr
 ## Arbitrages — novembre 2026
 
 - **Navigation du porte-avions (AB-05 à AB-07) :** ordres et quota (G-03.2.10, G-06.5.6) validés ; route bloquée (G-03.2.13) : arrêt avant la case occupée ; dernière occasion d'ordre : pause du cycle et bouton « Clôturer le cycle ». Les dégâts de vitesse et l'immobilisation définitive (G-03.2.11) restent à définir avec le combat. Détail dans le [registre Game Design](../game-design/DECISIONS.md).
-- **Sauvegardes (AB-08) et route bloquée (AB-09) :** un seul emplacement, reprise proposée, état et journal, version incompatible refusée pour un fichier importé (sauvegarde automatique illisible : traitée comme absente) ; le blocage du porte-avions par un navire est le comportement voulu. Détail dans [PERSISTANCE.md](../architecture/PERSISTANCE.md) et le registre Game Design.
+- **Sauvegardes (AB-08) et route bloquée (AB-09) :** un seul emplacement, reprise proposée, état et journal, sauvegarde automatique illisible ou incompatible traitée comme absente ; export et import manuels de fichiers JSON retirés de la V1 (AB-10) ; le blocage du porte-avions par un navire est le comportement voulu. Détail dans [PERSISTANCE.md](../architecture/PERSISTANCE.md) et le registre Game Design.
 
 Les éléments non précisés ci-dessus (autonomies, probabilités de panne/interception, leurres, cas limites de l'IA et de la détection) ne sont pas automatiquement validés.
 

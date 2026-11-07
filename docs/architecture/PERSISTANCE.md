@@ -2,12 +2,12 @@
 
 ## Décision AT-02
 
-Utiliser **IndexedDB** pour les sauvegardes automatiques et un **fichier JSON** pour l'export/import manuel. La V1 reste autonome, sans serveur ni MongoDB.
+Utiliser **IndexedDB** pour la sauvegarde automatique de la partie en cours. La V1 reste autonome, sans serveur ni MongoDB. L'export et l'import manuels de fichiers JSON, prévus à l'origine, sont **retirés du périmètre V1** (AB-10) : voir « Hors périmètre V1 ».
 
 ## Responsabilités
 
 - Sauvegarder un `GameState` cohérent après une séquence métier complète ; ne pas enregistrer d'état intermédiaire incomplet.
-- Restaurer la partie depuis IndexedDB ou depuis un fichier JSON importé.
+- Restaurer la partie depuis IndexedDB.
 - Sérialiser dans un format versionné (par exemple `schemaVersion`) et vérifier les données avant chargement.
 - Signaler les données incompatibles, invalides ou les échecs de lecture/écriture. Ne pas afficher une sauvegarde comme réussie avant confirmation.
 - Garder les appels IndexedDB hors de `engine/` ; le moteur ne connaît que les données métier.
@@ -16,7 +16,7 @@ Utiliser **IndexedDB** pour les sauvegardes automatiques et un **fichier JSON** 
 
 Le rafraîchissement de page et une mise à jour ordinaire du navigateur ne suppriment généralement pas IndexedDB. En revanche, la suppression des données du site, une réinitialisation du profil, la navigation privée ou une éviction du stockage peuvent entraîner une perte.
 
-L'export JSON permet de conserver une copie indépendante du navigateur. Aucune synchronisation distante ni gestion multi-utilisateur simultanée n'est prévue en V1.
+Aucune copie indépendante du navigateur n'est proposée en V1 (pas d'export manuel). Aucune synchronisation distante ni gestion multi-utilisateur simultanée n'est prévue en V1.
 
 ## Comportement V1 (arbitrage G-01.7, partie « sauvegardes »)
 
@@ -25,15 +25,14 @@ Décidé avec le propriétaire en novembre 2026 (AB-08) ; les interprétations n
 - **Un seul emplacement** : la « partie en cours », écrasée après chaque séquence complète. Seule une **mission en cours** est sauvegardée, jamais la préparation. Une mission gagnée est sauvegardée aussi ; la sauvegarde est effacée au retour à la préparation (« Nouvelle partie » ou abandon).
 - **Reprise au démarrage** : si une partie existe, l'écran de préparation propose « Reprendre la partie en cours » ou « Nouvelle partie ». Rien n'est restauré sans accord. Lancer une nouvelle mission écrase la sauvegarde sans avertissement.
 - **Contenu** : l'état de la partie et le journal de bord. La sélection et les brouillons d'action relèvent de l'interface et ne sont jamais sauvegardés.
-- **Version incompatible ou données invalides** : aucune migration en V1, et rien n'est jamais chargé à moitié. Le **refus avec un message clair** vaut pour un **fichier importé** (C3). Une **sauvegarde automatique** illisible ou incompatible au démarrage est traitée comme **absente** : aucun message, aucun bouton de suppression, et elle n'est **pas effacée** (décision du propriétaire, pour éviter une complexité inutile). Elle est écrasée au lancement de la mission suivante.
-- **Export et import JSON** : l'export est proposé pendant la mission, désactivé pendant une activation en cours (l'état serait incomplet). L'import n'est proposé que depuis l'écran de préparation, jamais pendant une mission. Fichier exporté : `tacticoop-AAAAMMJJ-HHMM.json`.
-- **Échec de stockage** (IndexedDB indisponible, quota, navigation privée) : avertissement non bloquant dans la barre du haut, jusqu'à la prochaine écriture réussie ; la partie continue et l'export manuel reste possible. « Sauvegardée à HH:MM » n'est affiché qu'après confirmation de l'écriture. Aucun repli en mémoire.
+- **Version incompatible ou données invalides** : aucune migration en V1, et rien n'est jamais chargé à moitié. Une **sauvegarde automatique** illisible ou incompatible au démarrage est traitée comme **absente** : aucun message, aucun bouton de suppression, et elle n'est **pas effacée** (décision du propriétaire, pour éviter une complexité inutile). Elle est écrasée au lancement de la mission suivante.
+- **Échec de stockage** (IndexedDB indisponible, quota, navigation privée) : avertissement non bloquant dans la barre du haut, jusqu'à la prochaine écriture réussie ; la partie continue. « Sauvegardée à HH:MM » n'est affiché qu'après confirmation de l'écriture. Aucun repli en mémoire.
 - Une commande refusée par le moteur ne modifie pas l'état et ne déclenche aucune écriture.
 - **« Nouvelle partie » sur le bandeau de reprise** masque le bandeau mais garde la sauvegarde jusqu'au lancement suivant (rechargée, elle est de nouveau proposée). Le bandeau indique mission, cycle, date et heure locales, et n'apparaît qu'une fois la lecture terminée.
 
 ## Format et module `src/persistence/`
 
-Fichier JSON : `{ schemaVersion: 1, savedAt, state, events }`, avec `state` une `MissionState` et `events` le journal. Aucun hasard n'est conservé : la carte est dans l'état, et les graines ne servent qu'au lancement.
+Contenu stocké dans IndexedDB, sérialisé en JSON : `{ schemaVersion: 1, savedAt, state, events }`, avec `state` une `MissionState` et `events` le journal. Aucun hasard n'est conservé : la carte est dans l'état, et les graines ne servent qu'au lancement.
 
 La validation est écrite à la main et refuse la sauvegarde au premier problème : JSON illisible, version inconnue, valeurs inconnues (terrains, classes de bâtiment, états d'activation, types d'événement, ordres du porte-avions), tableau de terrains de taille inattendue, cases hors carte, identifiants ou cases en double, porte-avions absent en escorte ou présent hors escorte, navigation du porte-avions incohérente, activation en cours. Elle ne vérifie ni l'équilibrage (PV, stocks) ni la navigabilité des cases, qui dépendent de valeurs provisoires.
 
@@ -61,7 +60,7 @@ Tout est dans `src/store/` ; `useGameStore` ne dépend pas de la persistance.
 | `startPersistence.ts` | appelée par `app/main.tsx` : branche la sauvegarde automatique, lit et valide la sauvegarde. Une proposition n'est publiée que si le joueur n'a pas lancé de mission pendant la lecture |
 | `resumeSavedGame.ts` | action « Reprendre » : `useGameStore.restore()` (simple mutation), puis sélection et brouillons réinitialisés |
 
-Interface : `ResumeBanner` (écran de préparation) et `SaveStatus` (barre du haut). Les textes sont dans `shared/labels.ts` (`saveText`) ; les messages de refus de `persistence` sont dans `shared/label-persistence.ts`, vérifiés par `satisfies` côté `persistence` (`SAVE_ERROR_MESSAGES`) et destinés à l'import (C3).
+Interface : `ResumeBanner` (écran de préparation) et `SaveStatus` (barre du haut). Les textes sont dans `shared/labels.ts` (`saveText`).
 
 ## Évolution du format : point de vigilance
 
@@ -71,3 +70,7 @@ Interface : `ResumeBanner` (écran de préparation) et `SaveStatus` (barre du ha
 ## Limite connue
 
 Deux onglets ouverts sur la même partie s'écrasent : **le dernier qui écrit gagne**. Aucune détection en V1 (pas de multi-utilisateur, voir « Conservation et limites »).
+
+## Hors périmètre V1 : export et import manuels de fichiers JSON
+
+Décision du propriétaire (AB-10) : l'export et l'import manuels de fichiers JSON sont retirés de la V1 ; ils pourront être réévalués après la V1 s'ils présentent un intérêt réel. Ne sont **pas** concernés et restent indispensables : la sérialisation JSON interne stockée dans IndexedDB, sa validation stricte (`parseSave`), le versionnement du format (`schemaVersion`) et la reprise de la partie en cours. Le contrat `SaveStorage` n'est pas modifié. Si l'import revient un jour, il devra décider des messages de refus à présenter au joueur (une sauvegarde automatique invalide reste, elle, traitée comme absente sans message).
