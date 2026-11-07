@@ -2,6 +2,7 @@ import type { GameConfig } from '../config/game.config';
 import type { MissionState, Progress } from '../core/game.types';
 import type { Unit } from '../units/unit.model';
 import { hasCarrierArrived, moveCarrier } from './carrier-movement.service';
+import type { MissionOutcome } from './carrier-orders.service';
 
 /** Une unité alliée peut encore recevoir des ordres ce cycle. */
 function isPending(unit: Unit): boolean {
@@ -54,18 +55,48 @@ export function isAwaitingFinalOrder(mission: MissionState): boolean {
 }
 
 /**
- * Clôture du cycle : navigation automatique du porte-avions, puis arrivée en B ou cycle suivant.
- * Les phases ennemies, la veille passive et le bilan n'existent pas encore (SF-03 §4). Une
- * mission gagnée n'ouvre pas de cycle suivant.
+ * Phases de fin de cycle, dans l'ordre de SF-03 §4 : navigation automatique du porte-avions, puis
+ * (à venir) veille passive, actualisation des contacts, progression des projectiles restants et
+ * bilan. Seule la navigation existe aujourd'hui ; les autres phases s'ajouteront ici, **avant**
+ * la détermination du résultat. Cette étape ne déclare jamais la fin de la mission.
+ */
+export function resolveCycleEnd(mission: MissionState, config: GameConfig): Progress {
+  return moveCarrier(mission, config);
+}
+
+/**
+ * Résultat de la mission une fois les phases de fin de cycle résolues, ou `null` si elle continue.
+ * Les conditions de défaite prévalent sur la victoire (AB-01, G-13) ; aucune n'existe encore faute
+ * de dégâts (AB-03). Victoire : le porte-avions est arrivé en B (G-03.2.9). C'est ici, et nulle
+ * part ailleurs, que se décide la fin d'une mission.
+ */
+export function determineOutcome(mission: MissionState): MissionOutcome | null {
+  return hasCarrierArrived(mission) ? 'victory' : null;
+}
+
+/**
+ * Déclare la fin de la mission : le résultat est posé et enregistré au journal, et la mission
+ * n'ouvre pas de cycle suivant. Les projectiles encore en vol cesseraient alors de progresser
+ * (AB-02) ; il n'y en a pas encore.
+ */
+function declareOutcome(mission: MissionState, outcome: MissionOutcome): Progress {
+  return {
+    state: { ...mission, outcome },
+    events: [{ type: 'MISSION_WON', cycle: mission.cycle }],
+  };
+}
+
+/**
+ * Clôture du cycle, en trois temps : résolution des phases de fin de cycle (`resolveCycleEnd`),
+ * détermination du résultat (`determineOutcome`), puis fin de mission ou ouverture du cycle
+ * suivant (SF-03 §4, AB-01). Une mission déjà terminée n'est jamais prolongée (SF-03 §4).
  */
 export function closeCycle(mission: MissionState, config: GameConfig): Progress {
-  const moved = moveCarrier(mission, config);
-  if (hasCarrierArrived(moved.state)) {
-    const won: MissionState = { ...moved.state, outcome: 'victory' };
-    return { state: won, events: [...moved.events, { type: 'MISSION_WON', cycle: mission.cycle }] };
-  }
-  const next = startNextCycle(moved.state);
-  return { state: next.state, events: [...moved.events, ...next.events] };
+  if (mission.outcome) return { state: mission, events: [] };
+  const resolved = resolveCycleEnd(mission, config);
+  const outcome = determineOutcome(resolved.state);
+  const next = outcome ? declareOutcome(resolved.state, outcome) : startNextCycle(resolved.state);
+  return { state: next.state, events: [...resolved.events, ...next.events] };
 }
 
 /**
