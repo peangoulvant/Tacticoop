@@ -1,24 +1,17 @@
 import * as engine from '../../engine';
-import * as labelPersistence from '../../shared/label-persistence';
 import { isRecord } from './guards';
 import { checkEvents, checkMissionState } from './validation';
 
 /** Version du format. Une autre version est refusée : aucune migration n'existe en V1. */
 export const SAVE_SCHEMA_VERSION = 1;
 
-/** Pourquoi une sauvegarde est refusée (messages affichés côté interface). */
+/** Pourquoi une sauvegarde est refusée (diagnostic ; aucun message n'est affiché au joueur, voir AB-08). */
 export const SaveErrorCode = {
   INVALID_JSON: 'INVALID_JSON',
   UNSUPPORTED_VERSION: 'UNSUPPORTED_VERSION',
   INVALID_DATA: 'INVALID_DATA',
 } as const;
 export type SaveErrorCode = (typeof SaveErrorCode)[keyof typeof SaveErrorCode];
-
-/** Message présenté au joueur pour chaque motif de refus (textes dans `shared/label-persistence`). */
-export const SAVE_ERROR_MESSAGES = labelPersistence.saveErrorMessages satisfies Record<
-  SaveErrorCode,
-  string
->;
 
 /**
  * Sauvegarde d'une mission en cours : l'état de la partie et le journal de bord. La sélection et
@@ -36,7 +29,7 @@ export interface SaveFile {
 export type ParseResult =
   { ok: true; save: SaveFile } | { ok: false; code: SaveErrorCode; detail: string };
 
-/** JSON d'une sauvegarde, prêt à être stocké ou exporté dans un fichier. */
+/** JSON d'une sauvegarde, prêt à être stocké dans IndexedDB. */
 export function serializeSave(
   state: engine.MissionState,
   events: readonly engine.GameEvent[],
