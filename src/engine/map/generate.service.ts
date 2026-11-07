@@ -79,6 +79,55 @@ function carveCorridor(map: GameMap, from: Hex, to: Hex): GameMap {
   return { ...map, terrain };
 }
 
+/**
+ * Lignes (en part de la hauteur) par lesquelles passe un itinéraire de contournement : une au
+ * nord et une au sud de la ligne droite A→B. Paramètres de génération provisoires.
+ */
+const BYPASS_ROW_RATIOS = [0.2, 0.8];
+
+/** Copie de la carte où les cases données sont infranchissables (calcul d'un trajet qui les évite). */
+function withBlockedHexes(map: GameMap, hexes: readonly Hex[]): GameMap {
+  const terrain = [...map.terrain];
+  for (const hex of hexes) terrain[indexOf(map, hex)] = 'mountain';
+  return { ...map, terrain };
+}
+
+/**
+ * Vrai s'il existe, en plus du plus court trajet A→B, un second trajet navigable pour le
+ * porte-avions qui n'emprunte aucune de ses cases (hors A et B) : un contournement possible
+ * (SF-02 §3). Sa sécurité tactique n'est pas évaluée.
+ */
+export function hasAlternativeRoute(map: GameMap, start: Hex, goal: Hex): boolean {
+  const main = shortestPath(map, start, goal, 'carrier');
+  if (!main) return false;
+  return shortestPath(withBlockedHexes(map, main.slice(1, -1)), start, goal, 'carrier') !== null;
+}
+
+/** Creuse un couloir A → point intermédiaire (au milieu de la carte, sur la ligne donnée) → B. */
+function carveBypass(map: GameMap, start: Hex, goal: Hex, row: number): GameMap {
+  const waypoint = { col: Math.floor((start.col + goal.col) / 2), row };
+  return carveCorridor(carveCorridor(map, start, waypoint), waypoint, goal);
+}
+
+/** Nombre de cases dont le terrain diffère entre deux cartes de même taille. */
+function changedCells(before: GameMap, after: GameMap): number {
+  return after.terrain.filter((terrain, i) => terrain !== before.terrain[i]).length;
+}
+
+/**
+ * Favorise les itinéraires alternatifs (SF-02 §3) : si la carte ne laisse qu'un passage, creuse un
+ * contournement, au nord ou au sud, en retenant le côté qui modifie le moins de relief (le nord à
+ * égalité). Une carte qui offre déjà un contournement n'est pas modifiée. Sans aléa : une même
+ * carte donne toujours le même résultat.
+ */
+function withAlternativeRoute(map: GameMap, start: Hex, goal: Hex): GameMap {
+  if (hasAlternativeRoute(map, start, goal)) return map;
+  const candidates = BYPASS_ROW_RATIOS.map((ratio) =>
+    carveBypass(map, start, goal, Math.round((map.height - 1) * ratio)),
+  ).filter((candidate) => hasAlternativeRoute(candidate, start, goal));
+  return candidates.sort((a, b) => changedCells(map, a) - changedCells(map, b))[0] ?? map;
+}
+
 /** Lutte navale : les alliés partent de l'ouest, au milieu de la carte. */
 export function generateNavalCombatMap(width: number, height: number, rng: Rng): ScenarioMap {
   const map = generateTerrain(width, height, rng);
@@ -88,7 +137,8 @@ export function generateNavalCombatMap(width: number, height: number, rng: Rng):
 
 /**
  * Carte d'escorte : A à l'ouest, B à l'est. Garantit au moins un trajet navigable A→B pour le
- * porte-avions ; si le relief le coupe, un couloir de mer classique est creusé (SF-02 §3).
+ * porte-avions ; si le relief le coupe, un couloir de mer classique est creusé (SF-02 §3). Un
+ * contournement est ensuite favorisé quand la carte n'en offre pas (`withAlternativeRoute`).
  */
 export function generateEscortMap(width: number, height: number, rng: Rng): EscortMap {
   const generated = generateTerrain(width, height, rng);
@@ -96,5 +146,6 @@ export function generateEscortMap(width: number, height: number, rng: Rng): Esco
   const start = nearestNavigableHex(generated, { col: 2, row: middle }, 'carrier');
   const goal = nearestNavigableHex(generated, { col: width - 3, row: middle }, 'carrier');
   const connected = shortestPath(generated, start, goal, 'carrier') !== null;
-  return { map: connected ? generated : carveCorridor(generated, start, goal), start, goal };
+  const reachable = connected ? generated : carveCorridor(generated, start, goal);
+  return { map: withAlternativeRoute(reachable, start, goal), start, goal };
 }
