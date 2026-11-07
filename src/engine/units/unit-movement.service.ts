@@ -82,7 +82,7 @@ function destinationRefusal(
  * chemin, lui, a été calculé sur ce que le joueur connaît (`FriendObservation`). Le déplacement
  * reste consommé même s'il est interrompu dès le premier hexagone.
  */
-export function travelledPath(
+export function checkMovedUnitPath(
   field: Battlefield,
   unit: Unit,
   path: readonly Hex[],

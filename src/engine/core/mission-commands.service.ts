@@ -23,7 +23,11 @@ import {
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
 import { observeFriend } from '../detection/observation.service';
-import { MOVE_REFUSAL_MESSAGES, planMove, travelledPath } from '../units/unit-movement.service';
+import {
+  MOVE_REFUSAL_MESSAGES,
+  planMove,
+  checkMovedUnitPath,
+} from '../units/unit-movement.service';
 import type { Unit } from '../units/unit.model';
 import { accept, reject } from './results.service';
 import type {
@@ -110,7 +114,7 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
   }
   // Sur l'état réel, un occupant non détecté interrompt le déplacement (SF-02.15) : il est tout de
   // même consommé, et l'occupant n'est ni identifié ni révélé.
-  const { stop, interrupted } = travelledPath(mission, unit, plan.path);
+  const { stop, interrupted } = checkMovedUnitPath(mission, unit, plan.path);
   const moved = updateUnitInMission(mission, unitId, {
     position: stop,
     activation: 'in_progress',
