@@ -122,3 +122,27 @@ export const activationLabel: Record<Exclude<engine.ActivationStatus, 'not_activ
   in_progress: 'En cours',
   activated: 'Activée',
 };
+
+/** Sauvegarde automatique et reprise de la partie en cours (AB-08). */
+export const saveText = {
+  resumeTitle: 'Une partie est en cours',
+  resume: 'Reprendre la partie en cours',
+  newGame: 'Nouvelle partie',
+  savedAt: (time: string) => `Sauvegardée à ${time}`,
+  writeFailed: 'Sauvegarde impossible : la partie continue mais ne sera pas conservée',
+};
+
+/** Description de la partie sauvegardée : mission, cycle, date et heure locales. */
+export function savedGameSummary(
+  mission: engine.MissionKind,
+  cycle: number,
+  savedAt: Date,
+): string {
+  const date = savedAt.toLocaleDateString('fr-FR');
+  return `${missionLabel[mission]} — cycle ${cycle} — ${date} à ${savedTime(savedAt)}`;
+}
+
+/** Heure locale au format HH:MM. */
+export function savedTime(date: Date): string {
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}

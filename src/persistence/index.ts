@@ -2,6 +2,7 @@
 // Format et validation des sauvegardes JSON : `format/`. Contrat de stockage et implémentation
 // IndexedDB : `storage/`.
 export {
+  SAVE_ERROR_MESSAGES,
   SaveErrorCode,
   parseSave,
   serializeSave,

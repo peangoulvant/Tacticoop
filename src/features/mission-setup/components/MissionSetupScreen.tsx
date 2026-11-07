@@ -14,6 +14,7 @@ import * as engine from '../../../engine';
 import * as labels from '../../../shared/labels';
 import { useGameStore } from '../../../store/useGameStore';
 import { Recap } from './Recap';
+import { ResumeBanner } from './ResumeBanner';
 import { BriefingStep, ConstraintsStep, ForceStep, MissionStep } from './SetupSteps';
 
 const STEPS = ['Mission', 'Briefing', 'Contraintes', 'Force navale', 'Récapitulatif'];
@@ -69,6 +70,7 @@ export function MissionSetupScreen({ setup }: { setup: engine.MissionSetup }) {
       <Typography color="text.secondary" sx={{ mb: 3 }}>
         Wargame naval tactique — préparation de mission
       </Typography>
+      <ResumeBanner />
       {lastError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {labels.errorMessage(lastError)}
