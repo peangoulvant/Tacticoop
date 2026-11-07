@@ -33,6 +33,10 @@ Le moteur produit depuis `GameState` des projections autorisées :
 - `FriendObservation` pour l'interface tactique du camp ami ;
 - `HostileObservation` pour les décisions de l'IA.
 
+**Implémenté** (`engine/detection/observation.service.ts`) : `observeFriend(mission)` et `observeHostile(mission)` ne gardent que les unités connues du camp. Faute de contacts, aucune unité hostile n'est connue du joueur ; `isKnownToFriend()` est l'unique point à étendre avec la détection (SF-04). Sont déjà branchés sur la projection ami : l'affichage de la carte, les destinations accessibles, le trajet prévu et les motifs de refus d'un déplacement. `HostileObservation` n'est consommée par personne tant que l'IA n'existe pas.
+
+**Déplacement et obstacle non détecté (SF-02 §7).** Le trajet est calculé sur la projection ami (un occupant caché n'y figure pas, donc ni refus « occupée », ni détour). La commande confirmée est ensuite jouée sur l'état réel : l'unité s'arrête au dernier hexagone libre, le déplacement est consommé, et l'événement `UNIT_MOVED` porte `interrupted: true`, présenté par le journal comme « Déplacement interrompu » sans identifier l'obstacle. Le drapeau est optionnel : une sauvegarde existante reste valide, `schemaVersion` n'est donc pas modifié.
+
 L'interface, les contacts et les événements affichés ne doivent pas révéler d'informations masquées. L'IA prend ses décisions à partir de `HostileObservation`, sans accéder directement aux positions réelles non détectées. Les critères de décision non arbitrés restent ouverts dans le registre fonctionnel.
 
 **Limite du frontend autonome :** les outils de développement du navigateur peuvent exposer les données locales complètes. Ce filtrage garantit le comportement attendu du jeu, pas une protection contre l'inspection volontaire.

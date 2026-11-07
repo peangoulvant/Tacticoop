@@ -22,7 +22,12 @@ import {
   hasActivationInProgress,
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
-import { MOVE_REFUSAL_MESSAGES, planMove } from '../units/unit-movement.service';
+import { observeFriend } from '../detection/observation.service';
+import {
+  MOVE_REFUSAL_MESSAGES,
+  planMove,
+  checkMovedUnitPath,
+} from '../units/unit-movement.service';
 import type { Unit } from '../units/unit.model';
 import { accept, reject } from './results.service';
 import type {
@@ -102,12 +107,16 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
   const { unit } = found;
   const blocker = moveBlocker(mission.units, unit);
   if (blocker) return blockerRejection(blocker);
-  const plan = planMove(mission, unit, destination, config);
+  // Le trajet et les refus ne reposent que sur ce que le joueur connaît (SF-02 §7).
+  const plan = planMove(observeFriend(mission), unit, destination, config);
   if (!plan.ok) {
     return reject('MOVE_REFUSED', MOVE_REFUSAL_MESSAGES[plan.reason], { moveRefusal: plan.reason });
   }
+  // Sur l'état réel, un occupant non détecté interrompt le déplacement (SF-02.15) : il est tout de
+  // même consommé, et l'occupant n'est ni identifié ni révélé.
+  const { stop, interrupted } = checkMovedUnitPath(mission, unit, plan.path);
   const moved = updateUnitInMission(mission, unitId, {
-    position: destination,
+    position: stop,
     activation: 'in_progress',
     hasMoved: true,
   });
@@ -117,8 +126,9 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
       unitId,
       shipClass: unit.shipClass,
       from: unit.position,
-      to: destination,
+      to: stop,
       cycle: mission.cycle,
+      ...(interrupted && { interrupted: true }),
     },
   ]);
 };

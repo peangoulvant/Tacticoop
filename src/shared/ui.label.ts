@@ -116,6 +116,9 @@ type CarrierEvent = Extract<
   { type: 'CARRIER_ORDERED' | 'CARRIER_MOVED' | 'MISSION_WON' }
 >;
 
+/** Message neutre d'un déplacement interrompu par un obstacle inconnu : l'obstacle n'est pas révélé (SF-02 §7). */
+export const interruptedMoveText = 'Déplacement interrompu';
+
 /** Texte du journal pour les événements du porte-avions et la victoire (catalogue provisoire, D-11). */
 export function carrierEventLabel(event: CarrierEvent): string {
   switch (event.type) {

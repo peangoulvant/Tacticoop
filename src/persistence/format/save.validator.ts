@@ -174,14 +174,24 @@ function isCarrierOrder(order: unknown): boolean {
 }
 
 /** Contrôle propre à chaque type d'événement ; le type `Record` impose de les couvrir tous. */
+/** Une unité, de la case `from` à la case `to` (déplacement d'unité). */
+function isMove(event: Json): boolean {
+  return (
+    typeof event.unitId === 'string' &&
+    isShipClass(event.shipClass) &&
+    isHex(event.from) &&
+    isHex(event.to)
+  );
+}
+
+/** Drapeau facultatif : absent, ou vrai (un drapeau faux n'est jamais écrit). */
+function isAbsentOrTrue(value: unknown): boolean {
+  return value === undefined || value === true;
+}
+
 const EVENT_CHECKS: Record<engine.GameEvent['type'], (event: Json) => boolean> = {
   MISSION_LAUNCHED: (e) => isOneOf(engine.MISSIONS, e.mission) && isPositive(e.cycle),
-  UNIT_MOVED: (e) =>
-    typeof e.unitId === 'string' &&
-    isShipClass(e.shipClass) &&
-    isHex(e.from) &&
-    isHex(e.to) &&
-    isPositive(e.cycle),
+  UNIT_MOVED: (e) => isMove(e) && isPositive(e.cycle) && isAbsentOrTrue(e.interrupted),
   CYCLE_STARTED: (e) => isPositive(e.cycle),
   CARRIER_ORDERED: (e) => isCarrierOrder(e.order) && isPositive(e.cycle),
   CARRIER_MOVED: (e) => isHex(e.from) && isHex(e.to) && isPositive(e.cycle),

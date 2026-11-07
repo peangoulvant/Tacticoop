@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -143,7 +143,9 @@ export function TacticalMap({
   move: MoveDraft | null;
   carrierRoute: CarrierRouteView | null;
 }) {
-  const { map, units, start, goal } = mission;
+  // La carte n'affiche que ce que le joueur connaît : jamais une unité hostile non détectée.
+  const observation = useMemo(() => engine.observeFriend(mission), [mission]);
+  const { map, units, start, goal } = observation;
   const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
   const content = mapViewBox(map);
 

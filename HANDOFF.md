@@ -78,6 +78,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Porte-avions | Non activable : il n'a pas d'état d'activation, il se pilote par ordres de navigation (à venir) |
 | Cases occupées | Infranchissables en déplacement, pas seulement interdites comme destination |
 | Journal | Minimal et provisoire : déplacement et ouverture d'un cycle (D-11 ouvert) |
+| Brouillard de guerre | `engine/detection/` : `observeFriend()` / `observeHostile()` ne gardent que les unités connues (aucune hostile n'est connue faute de contacts). L'interface (carte, aperçu et refus de déplacement) passe par la projection ami, jamais par l'état réel. Un obstacle caché interrompt le déplacement sur l'état réel (SF-02.15) : `UNIT_MOVED.interrupted`, message neutre au journal. **Ne jamais calculer un aperçu ni un message à partir de `mission.units`** |
 | Imports | Sous un nom, pour toutes les couches quand l'origine est peu explicite (moteur, libellés, ressources) ; règle ESLint pour ces trois |
 | Textes du moteur | `shared/engine.label.ts` (et non `label-core`, qui prêtait à confusion avec `engine/core/`). Le moteur peut dépendre de `shared/` ; les libellés de catalogue (`ShipSpec.label`, `description`) restent dans `GameConfig` |
 | Règles ESLint | Imports profonds entre features : interdits (PR 2/4). Style des fonctions (premier niveau des modules) : imposé en PR 4/4 (#18) |
