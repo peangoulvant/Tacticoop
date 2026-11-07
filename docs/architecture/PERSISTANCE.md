@@ -67,6 +67,8 @@ Interface : `ResumeBanner` (écran de préparation) et `SaveStatus` (barre du ha
 - Les validateurs de `format/` sont **écrits à la main** : un champ ajouté à l'état du moteur n'y est pas contrôlé tant qu'on ne les met pas à jour (risque de dérive).
 - Tout changement de la **forme de l'état** (`MissionState`, `Unit`, `GameEvent`…) impose de **monter `schemaVersion`** et d'**arbitrer le sort des anciennes sauvegardes** : migration, message ou suppression. Comme une sauvegarde automatique incompatible est traitée comme absente sans message, elle serait sinon perdue en silence au prochain lancement.
 
+- **Hasard en cours de partie** : tant qu'aucun tirage n'a lieu après le lancement, la sauvegarde n'a rien à conserver (la carte est dans l'état). Dès le premier tirage (détection, combat, IA), l'état du générateur rejoindra `MissionState` : `schemaVersion` passera à 2, et les sauvegardes de version 1, traitées comme absentes sans message (décision du propriétaire), seront perdues au premier lancement suivant, sauf migration à arbitrer à ce moment-là. Voir « État du hasard » dans [MOTEUR-ET-ETAT.md](MOTEUR-ET-ETAT.md).
+
 ## Limite connue
 
 Deux onglets ouverts sur la même partie s'écrasent : **le dernier qui écrit gagne**. Aucune détection en V1 (pas de multi-utilisateur, voir « Conservation et limites »).

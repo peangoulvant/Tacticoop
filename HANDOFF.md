@@ -89,6 +89,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Interface de navigation | Ordres dans la fiche du porte-avions, confirmation par une barre sur la carte, un seul brouillon à la fois, « Terminer le cycle » désactivé pendant la dernière occasion d'ordre, bandeau de victoire avec « Nouvelle partie » sans confirmation, commandes désactivées ensuite |
 | Périmètre de la navigation | Navigation et victoire à l'arrivée en B (résultat binaire, commandes ensuite refusées), avec un simple bandeau de résultat ; ni bilan ni débriefing (D-12 ouvert) |
 | Export et import JSON (AB-10) | **Retirés de la V1** (nouvelle décision) : PR C3 abandonnée, réévaluation possible après la V1. La sérialisation interne, la validation, `schemaVersion` et la reprise IndexedDB restent |
+| Hasard et reprise | `createRng(seed)` est une fermeture sans état global ; le hasard ne sert qu'au lancement et la graine n'est pas dans l'état. **Aucun état de générateur n'est ajouté tant qu'aucun tirage n'existe en cours de partie** : le premier tirage (détection, combat, IA) imposera de le conserver dans `MissionState`, de monter `schemaVersion` à 2 et d'arbitrer le sort des sauvegardes v1 (voir `MOTEUR-ET-ETAT.md`) |
 | Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
 
 ## État d'avancement
