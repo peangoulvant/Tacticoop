@@ -63,7 +63,16 @@ export type GameCommand = PreparationCommand | MissionCommand;
 
 export type GameEvent =
   | { type: 'MISSION_LAUNCHED'; mission: MissionKind; cycle: number }
-  | { type: 'UNIT_MOVED'; unitId: string; shipClass: ShipClass; from: Hex; to: Hex; cycle: number }
+  | {
+      type: 'UNIT_MOVED';
+      unitId: string;
+      shipClass: ShipClass;
+      from: Hex;
+      to: Hex;
+      cycle: number;
+      /** Déplacement interrompu avant la destination par un obstacle inconnu du joueur (SF-02.15). */
+      interrupted?: true;
+    }
   | { type: 'CYCLE_STARTED'; cycle: number }
   | { type: 'CARRIER_ORDERED'; order: CarrierOrder; cycle: number }
   | { type: 'CARRIER_MOVED'; from: Hex; to: Hex; cycle: number }

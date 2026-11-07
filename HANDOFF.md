@@ -89,6 +89,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Interface de navigation | Ordres dans la fiche du porte-avions, confirmation par une barre sur la carte, un seul brouillon à la fois, « Terminer le cycle » désactivé pendant la dernière occasion d'ordre, bandeau de victoire avec « Nouvelle partie » sans confirmation, commandes désactivées ensuite |
 | Périmètre de la navigation | Navigation et victoire à l'arrivée en B (résultat binaire, commandes ensuite refusées), avec un simple bandeau de résultat ; ni bilan ni débriefing (D-12 ouvert) |
 | Export et import JSON (AB-10) | **Retirés de la V1** (nouvelle décision) : PR C3 abandonnée, réévaluation possible après la V1. La sérialisation interne, la validation, `schemaVersion` et la reprise IndexedDB restent |
+| Brouillard de guerre | `engine/detection/` : `observeFriend()` / `observeHostile()` ne gardent que les unités connues (aucune hostile n'est connue faute de contacts). L'interface (carte, aperçu et refus de déplacement) passe par la projection ami, jamais par l'état réel. Un obstacle caché interrompt le déplacement sur l'état réel (SF-02.15) : `UNIT_MOVED.interrupted`, message neutre au journal. **Ne jamais calculer un aperçu ni un message à partir de `mission.units`** |
 | Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
 
 ## État d'avancement

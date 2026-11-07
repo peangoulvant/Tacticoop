@@ -44,6 +44,8 @@ export { BLOCKER_MESSAGES, moveBlocker, orderBlocker } from './missions/activati
 export type { MoveBlocker, OrderBlocker } from './missions/activation.service';
 export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle.service';
 export { plannedRoute } from './missions/carrier-movement.service';
+export { observeFriend, observeHostile } from './detection/observation.service';
+export type { FriendObservation, HostileObservation } from './detection/observation.types';
 export {
   WAYPOINT_REFUSAL_MESSAGES,
   carrierOf,

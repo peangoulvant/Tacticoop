@@ -76,7 +76,29 @@ function destinationRefusal(
 }
 
 /**
- * Chemin le plus court vers une destination, ou le motif du refus. Aucun détour vers une autre
+ * Parcours réel d'un déplacement confirmé, sur l'état réel (SF-02 §7, SF-02.15) : l'unité avance
+ * le long du chemin prévu et s'arrête au dernier hexagone libre si une autre unité, que le joueur
+ * ne connaissait pas, occupe une case du trajet. `field` contient toutes les unités réelles ; le
+ * chemin, lui, a été calculé sur ce que le joueur connaît (`FriendObservation`). Le déplacement
+ * reste consommé même s'il est interrompu dès le premier hexagone.
+ */
+export function travelledPath(
+  field: Battlefield,
+  unit: Unit,
+  path: readonly Hex[],
+): { stop: Hex; interrupted: boolean } {
+  const occupied = new Set(
+    field.units.filter((u) => u.id !== unit.id).map((u) => indexOf(field.map, u.position)),
+  );
+  const blockedAt = path.findIndex((hex, i) => i > 0 && occupied.has(indexOf(field.map, hex)));
+  if (blockedAt === -1) return { stop: path[path.length - 1] as Hex, interrupted: false };
+  return { stop: path[blockedAt - 1] as Hex, interrupted: true };
+}
+
+/**
+ * Chemin le plus court vers une destination, ou le motif du refus. `field` doit être la projection
+ * connue du joueur (`FriendObservation`) : un occupant non détecté n'y figure pas, et ne peut donc
+ * ni modifier le trajet proposé ni apparaître dans un motif de refus (SF-02 §7). Aucun détour vers une autre
  * destination n'est proposé (SF-02 §6). Un chemin existant mais trop long est « hors de portée » ;
  * s'il n'en existe aucun, même sans limite de mouvement, c'est « aucun chemin ».
  */

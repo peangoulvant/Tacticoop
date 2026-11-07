@@ -8,6 +8,9 @@ function describe(event: engine.GameEvent): string {
     case 'MISSION_LAUNCHED':
       return `Mission lancée : ${labels.missionLabel[event.mission]}`;
     case 'UNIT_MOVED':
+      if (event.interrupted) {
+        return `${engine.defaultConfig.ships[event.shipClass].label} : ${labels.interruptedMoveText} (de (${event.from.col}, ${event.from.row}) à (${event.to.col}, ${event.to.row}))`;
+      }
       return `${engine.defaultConfig.ships[event.shipClass].label} : déplacement de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
     case 'CYCLE_STARTED':
       return `Cycle ${event.cycle} ouvert`;

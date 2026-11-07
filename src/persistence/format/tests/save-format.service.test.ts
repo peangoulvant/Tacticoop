@@ -319,6 +319,19 @@ describe('refus d’un journal invalide', () => {
     );
   });
 
+  it('accepte un déplacement interrompu dans le journal, et refuse une valeur invalide du drapeau', () => {
+    const index = (s: TamperedSave) =>
+      s.events.findIndex((e: { type: string }) => e.type === 'UNIT_MOVED');
+    const interrupted = parseTampered('escort', (s) => (s.events[index(s)].interrupted = true));
+    expect(interrupted.ok).toBe(true);
+    for (const invalid of [false, 'oui', 1]) {
+      expectInvalidData(
+        parseTampered('escort', (s) => (s.events[index(s)].interrupted = invalid)),
+        /du journal invalide/,
+      );
+    }
+  });
+
   it('refuse un ordre du porte-avions inconnu dans le journal', () => {
     const result = parseTampered('escort', (s) => {
       const index = s.events.findIndex((e: { type: string }) => e.type === 'CARRIER_ORDERED');

@@ -19,22 +19,24 @@ export interface MoveDraft {
 export function useMoveDraft(mission: engine.MissionState): MoveDraft | null {
   const unitId = useMoveDraftStore((s) => s.unitId);
   const destination = useMoveDraftStore((s) => s.destination);
-  const unit = mission.units.find((u) => u.id === unitId);
+  // Aperçu, destinations et refus ne reposent que sur ce que le joueur connaît (SF-02 §7).
+  const observation = useMemo(() => engine.observeFriend(mission), [mission]);
+  const unit = observation.units.find((u) => u.id === unitId);
   const possible =
     unit !== undefined &&
-    mission.outcome === null &&
-    engine.moveBlocker(mission.units, unit) === null;
+    observation.outcome === null &&
+    engine.moveBlocker(observation.units, unit) === null;
 
   return useMemo(() => {
     if (!unit || !possible) return null;
     const plan = destination
-      ? engine.planMove(mission, unit, destination, engine.defaultConfig)
+      ? engine.planMove(observation, unit, destination, engine.defaultConfig)
       : null;
     return {
       unit,
-      reachable: engine.reachableHexes(mission, unit, engine.defaultConfig),
+      reachable: engine.reachableHexes(observation, unit, engine.defaultConfig),
       destination,
       plan,
     };
-  }, [mission, unit, possible, destination]);
+  }, [observation, unit, possible, destination]);
 }
