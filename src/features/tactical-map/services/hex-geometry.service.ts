@@ -34,3 +34,28 @@ export function pathPoints(path: readonly engine.Hex[]): string {
     })
     .join(' ');
 }
+
+/**
+ * Contour d'une zone : tracé SVG des seuls côtés d'hexagones qui ne touchent pas un autre
+ * hexagone de la zone. Les voisins se reconnaissent à leur centre, sans refaire la géométrie du
+ * décalage des lignes impaires.
+ */
+export function zoneContour(zone: readonly engine.Hex[]): string {
+  const key = (x: number, y: number) => `${Math.round(x * 100)},${Math.round(y * 100)}`;
+  const inZone = new Set(zone.map((hex) => key(hexCenter(hex).x, hexCenter(hex).y)));
+  const apothem = Math.sqrt(3) * HEX_SIZE;
+  const segments: string[] = [];
+  for (const hex of zone) {
+    const { x, y } = hexCenter(hex);
+    for (let side = 0; side < 6; side++) {
+      const middle = (Math.PI / 180) * (60 * side);
+      if (inZone.has(key(x + apothem * Math.cos(middle), y + apothem * Math.sin(middle)))) continue;
+      const from = (Math.PI / 180) * (60 * side - 30);
+      const to = (Math.PI / 180) * (60 * side + 30);
+      const a = `${(x + HEX_SIZE * Math.cos(from)).toFixed(2)} ${(y + HEX_SIZE * Math.sin(from)).toFixed(2)}`;
+      const b = `${(x + HEX_SIZE * Math.cos(to)).toFixed(2)} ${(y + HEX_SIZE * Math.sin(to)).toFixed(2)}`;
+      segments.push(`M ${a} L ${b}`);
+    }
+  }
+  return segments.join(' ');
+}

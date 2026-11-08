@@ -1,3 +1,5 @@
+import type { Rng } from '../core/rng.service';
+
 /**
  * Géométrie hexagonale. Convention interne (GD-06 non arbitré, donc réversible) :
  * hexagones « pointy-top », coordonnées « offset » (col, row) avec décalage des lignes impaires,
@@ -8,15 +10,16 @@ export interface Hex {
   row: number;
 }
 
-interface Axial {
+/** Coordonnées axiales : sert aux formes déplaçables, sans le décalage des lignes impaires. */
+export interface Axial {
   q: number;
   r: number;
 }
 
-function toAxial({ col, row }: Hex): Axial {
+export function toAxial({ col, row }: Hex): Axial {
   return { q: col - (row - (row & 1)) / 2, r: row };
 }
-function fromAxial({ q, r }: Axial): Hex {
+export function fromAxial({ q, r }: Axial): Hex {
   return { col: q + (r - (r & 1)) / 2, row: r };
 }
 
@@ -77,4 +80,36 @@ function roundAxial(q: number, r: number): Axial {
   if (dq > dr && dq > ds) rq = -rr - rs;
   else if (dr > ds) rr = -rq - rs;
   return { q: rq, r: rr };
+}
+
+/**
+ * Premier temps de la fabrication de la zone d'un contact suspect (G-08.5, AB-20) : tire la forme
+ * de la zone, sans encore la poser sur la carte. Forme connexe de `size` hexagones, en coordonnées
+ * axiales, obtenue par croissance aléatoire : on part de l'origine et l'on ajoute, tour à tour, un
+ * voisin tiré uniformément parmi ceux de la forme en cours. Aucune limite de carte ici : la forme
+ * est ensuite déplacée sur la cible détectée par `placeShape`.
+ */
+export function growShape(size: number, rng: Rng): Axial[] {
+  const shape: Axial[] = [{ q: 0, r: 0 }];
+  const taken = new Set(['0,0']);
+  while (shape.length < size) {
+    const frontier = shape
+      .flatMap((a) => AXIAL_DIRECTIONS.map((d) => ({ q: a.q + d.q, r: a.r + d.r })))
+      .filter((n) => !taken.has(`${n.q},${n.r}`));
+    const next = frontier[Math.floor(rng() * frontier.length)] as Axial;
+    shape.push(next);
+    taken.add(`${next.q},${next.r}`);
+  }
+  return shape;
+}
+
+/**
+ * Second temps de la fabrication de la zone d'un contact suspect (G-08.5, AB-20) : déplace la forme
+ * tirée par `growShape` pour que sa case d'indice `anchor` tombe sur `target`, la cible détectée.
+ * L'appelant tire `anchor` uniformément : la cible n'est ainsi pas plus centrale qu'une autre case.
+ */
+export function placeShape(shape: readonly Axial[], anchor: number, target: Hex): Hex[] {
+  const base = shape[anchor] as Axial;
+  const t = toAxial(target);
+  return shape.map((a) => fromAxial({ q: a.q - base.q + t.q, r: a.r - base.r + t.r }));
 }

@@ -123,10 +123,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 2;
+      save.schemaVersion = 3;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 2/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 3/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -351,5 +351,105 @@ describe('refus d’un journal invalide', () => {
       s.events[index].order = { kind: 'foncer' };
     });
     expectInvalidData(result, /du journal invalide/);
+  });
+});
+
+describe('contacts et état du hasard (version 2)', () => {
+  const validContact = { id: 'C-1', cycle: 1, zone: [{ col: 3, row: 3 }] };
+
+  it('relit une mission avec contacts, compteur et état du générateur', () => {
+    const result = parseTampered('naval_combat', (s) => {
+      s.state.friendContacts = [validContact];
+      s.state.nextContactNumber = 2;
+    });
+    expect(result.ok && result.save.state.friendContacts).toEqual([validContact]);
+  });
+
+  it('relit un événement de contact', () => {
+    const result = parseTampered('naval_combat', (s) => {
+      s.events.push({
+        type: 'CONTACT_DETECTED',
+        contactId: 'C-1',
+        cycle: 1,
+        zone: validContact.zone,
+      });
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it.each([
+    [
+      'un identifiant mal formé',
+      (s: TamperedSave) => (s.state.friendContacts = [{ ...validContact, id: 'X-1' }]),
+      /identifiant de contact/,
+    ],
+    [
+      'un cycle futur',
+      (s: TamperedSave) => (s.state.friendContacts = [{ ...validContact, cycle: 999 }]),
+      /cycle invalide/,
+    ],
+    [
+      'une zone hors de la carte',
+      (s: TamperedSave) =>
+        (s.state.friendContacts = [{ ...validContact, zone: [{ col: 999, row: 0 }] }]),
+      /zone invalide/,
+    ],
+    [
+      'une zone vide',
+      (s: TamperedSave) => (s.state.friendContacts = [{ ...validContact, zone: [] }]),
+      /zone invalide/,
+    ],
+    [
+      'une zone de plus de 7 hexagones',
+      (s: TamperedSave) =>
+        (s.state.friendContacts = [
+          { ...validContact, zone: Array.from({ length: 8 }, (_, col) => ({ col, row: 0 })) },
+        ]),
+      /zone invalide/,
+    ],
+    [
+      'des identifiants en double',
+      (s: TamperedSave) => (s.state.friendContacts = [validContact, validContact]),
+      /en double/,
+    ],
+    [
+      'des contacts illisibles',
+      (s: TamperedSave) => (s.state.friendContacts = 'aucun'),
+      /contacts illisibles/,
+    ],
+    [
+      'un compteur invalide',
+      (s: TamperedSave) => (s.state.nextContactNumber = 0),
+      /compteur de contacts/,
+    ],
+    ['un état du hasard négatif', (s: TamperedSave) => (s.state.rngState = -1), /état du hasard/],
+    [
+      'un état du hasard trop grand',
+      (s: TamperedSave) => (s.state.rngState = 2 ** 32),
+      /état du hasard/,
+    ],
+    ['un état du hasard absent', (s: TamperedSave) => delete s.state.rngState, /état du hasard/],
+  ])('refuse %s', (_name, mutate, detail) => {
+    expectInvalidData(parseTampered('naval_combat', mutate), detail);
+  });
+
+  it('refuse un événement de contact incomplet ou mal formé', () => {
+    expectInvalidData(
+      parseTampered('naval_combat', (s) => s.events.push({ type: 'CONTACT_DETECTED', cycle: 1 })),
+      /événement \d+ du journal invalide/,
+    );
+    expectInvalidData(
+      parseTampered('naval_combat', (s) =>
+        s.events.push({ type: 'CONTACT_DETECTED', contactId: 'C-1', cycle: 1, zone: [] }),
+      ),
+      /événement \d+ du journal invalide/,
+    );
+  });
+
+  it('refuse une sauvegarde de version 1, sans migration (AB-08, AB-24)', () => {
+    const result = parseTampered('escort', (s) => {
+      s.schemaVersion = 1;
+    });
+    expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
   });
 });

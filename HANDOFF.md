@@ -86,7 +86,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Départ du camp allié (AB-14) | Validé : groupe autour de A en escorte ; en lutte navale, point de départ allié à 6 % de la largeur, mi-hauteur. Heuristique actuelle conforme, test sur 200 graines concluant |
 | Navigation du porte-avions | Arbitrée (AB-05 à AB-07) : ordres et quota validés tels que rédigés (ordre par défaut Poursuivre vers B, Stopper persistant) ; route bloquée = arrêt avant la case occupée, sans contournement ; dernière occasion d'ordre = pause du cycle et bouton « Clôturer le cycle » (nom proche de « Terminer le cycle » de la fin anticipée : à vérifier à l'implémentation de l'interface) |
 | Sauvegardes (AB-08) | Un seul emplacement, reprise proposée au démarrage, état et journal, sauvegarde automatique illisible ou incompatible traitée comme absente, sans message ni effacement (décision du propriétaire) ; mission gagnée sauvegardée, effacée au retour à la préparation (détail : `PERSISTANCE.md`) |
-| Hasard et reprise | `createRng(seed)` est une fermeture sans état global ; le hasard ne sert qu'au lancement et la graine n'est pas dans l'état. **Aucun état de générateur n'est ajouté tant qu'aucun tirage n'existe en cours de partie** : le premier tirage (détection, combat, IA) imposera de le conserver dans `MissionState`, de monter `schemaVersion` à 2 et d'arbitrer le sort des sauvegardes v1 (voir `MOTEUR-ET-ETAT.md`) |
+| Hasard et reprise (AB-24) | `createRng(seed)` renvoie un `StatefulRng` : `state()` donne l'état du générateur, `restoreRng(state)` le reprend. Le lancement tire la carte et les ennemis, puis `MissionState.rngState` conserve l'état pour la veille passive (premier tirage en cours de partie) ; la graine n'est jamais sauvegardée. `schemaVersion` est à 2 ; les sauvegardes de version 1 sont traitées comme absentes, sans migration |
 | Route du porte-avions bloquée (AB-09) | Comportement voulu : le porte-avions s'arrête devant un navire et le joueur modifie la route ; aucun indicateur ni contournement |
 | Interface de navigation | Ordres dans la fiche du porte-avions, confirmation par une barre sur la carte, un seul brouillon à la fois, « Terminer le cycle » désactivé pendant la dernière occasion d'ordre, bandeau de victoire avec « Nouvelle partie » sans confirmation, commandes désactivées ensuite |
 | Périmètre de la navigation | Navigation et victoire à l'arrivée en B (résultat binaire, commandes ensuite refusées), avec un simple bandeau de résultat ; ni bilan ni débriefing (D-12 ouvert) |
@@ -100,7 +100,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 
 ## État d'avancement
 
-Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. Navigation du porte-avions et victoire à l'arrivée en B, moteur et interface. Sauvegarde automatique et reprise de la partie en cours. Force ennemie créée au lancement (composition et placement, AB-11 à AB-16), inerte et cachée. **Rien** côté détection, combat, IA, actions spéciales, écran de fin de mission.
+Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. Navigation du porte-avions et victoire à l'arrivée en B, moteur et interface. Sauvegarde automatique et reprise de la partie en cours. Force ennemie créée au lancement (composition et placement, AB-11 à AB-16), inerte et cachée. Veille passive du camp ami (contacts, zones, journal, affichage, AB-18 à AB-24). **Rien** côté recherche active, détection hostile, combat, IA, actions spéciales, écran de fin de mission.
 
 | PR | Contenu | État |
 |---|---|---|
@@ -124,7 +124,9 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #25 | Retrait de l'export/import manuel JSON de la V1 (AB-10) | Fusionnée |
 | #26 | Noms de fichiers en kebab-case avec suffixes, tests dans `tests/`, `UnitPanel` dans `fleet`, blocs de séparation | Ouverte |
 | #31 | Arbitrage de la force ennemie et des zones de départ (AB-11 à AB-17), documents seuls | Fusionnée |
-| #32 | Jalon 5, PR A : force ennemie au lancement (composition, zones de départ, interception) | Ouverte |
+| #32 | Jalon 5, PR A : force ennemie au lancement (composition, zones de départ, interception) | Fusionnée |
+| #33 | Arbitrage de la détection passive, du journal des contacts et de la mer côtière (AB-18 à AB-24), documents seuls | Fusionnée |
+| #34 | Jalon 5, PR B : veille passive du camp ami (contacts, zones, journal, affichage) | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
@@ -140,7 +142,7 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
 
 **Navigation du porte-avions** : faite (PR A moteur, PR B interface). **Persistance (jalon 4, PR C)** : en deux PR. C1 : module `persistence/` (fait, sans interface ; revu pour séparer format, contrat de stockage et IndexedDB). C2 : store, sauvegarde automatique, reprise au démarrage, interface (faite). Le comportement est arbitré (AB-08, voir `PERSISTANCE.md`). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
 
-**Prochaine étape (jalon 5, PR A) : veille passive côté ami, voir le plan ci-dessous ;** puis recherche active (PR B), combat et IA. Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
+**Prochaine étape (jalon 5) : action spéciale et recherche active (PR B), puis combat et IA.** Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
 
 ## Force ennemie au lancement (jalon 5, première PR) : faite
 
@@ -154,22 +156,15 @@ Plan exécuté, avec ces écarts : pas de clé `hostileCount` (l'effectif décou
 6. **Hors périmètre** : IA (D-13, fichiers `engine/ai/*.ai.service.ts` plus tard), détection, combat, bonus du sous-marin côtier, équilibrage (G-03.1.5).
 7. **Conventions à rappeler** : nommage `nom.categorie.ts`, complexité ≤ 10, commentaire sur chaque fonction non triviale, aucune valeur de jeu en dur, mise à jour de `TRACEABILITY.md` et de `HANDOFF.md`.
 
-## Plan d'implémentation : veille passive (jalon 5, PR A)
+## Veille passive (jalon 5, PR A) : faite
 
-À exécuter après fusion de la PR d'arbitrage (AB-18 à AB-24).
+Plan exécuté, avec ces écarts : `ShipSpec.detection` (capteurs par classe, `null` pour le porte-avions) remplace un tableau séparé, `GameConfig.weaponRanges` ne garde que les armes, `constraints.sensorsFactor` porte les capteurs dégradés ; les contacts du camp ami sont dans `MissionState.friendContacts` (ceux de l'IA viendront à part) ; `createRng` renvoie un `StatefulRng` (`state()`, `restoreRng()`).
 
-1. **Configuration** (`engine/config/game.config.ts`) : `GameConfig.detection` (portées et probabilités par type de navire, taille de zone 7, tentatives 200, bonus côtier 0,2), en reprenant `ranges` ; capteurs dégradés (portées × 0,8, arrondi inférieur) lus de `constraints`. Mettre à jour `game.config.test.ts`.
-2. **Hasard** : `createRng` expose son état ; `MissionState.rngState` ; `schemaVersion` 2 ; `persistence/format/save.validator.ts` valide le nouvel état (et `contacts`) ; `PERSISTANCE.md` et `MOTEUR-ET-ETAT.md` à jour ; le test « aucune graine dans l'état » est remplacé.
-3. **Contacts** : `engine/detection/contact.types.ts` (contact : `id` `C-n`, `cycle` de détection, `zone`), `MissionState.contacts` et `nextContactNumber`.
-4. **Zone** : `engine/detection/passive-zone.service.ts` : croissance aléatoire, alignement sur une case uniforme (coordonnées axiales), refus si plage, plaine ou montagne, 200 tentatives, repli eau, cases triées.
-5. **Phase** : `engine/detection/passive-watch.service.ts` : un tirage par paire détecteur–cible éligible (distance hexagonale, porte-avions exclu), bonus côtier, un contact par cible ; branchée dans `resolveCycleEnd()` après le porte-avions et avant l'expiration, qui est ajoutée (contacts détectés deux cycles avant).
-6. **Événement** : `GameEvent` `CONTACT_DETECTED` ; libellé dans `shared/engine.label.ts`.
-7. **Navigabilité** : `engine/map/terrain.model.ts` autorise le sous-marin en mer côtière ; tests de navigabilité, de déplacement et de placement mis à jour.
-8. **Projection amie** : `FriendObservation.contacts` (`observeFriend()`), sans cible ni classe.
-9. **Interface** : couche des zones dans `features/tactical-map` (ambre, contour, étiquette), légende de case enrichie (`HexCaption`), journal (`LogbookPanel`), textes dans `shared/ui.label.ts`.
-10. **Tests** (dans des sous-dossiers `tests/`) : sur 200 graines, zones de 7 cases, contiguës, sans terre, contenant la cible, triées ; cible uniformément placée (statistique) ; déterminisme par graine et après reprise ; bonus côtier ; capteurs dégradés ; un contact par cible ; expiration ; aucun ennemi dans la projection amie ni dans l'événement ; sauvegarde v2 et refus de v1.
-11. **Hors périmètre** : recherche active (PR B), détection hostile (avec l'IA, fichiers `*.ai.service.ts`), style « ancien », synthèse de cycle, panneau de fiche.
-12. **Rappels** : nommage `nom.categorie.ts`, complexité ≤ 10, commentaire sur chaque fonction non triviale, aucune valeur de jeu en dur, `TRACEABILITY.md` et `HANDOFF.md` à mettre à jour.
+- **Moteur** : `engine/detection/` (`contact.types.ts`, `passive-zone.service.ts`, `passive-sensor.service.ts`), branché dans `resolveCycleEnd()` après la navigation du porte-avions.
+- **Hasard et sauvegarde** : `rngState` dans la mission, `schemaVersion` 2, validation des contacts ; une sauvegarde de version 1 est traitée comme absente (AB-24).
+- **Interface** : `ContactOverlay` (zone ambre, contour, étiquette), légende de case, journal. Vérifié dans le navigateur avec une sauvegarde fabriquée ; aucun test d'interface (Cypress plus tard).
+- **Navigabilité** : le sous-marin entre en mer côtière (AB-15, AB-22) ; les ennemis peuvent donc y partir.
+- **Reste** : recherche active (PR B, avec l'action spéciale), détection hostile (avec l'IA), état « ancien », synthèse de cycle, panneau de fiche, porte-avions non détecteur (`PROPOSÉ`).
 
 ## Pièges techniques rencontrés
 

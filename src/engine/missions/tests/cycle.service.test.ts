@@ -1,5 +1,6 @@
 import { defaultConfig, type ShipClass } from '../../config/game.config';
 import type { MissionState } from '../../core/game.types';
+import { createRng } from '../../core/rng.service';
 import type { Hex } from '../../map/hex.service';
 import { createUnit, type Unit } from '../../units/unit.model';
 import { closeCycle, determineOutcome, resolveCycleEnd } from '../cycle.service';
@@ -25,6 +26,9 @@ function escort(carrierAt: Hex): MissionState {
     cycle: 3,
     carrierNavigation: { mode: 'continue', waypoint: null, orderUsed: false },
     outcome: null,
+    friendContacts: [],
+    nextContactNumber: 1,
+    rngState: 1,
     units: [make('carrier', 'carrier', carrierAt), make('a', 'fremm', { col: 2, row: 2 })],
   };
 }
@@ -90,5 +94,65 @@ describe('clôture du cycle : navigation, puis résultat, puis suite', () => {
     const { state, events } = closeCycle(won, defaultConfig);
     expect(state).toBe(won);
     expect(events).toEqual([]);
+  });
+});
+
+describe('veille passive en fin de cycle (G-08, chronologie)', () => {
+  /** Lutte navale : un détecteur allié, un sous-marin hostile adjacent en mer côtière, cycle 3. */
+  function withHostileInRange(seed: number): MissionState {
+    return {
+      ...escort({ col: 0, row: 4 }),
+      goal: null,
+      carrierNavigation: null,
+      map: { width: SIZE, height: SIZE, terrain: Array(SIZE * SIZE).fill('coastal_sea') },
+      rngState: createRng(seed).state(),
+      units: [
+        make('a', 'frigate_da', { col: 4, row: 4 }),
+        createUnit('h', 'hostile', 'submarine', { col: 5, row: 4 }, defaultConfig, {
+          ammoFactor: 1,
+          movementCap: null,
+        }),
+      ],
+    };
+  }
+
+  it('détecte après le déplacement du porte-avions, avant l’ouverture du cycle suivant', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const mission = { ...withHostileInRange(seed), goal: escort({ col: 0, row: 4 }).goal };
+      const withCarrier: MissionState = {
+        ...mission,
+        carrierNavigation: { mode: 'continue', waypoint: null, orderUsed: false },
+        units: [make('carrier', 'carrier', { col: 6, row: 2 }), ...mission.units],
+      };
+      const { events } = closeCycle(withCarrier, defaultConfig);
+      const types = events.map((e) => e.type);
+      if (types.includes('CONTACT_DETECTED')) {
+        expect(types.indexOf('CARRIER_MOVED')).toBeLessThan(types.indexOf('CONTACT_DETECTED'));
+        expect(types.indexOf('CONTACT_DETECTED')).toBeLessThan(types.indexOf('CYCLE_STARTED'));
+        return;
+      }
+    }
+    throw new Error('aucune détection obtenue');
+  });
+
+  it('enregistre le cycle clos dans le contact et dans l’événement', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const { state, events } = closeCycle(withHostileInRange(seed), defaultConfig);
+      const detected = events.filter((e) => e.type === 'CONTACT_DETECTED');
+      if (detected.length > 0) {
+        expect(detected[0]).toMatchObject({ contactId: 'C-1', cycle: 3 });
+        expect(state.friendContacts.map((c) => [c.id, c.cycle])).toEqual([['C-1', 3]]);
+        expect(state.cycle).toBe(4);
+        return;
+      }
+    }
+    throw new Error('aucune détection obtenue');
+  });
+
+  it('détecte aussi quand la mission se termine pendant ce cycle (AB-01)', () => {
+    const mission = escort({ col: 7, row: 4 });
+    const result = closeCycle(mission, defaultConfig);
+    expect(result.state.outcome).toBe('victory');
+    expect(result.state.rngState).toBe(mission.rngState);
   });
 });

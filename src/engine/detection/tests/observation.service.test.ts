@@ -23,6 +23,9 @@ function missionWithHostiles(): MissionState {
     cycle: 2,
     carrierNavigation: { mode: 'continue', waypoint: null, orderUsed: false },
     outcome: null,
+    friendContacts: [],
+    nextContactNumber: 1,
+    rngState: 1,
     units: [
       make('carrier', 'friend', 'carrier', { col: 0, row: 4 }),
       make('a', 'friend', 'fremm', { col: 2, row: 2 }),
@@ -31,6 +34,20 @@ function missionWithHostiles(): MissionState {
     ],
   };
 }
+
+describe('projection du camp ami : contacts', () => {
+  const contact = { id: 'C-1', cycle: 1, zone: [{ col: 5, row: 4 }] };
+
+  it('transmet les contacts du camp ami, sans unité hostile', () => {
+    const observation = observeFriend({ ...missionWithHostiles(), friendContacts: [contact] });
+    expect(observation.contacts).toEqual([contact]);
+    expect(observation.units.every((u) => u.side === 'friend')).toBe(true);
+  });
+
+  it("n'expose aucun contact quand il n'y en a pas", () => {
+    expect(observeFriend(missionWithHostiles()).contacts).toEqual([]);
+  });
+});
 
 describe('projection du camp ami', () => {
   it("ne contient que les unités amies : aucune unité hostile n'est détectée", () => {

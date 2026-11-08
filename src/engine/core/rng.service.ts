@@ -1,15 +1,29 @@
 /** Générateur pseudo-aléatoire à graine (mulberry32) : le hasard reste contrôlable dans les tests. */
 export type Rng = () => number;
 
-export function createRng(seed: number): Rng {
-  let a = seed >>> 0;
-  return () => {
+/**
+ * Générateur dont l'état interne (un entier 32 bits) peut être relu : le conserver dans la
+ * mission permet à une reprise de poursuivre exactement la même suite de tirages (AB-24).
+ */
+export interface StatefulRng extends Rng {
+  state(): number;
+}
+
+/** Reprend un générateur à un état donné. Une graine est un état de départ comme un autre. */
+export function restoreRng(state: number): StatefulRng {
+  let a = state >>> 0;
+  const next = () => {
     a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  return Object.assign(next, { state: () => a });
+}
+
+export function createRng(seed: number): StatefulRng {
+  return restoreRng(seed);
 }
 
 export function randomInt(rng: Rng, maxExclusive: number): number {

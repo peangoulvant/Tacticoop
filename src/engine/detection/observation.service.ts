@@ -26,6 +26,7 @@ export function observeFriend(mission: MissionState): FriendObservation {
     outcome: mission.outcome,
     carrierNavigation: mission.carrierNavigation,
     units: mission.units.filter(isKnownToFriend),
+    contacts: mission.friendContacts,
   };
 }
 

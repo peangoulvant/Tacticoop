@@ -43,13 +43,22 @@ describe('reachableHexes', () => {
     );
   });
 
-  it('exclut les terrains interdits : une frégate entre en mer côtière, pas un sous-marin', () => {
+  it('exclut les terrains interdits : la plage est interdite à la frégate comme au sous-marin', () => {
+    const map = seaMap(9, [[{ col: 5, row: 4 }, 'beach']]);
+    const frigate = unit('a', 'frigate_da', centre);
+    const submarine = unit('b', 'submarine', centre);
+    const has = (hexes: Hex[]) => hexes.some((h) => h.col === 5 && h.row === 4);
+    expect(has(reachableHexes({ map, units: [frigate] }, frigate, defaultConfig))).toBe(false);
+    expect(has(reachableHexes({ map, units: [submarine] }, submarine, defaultConfig))).toBe(false);
+  });
+
+  it('autorise le sous-marin en mer côtière, comme la frégate (AB-15, AB-22)', () => {
     const map = seaMap(9, [[{ col: 5, row: 4 }, 'coastal_sea']]);
     const frigate = unit('a', 'frigate_da', centre);
     const submarine = unit('b', 'submarine', centre);
     const has = (hexes: Hex[]) => hexes.some((h) => h.col === 5 && h.row === 4);
     expect(has(reachableHexes({ map, units: [frigate] }, frigate, defaultConfig))).toBe(true);
-    expect(has(reachableHexes({ map, units: [submarine] }, submarine, defaultConfig))).toBe(false);
+    expect(has(reachableHexes({ map, units: [submarine] }, submarine, defaultConfig))).toBe(true);
   });
 
   it('exclut les cases occupées et ne les traverse pas', () => {
