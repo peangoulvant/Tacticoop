@@ -6,6 +6,8 @@ import type { Terrain } from '../../map/terrain.model';
 import { initialSetup, type Constraint } from '../../missions/setup.service';
 import { createUnit, type Side, type Unit } from '../../units/unit.model';
 import type { Contact } from '../contact.types';
+import { contactHexes } from '../contact.types';
+import { observeFriend } from '../observation.service';
 import { resolvePassiveSensors } from '../passive-sensor.service';
 
 const SIZE = 15;
@@ -41,6 +43,11 @@ function mission(
     nextContactNumber: contacts.length + 1,
     rngState: createRng(seed).state(),
   };
+}
+
+/** Contact suspect d'essai, issu de la cible `h1`. */
+function suspect(id: string, cycle: number, zone: Hex[]): Contact {
+  return { kind: 'suspect', id, cycle, zone, source: 'h1' };
 }
 
 const AT = { col: 7, row: 7 };
@@ -202,18 +209,19 @@ describe('veille passive : contacts (AB-18, AB-21)', () => {
       const result = resolvePassiveSensors(sureDetection([friend(), target], seed), defaultConfig);
       for (const contact of result.state.friendContacts) {
         expect(contact.cycle).toBe(1);
-        expect(contact.zone.some((h) => h.col === 8 && h.row === 7)).toBe(true);
+        expect(contact.kind).toBe('suspect');
+        expect(contactHexes(contact).some((h) => h.col === 8 && h.row === 7)).toBe(true);
       }
     }
   });
 
-  it("n'écrit aucune information cachée dans l'événement : ni cible, ni classe, ni détecteur", () => {
+  it("n'écrit aucune information cachée dans l'événement ni dans la projection : ni cible, ni classe, ni détecteur", () => {
     for (let seed = 1; seed <= 200; seed++) {
       const result = resolvePassiveSensors(
         sureDetection([friend(), hostile('submarine', { col: 8, row: 7 })], seed),
         defaultConfig,
       );
-      const text = JSON.stringify([result.events, result.state.friendContacts]);
+      const text = JSON.stringify([result.events, observeFriend(result.state).contacts]);
       expect(text).not.toContain('hostile');
       expect(text).not.toContain('h1');
       expect(text).not.toContain('f1');
@@ -223,8 +231,8 @@ describe('veille passive : contacts (AB-18, AB-21)', () => {
   });
 
   it('expire les contacts détectés avant ce cycle et garde ceux du cycle', () => {
-    const old: Contact = { id: 'C-1', cycle: 1, zone: [{ col: 1, row: 1 }] };
-    const recent: Contact = { id: 'C-2', cycle: 2, zone: [{ col: 2, row: 2 }] };
+    const old: Contact = suspect('C-1', 1, [{ col: 1, row: 1 }]);
+    const recent: Contact = suspect('C-2', 2, [{ col: 2, row: 2 }]);
     const state = resolvePassiveSensors(
       mission([friend()], { cycle: 2, contacts: [old, recent] }),
       defaultConfig,
@@ -233,7 +241,7 @@ describe('veille passive : contacts (AB-18, AB-21)', () => {
   });
 
   it('un contact reste visible jusqu’à la fin du cycle suivant sa détection', () => {
-    const detectedAt1: Contact = { id: 'C-1', cycle: 1, zone: [{ col: 1, row: 1 }] };
+    const detectedAt1: Contact = suspect('C-1', 1, [{ col: 1, row: 1 }]);
     const endOfCycle1 = resolvePassiveSensors(
       mission([friend()], { cycle: 1, contacts: [detectedAt1] }),
       defaultConfig,
@@ -244,7 +252,7 @@ describe('veille passive : contacts (AB-18, AB-21)', () => {
   });
 
   it('une nouvelle détection crée un nouveau contact, sans actualiser le précédent (AB-18)', () => {
-    const previous: Contact = { id: 'C-1', cycle: 1, zone: [{ col: 1, row: 1 }] };
+    const previous: Contact = suspect('C-1', 1, [{ col: 1, row: 1 }]);
     for (let seed = 1; seed <= 300; seed++) {
       const state = resolvePassiveSensors(
         mission([friend(), hostile('submarine', { col: 8, row: 7 })], {

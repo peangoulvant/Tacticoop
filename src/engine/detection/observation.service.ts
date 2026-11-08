@@ -1,11 +1,12 @@
 import type { MissionState } from '../core/game.types';
 import type { Unit } from '../units/unit.model';
+import type { Contact, FriendContact } from './contact.types';
 import type { FriendObservation, HostileObservation } from './observation.types';
 
 /**
- * Une unité est connue du camp ami si elle est amie. Une unité hostile ne l'est qu'une fois
- * détectée (SF-04) : aucun contact n'existe encore, donc aucune n'est connue. C'est le seul point
- * à étendre quand les contacts seront implémentés.
+ * Une unité est connue du camp ami si elle est amie. Un navire hostile identifié n'est jamais
+ * une unité connue (AB-30) : il n'existe pour le joueur que sous forme de contact, sans état
+ * réel (PV, stocks, classe).
  */
 function isKnownToFriend(unit: Unit): boolean {
   return unit.side === 'friend';
@@ -14,6 +15,25 @@ function isKnownToFriend(unit: Unit): boolean {
 /** Une unité est connue de l'IA si elle est hostile ; les alliés ne le seront qu'une fois détectés. */
 function isKnownToHostile(unit: Unit): boolean {
   return unit.side === 'hostile';
+}
+
+/**
+ * Contact tel que le joueur le voit : la cible interne (`source`) est retirée, et un contact
+ * identifié détecté avant le cycle courant est marqué « ancien » (AB-26, AB-27).
+ */
+function toFriendContact(contact: Contact, cycle: number): FriendContact {
+  const { id, cycle: detectedAt } = contact;
+  if (contact.kind === 'suspect')
+    return { kind: 'suspect', id, cycle: detectedAt, zone: contact.zone };
+  const { targetType, position } = contact;
+  return {
+    kind: 'identified',
+    id,
+    cycle: detectedAt,
+    targetType,
+    position,
+    stale: detectedAt < cycle,
+  };
 }
 
 /** Projection autorisée du camp ami sur l'état réel : carte, objectifs, et unités connues seulement. */
@@ -25,8 +45,9 @@ export function observeFriend(mission: MissionState): FriendObservation {
     cycle: mission.cycle,
     outcome: mission.outcome,
     carrierNavigation: mission.carrierNavigation,
+    constraints: mission.setup.constraints,
     units: mission.units.filter(isKnownToFriend),
-    contacts: mission.friendContacts,
+    contacts: mission.friendContacts.map((contact) => toFriendContact(contact, mission.cycle)),
   };
 }
 

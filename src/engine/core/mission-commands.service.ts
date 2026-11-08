@@ -3,9 +3,12 @@ import type { GameConfig } from '../config/game.config';
 import type { Hex } from '../map/hex.service';
 import {
   type MoveBlocker,
+  type SpecialActionBlocker,
   BLOCKER_MESSAGES,
+  SPECIAL_ACTION_BLOCKER_MESSAGES,
   moveBlocker,
   orderBlocker,
+  specialActionBlocker,
 } from '../missions/activation.service';
 import {
   CarrierOrderKind,
@@ -22,6 +25,7 @@ import {
   hasActivationInProgress,
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
+import { resolveActiveSearch } from '../detection/active-search.service';
 import { observeFriend } from '../detection/observation.service';
 import {
   MOVE_REFUSAL_MESSAGES,
@@ -63,6 +67,13 @@ const BLOCKER_CODES: Record<MoveBlocker, GameErrorCode> = {
 /** Refus correspondant à un motif d'impossibilité d'ordre. */
 function blockerRejection(blocker: MoveBlocker): CommandResult {
   return reject(BLOCKER_CODES[blocker], BLOCKER_MESSAGES[blocker]);
+}
+
+/** Refus correspondant à un motif d'impossibilité d'action spéciale (ordre ou propre à l'action). */
+function specialActionRejection(blocker: SpecialActionBlocker): CommandResult {
+  return blocker === 'SPECIAL_ACTION_USED' || blocker === 'NO_SENSORS'
+    ? reject(blocker, SPECIAL_ACTION_BLOCKER_MESSAGES[blocker])
+    : blockerRejection(blocker);
 }
 
 /*****************************
@@ -131,6 +142,25 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
       ...(interrupted && { interrupted: true }),
     },
   ]);
+};
+
+/**
+ * Recherche active (G-07.7, AB-25, AB-30) : résolue sur-le-champ, elle consomme l'action spéciale
+ * de l'unité même sans résultat, et l'engage dans son activation. Elle ne touche ni au déplacement
+ * ni à la discrétion de l'unité (AB-29) ; un refus ne consomme rien.
+ */
+const activeSearch: Handler<'ACTIVE_SEARCH'> = (mission, { unitId }, config) => {
+  const found = findOrderableUnit(mission, unitId);
+  if ('rejection' in found) return found.rejection;
+  const { unit } = found;
+  const blocker = specialActionBlocker(mission.units, unit, config);
+  if (blocker) return specialActionRejection(blocker);
+  const searched = resolveActiveSearch(mission, unit, config);
+  const engaged = updateUnitInMission(searched.state, unitId, {
+    activation: 'in_progress',
+    specialActionUsed: true,
+  });
+  return accept(engaged, searched.events);
 };
 
 /**
@@ -243,6 +273,7 @@ const closeCycleWithoutOrder: Handler<'CLOSE_CYCLE'> = (mission, _command, confi
 const handlers: { [T in MissionCommand['type']]: Handler<T> } = {
   MOVE_UNIT: moveUnit,
   END_ACTIVATION: endActivation,
+  ACTIVE_SEARCH: activeSearch,
   END_CYCLE_EARLY: endCycleEarly,
   ORDER_CARRIER: orderCarrier,
   CLOSE_CYCLE: closeCycleWithoutOrder,

@@ -1,6 +1,7 @@
-import type { Contact } from './contact.types';
+import type { FriendContact } from './contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
+import type { Constraint } from '../missions/setup.service';
 import type { CarrierNavigation, MissionOutcome } from '../units/carrier-orders.service';
 import type { Unit } from '../units/unit.model';
 
@@ -17,10 +18,15 @@ export interface FriendObservation {
   cycle: number;
   outcome: MissionOutcome | null;
   carrierNavigation: CarrierNavigation | null;
-  /** Unités connues du joueur : les siennes, et plus tard les hostiles identifiés (recherche active). */
+  /** Contraintes choisies par le joueur (« Capteurs dégradés » réduit la portée de recherche). */
+  constraints: readonly Constraint[];
+  /** Unités connues du joueur : les siennes ; un hostile identifié n'est jamais une unité (AB-30). */
   units: Unit[];
-  /** Contacts suspects de la veille passive : zones approximatives, jamais une unité (AB-23). */
-  contacts: Contact[];
+  /**
+   * Contacts du camp ami : zones suspectes de la veille passive et navires identifiés par
+   * recherche active, jamais une unité (AB-23, AB-30). Sans la cible interne (AB-26).
+   */
+  contacts: FriendContact[];
 }
 
 /**
