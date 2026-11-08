@@ -126,6 +126,7 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #31 | Arbitrage de la force ennemie et des zones de départ (AB-11 à AB-17), documents seuls | Fusionnée |
 | #32 | Jalon 5, PR A : force ennemie au lancement (composition, zones de départ, interception) | Fusionnée |
 | #33 | Arbitrage de la détection passive, du journal des contacts et de la mer côtière (AB-18 à AB-24), documents seuls | Fusionnée |
+| #34 | Jalon 5, PR B : veille passive du camp ami (contacts, zones, journal, affichage) | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
@@ -159,7 +160,7 @@ Plan exécuté, avec ces écarts : pas de clé `hostileCount` (l'effectif décou
 
 Plan exécuté, avec ces écarts : `ShipSpec.detection` (capteurs par classe, `null` pour le porte-avions) remplace un tableau séparé, `GameConfig.weaponRanges` ne garde que les armes, `constraints.sensorsFactor` porte les capteurs dégradés ; les contacts du camp ami sont dans `MissionState.friendContacts` (ceux de l'IA viendront à part) ; `createRng` renvoie un `StatefulRng` (`state()`, `restoreRng()`).
 
-- **Moteur** : `engine/detection/` (`contact.types.ts`, `passive-zone.service.ts`, `passive-watch.service.ts`), branché dans `resolveCycleEnd()` après la navigation du porte-avions.
+- **Moteur** : `engine/detection/` (`contact.types.ts`, `passive-zone.service.ts`, `passive-sensor.service.ts`), branché dans `resolveCycleEnd()` après la navigation du porte-avions.
 - **Hasard et sauvegarde** : `rngState` dans la mission, `schemaVersion` 2, validation des contacts ; une sauvegarde de version 1 est traitée comme absente (AB-24).
 - **Interface** : `ContactOverlay` (zone ambre, contour, étiquette), légende de case, journal. Vérifié dans le navigateur avec une sauvegarde fabriquée ; aucun test d'interface (Cypress plus tard).
 - **Navigabilité** : le sous-marin entre en mer côtière (AB-15, AB-22) ; les ennemis peuvent donc y partir.

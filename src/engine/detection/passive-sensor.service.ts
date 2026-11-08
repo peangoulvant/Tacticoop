@@ -70,7 +70,7 @@ function isDetected(
  * contacts détectés avant ce cycle expirent : un contact reste visible jusqu'à la fin du cycle
  * suivant sa détection (G-08.6.2). Le hasard est repris et rendu à l'état de la mission (AB-24).
  */
-export function resolvePassiveWatch(mission: MissionState, config: GameConfig): Progress {
+export function resolvePassiveSensors(mission: MissionState, config: GameConfig): Progress {
   const rng = restoreRng(mission.rngState);
   const detectors = mission.units.filter((unit) => isFriendlyDetector(unit, config));
   const targets = mission.units.filter((unit) => unit.side === 'hostile' && unit.hp > 0);

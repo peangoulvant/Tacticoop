@@ -1,6 +1,6 @@
 import type { GameConfig } from '../config/game.config';
 import type { MissionState, Progress } from '../core/game.types';
-import { resolvePassiveWatch } from '../detection/passive-watch.service';
+import { resolvePassiveSensors } from '../detection/passive-sensor.service';
 import type { Unit } from '../units/unit.model';
 import { hasCarrierArrived, moveCarrier } from '../units/carrier-movement.service';
 import type { MissionOutcome } from '../units/carrier-orders.service';
@@ -63,8 +63,8 @@ export function isAwaitingFinalOrder(mission: MissionState): boolean {
  */
 export function resolveCycleEnd(mission: MissionState, config: GameConfig): Progress {
   const moved = moveCarrier(mission, config);
-  const watched = resolvePassiveWatch(moved.state, config);
-  return { state: watched.state, events: [...moved.events, ...watched.events] };
+  const sensed = resolvePassiveSensors(moved.state, config);
+  return { state: sensed.state, events: [...moved.events, ...sensed.events] };
 }
 
 /**

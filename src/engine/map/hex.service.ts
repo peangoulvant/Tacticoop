@@ -83,9 +83,11 @@ function roundAxial(q: number, r: number): Axial {
 }
 
 /**
- * Forme connexe de `size` hexagones, en coordonnées axiales, par croissance aléatoire : on part de
- * l'origine et l'on ajoute, tour à tour, un voisin tiré uniformément parmi ceux de la forme en
- * cours. Aucune limite de carte ici : la forme est ensuite déplacée (`placeShape`).
+ * Premier temps de la fabrication de la zone d'un contact suspect (G-08.5, AB-20) : tire la forme
+ * de la zone, sans encore la poser sur la carte. Forme connexe de `size` hexagones, en coordonnées
+ * axiales, obtenue par croissance aléatoire : on part de l'origine et l'on ajoute, tour à tour, un
+ * voisin tiré uniformément parmi ceux de la forme en cours. Aucune limite de carte ici : la forme
+ * est ensuite déplacée sur la cible détectée par `placeShape`.
  */
 export function growShape(size: number, rng: Rng): Axial[] {
   const shape: Axial[] = [{ q: 0, r: 0 }];
@@ -101,7 +103,11 @@ export function growShape(size: number, rng: Rng): Axial[] {
   return shape;
 }
 
-/** Déplace une forme pour que sa case d'indice `anchor` tombe sur `target`. */
+/**
+ * Second temps de la fabrication de la zone d'un contact suspect (G-08.5, AB-20) : déplace la forme
+ * tirée par `growShape` pour que sa case d'indice `anchor` tombe sur `target`, la cible détectée.
+ * L'appelant tire `anchor` uniformément : la cible n'est ainsi pas plus centrale qu'une autre case.
+ */
 export function placeShape(shape: readonly Axial[], anchor: number, target: Hex): Hex[] {
   const base = shape[anchor] as Axial;
   const t = toAxial(target);
