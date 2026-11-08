@@ -37,7 +37,7 @@ Un développeur doit savoir **d'où vient** une fonction ou un type en lisant un
 - `plan` désigne le calcul du moteur : `engine.planMove`, `engine.MovePlan`.
 - `draft` (« brouillon ») désigne l'état d'interface d'une action en préparation, pas encore exécutée : `useMoveDraft`, `MoveDraft`, `useMoveDraftStore`.
 - Un hook s'appelle `useXxx`, un store Zustand `useXxxStore` ; un composant React porte un nom de rôle (`UnitPanel`, `MoveBar`).
-- Deux notions de déplacement ne partagent pas un nom : `units/unit-movement.service.ts` (déplacement d'une unité par le joueur) et `missions/carrier-movement.service.ts` (navigation automatique du porte-avions).
+- Deux notions de déplacement ne partagent pas un nom : `units/unit-movement.service.ts` (déplacement d'une unité par le joueur) et `units/carrier-movement.service.ts` (navigation automatique du porte-avions).
 - Avant de nommer, chercher les noms déjà proches dans les autres couches et choisir un mot distinct.
 
 ## Nommage des fichiers

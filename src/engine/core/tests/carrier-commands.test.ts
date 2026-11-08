@@ -1,6 +1,6 @@
 import { defaultConfig, type ShipClass } from '../../config/game.config';
 import { hexNeighbors, type Hex } from '../../map/hex.service';
-import { plannedRoute } from '../../missions/carrier-movement.service';
+import { plannedRoute } from '../../units/carrier-movement.service';
 import { isAwaitingFinalOrder } from '../../missions/cycle.service';
 import { initialSetup } from '../../missions/setup.service';
 import { createUnit, type Unit } from '../../units/unit.model';

@@ -3,7 +3,7 @@ import type { MissionState, Progress } from '../core/game.types';
 import { indexOf, shortestPath, type GameMap } from '../map/game-map.service';
 import { sameHex, type Hex } from '../map/hex.service';
 import type { NavalCategory } from '../map/terrain.model';
-import type { Unit } from '../units/unit.model';
+import type { Unit } from './unit.model';
 import { CarrierOrderKind, carrierOf, type CarrierNavigation } from './carrier-orders.service';
 
 /**

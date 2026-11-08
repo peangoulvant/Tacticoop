@@ -10,8 +10,8 @@ import { indexOf, terrainAt, type GameMap } from '../map/game-map.service';
 import type { ScenarioMap } from '../map/generate.service';
 import { hexDistance, type Hex } from '../map/hex.service';
 import { isNavigable, type NavalCategory } from '../map/terrain.model';
-import { createUnit, type Unit } from '../units/unit.model';
-import type { MissionKind } from './setup.service';
+import { createUnit, type Unit } from './unit.model';
+import type { MissionKind } from '../missions/setup.service';
 
 /** Les contraintes initiales ne s'appliquent qu'aux alliés (SF-01 §4) : l'ennemi garde sa fiche. */
 const NO_MODIFIERS = { ammoFactor: 1, movementCap: null } as const;

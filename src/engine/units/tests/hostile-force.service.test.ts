@@ -4,10 +4,10 @@ import { observeFriend } from '../../detection/observation.service';
 import { indexOf, terrainAt } from '../../map/game-map.service';
 import { hexDistance } from '../../map/hex.service';
 import { isNavigable } from '../../map/terrain.model';
-import type { Unit } from '../../units/unit.model';
+import type { Unit } from '../unit.model';
 import { createHostileUnits, drawHostileClasses, hostileZoneOf } from '../hostile-force.service';
-import { launchMission, type LaunchedMission } from '../launch.service';
-import { initialSetup, type MissionKind, type MissionSetup } from '../setup.service';
+import { launchMission, type LaunchedMission } from '../../missions/launch.service';
+import { initialSetup, type MissionKind, type MissionSetup } from '../../missions/setup.service';
 
 const SEEDS = Array.from({ length: 200 }, (_, i) => i + 1);
 const WIDTH = defaultConfig.map.width;

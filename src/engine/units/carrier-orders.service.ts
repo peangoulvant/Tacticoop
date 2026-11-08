@@ -3,8 +3,8 @@ import * as labelEngine from '../../shared/engine.label';
 import { inBounds, shortestPath, terrainAt, type GameMap } from '../map/game-map.service';
 import { sameHex, type Hex } from '../map/hex.service';
 import { isNavigable } from '../map/terrain.model';
-import type { Unit } from '../units/unit.model';
-import type { MissionKind } from './setup.service';
+import type { Unit } from './unit.model';
+import type { MissionKind } from '../missions/setup.service';
 
 /**
  * Types d'ordre de navigation du porte-avions (G-03.2.3) : Poursuivre, Stopper, Modifier

@@ -1,6 +1,6 @@
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
-import type { CarrierNavigation, MissionOutcome } from '../missions/carrier-orders.service';
+import type { CarrierNavigation, MissionOutcome } from '../units/carrier-orders.service';
 import type { Unit } from '../units/unit.model';
 
 /**

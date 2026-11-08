@@ -8,13 +8,13 @@ import {
 } from '../map/generate.service';
 import { indexOf, nearestNavigableHex } from '../map/game-map.service';
 import { createUnit, type Unit, type UnitModifiers } from '../units/unit.model';
-import { initialCarrierNavigation, type CarrierNavigation } from './carrier-orders.service';
+import { initialCarrierNavigation, type CarrierNavigation } from '../units/carrier-orders.service';
 import {
   createHostileUnits,
   drawHostileClasses,
   hostileForceSpecOf,
   hostileZoneOf,
-} from './hostile-force.service';
+} from '../units/hostile-force.service';
 import type { MissionSetup } from './setup.service';
 
 export interface LaunchedMission extends ScenarioMap {
