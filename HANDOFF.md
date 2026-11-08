@@ -94,6 +94,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Clôture de cycle et résultat | `closeCycle()` = `resolveCycleEnd()` (phases de fin de cycle) puis `determineOutcome()` (défaite avant victoire, AB-01) puis fin de mission ou cycle suivant. Les phases ennemies, la veille passive, les projectiles (AB-02) et la défaite (AB-03) sont **reportés** avec le combat, sans stub : ils s'ajouteront dans `resolveCycleEnd()` et `determineOutcome()` |
 | Force ennemie (AB-11 à AB-13) | Arbitrée et **créée au lancement** (`engine/units/hostile-force.service.ts`), inerte et cachée. Lutte navale et escorte : 3 ennemis, quatre configurations équiprobables, frégates tirées parmi FREMM, DA et ASM ; bande est (25 %) en lutte navale, partie centrale (30 % à 85 %) en escorte ; distances minimales proportionnelles à la largeur ; difficulté sans effet sur composition et placement |
 | Sous-marin en mer côtière (AB-15, AB-22) | Autorisé ; +20 points de probabilité de détection passive (plafond 100 %), deux camps, portée inchangée ; recherche active à définir ; la table `NAVIGABLE` change avec la veille passive |
+| Recherche active (AB-25 à AB-30) | Résolue à l'action : un tirage à 90 % par navire hostile à portée (3 avec capteurs dégradés), type (frégate ou sous-marin, pas la classe) et position exacte ; en plus du passif de fin de cycle ; une zone désigne une cible (interne), identifiée sa zone disparaît ; contact identifié actualisé, un par navire, « ancien » s'il date d'un cycle précédent, position figée ; teintes par numéro ; événement `ACTIVE_SEARCH_PERFORMED` toujours journalisé ; bonus côtier passif seulement (actif : 90 % partout) ; aucun effet de discrétion en V1 ; bouton « Recherche active » avec brouillon, confirmation et retour explicite ; contacts sans effet sur la planification des déplacements ; `schemaVersion` 3 |
 | Détection passive (AB-18 à AB-24) | Un contact distinct par observation, une zone par cible et par cycle ; zone de 7 hexagones sans terre, forme tirée puis alignée sur une case uniforme, 200 tentatives, repli eau ; cases triées (jamais l'ordre de génération, qui commence par la cible) ; événement `CONTACT_DETECTED` sans cible ni détecteur ; affichage ambre avec légende de case ; porte-avions non détecteur (`PROPOSÉ`) ; état du générateur dans `MissionState`, `schemaVersion` 2, anciennes sauvegardes absentes |
 | Paramétrage (AB-16) | `GameConfig.missions` ; portées non mises à l'échelle, test de cohérence de configuration ; littéraux d'escorte à externaliser |
 | Nommage de l'IA (AB-17) | `nom.ai.service.ts` pour les fichiers de `engine/ai/` qui ont un homologue côté unités |
@@ -126,7 +127,7 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #31 | Arbitrage de la force ennemie et des zones de départ (AB-11 à AB-17), documents seuls | Fusionnée |
 | #32 | Jalon 5, PR A : force ennemie au lancement (composition, zones de départ, interception) | Fusionnée |
 | #33 | Arbitrage de la détection passive, du journal des contacts et de la mer côtière (AB-18 à AB-24), documents seuls | Fusionnée |
-| #34 | Jalon 5, PR B : veille passive du camp ami (contacts, zones, journal, affichage) | Ouverte |
+| #34 | Jalon 5, PR B : veille passive du camp ami (contacts, zones, journal, affichage) | Fusionnée |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
@@ -142,7 +143,7 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
 
 **Navigation du porte-avions** : faite (PR A moteur, PR B interface). **Persistance (jalon 4, PR C)** : en deux PR. C1 : module `persistence/` (fait, sans interface ; revu pour séparer format, contrat de stockage et IndexedDB). C2 : store, sauvegarde automatique, reprise au démarrage, interface (faite). Le comportement est arbitré (AB-08, voir `PERSISTANCE.md`). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
 
-**Prochaine étape (jalon 5) : action spéciale et recherche active (PR B), puis combat et IA.** Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
+**Prochaine étape (jalon 5, PR C) : recherche active, voir le plan ci-dessous ;** puis combat et IA. Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
 
 ## Force ennemie au lancement (jalon 5, première PR) : faite
 
@@ -165,6 +166,20 @@ Plan exécuté, avec ces écarts : `ShipSpec.detection` (capteurs par classe, `n
 - **Interface** : `ContactOverlay` (zone ambre, contour, étiquette), légende de case, journal. Vérifié dans le navigateur avec une sauvegarde fabriquée ; aucun test d'interface (Cypress plus tard).
 - **Navigabilité** : le sous-marin entre en mer côtière (AB-15, AB-22) ; les ennemis peuvent donc y partir.
 - **Reste** : recherche active (PR B, avec l'action spéciale), détection hostile (avec l'IA), état « ancien », synthèse de cycle, panneau de fiche, porte-avions non détecteur (`PROPOSÉ`).
+
+## Plan d'implémentation : recherche active (jalon 5, PR C)
+
+À exécuter après fusion de la PR d'arbitrage (AB-25 à AB-30).
+
+1. **État** : `Unit.specialActionUsed` (remis à faux par `reopen()` en début de cycle) ; `Contact` devient une union : contact suspect (zone) et contact identifié (`targetType` frégate ou sous-marin, `position`), tous deux avec `id`, `cycle` et un champ interne `source` (identifiant de la cible, jamais exposé). `schemaVersion` 3, validation à jour, les sauvegardes de version 2 sont traitées comme absentes.
+2. **Résolution** : `engine/detection/active-search.service.ts` → `resolveActiveSearch()` : un tirage à 90 % par navire hostile à portée effective (capteurs dégradés compris), sans bonus côtier, avec `restoreRng(rngState)` ; crée ou actualise un contact identifié par navire ; retire les zones suspectes dont la source est identifiée ; renvoie l'événement `ACTIVE_SEARCH_PERFORMED`.
+3. **Commande** : `ACTIVE_SEARCH` (`unitId`) dans `mission-commands.service.ts` ; préconditions dans `missions/activation.service.ts` (`SPECIAL_ACTION_USED`, `NO_SENSORS`, blocages existants), codes d'erreur dans `game.types.ts`, messages dans `shared/engine.label.ts`. Le tirage passif de fin de cycle (`passive-sensor.service.ts`) renseigne la source des zones.
+4. **Projection amie** : `observeFriend()` renvoie des contacts sans `source` (type dédié) ; test d'absence dans la projection, les événements et le journal.
+5. **Journal** : événement `ACTIVE_SEARCH_PERFORMED` (cycle, unité, navires identifiés), libellé dans `shared/ui.label.ts` ; validation d'événement.
+6. **Interface** : `store/search-draft.store.ts` et `use-search-draft.ts`, `search-bar.component.tsx` (`Confirmer` / `Annuler`), surlignage de la portée, bouton « Recherche active » dans `unit-panel.component.tsx`, retour de 4 secondes ; `dispatchAndCloseDrafts` ferme aussi ce brouillon ; `ContactOverlay` : teintes par numéro (`theme.config.ts`), contact identifié (case exacte, couleur hostile, badge « F » ou « SM », pointillés si ancien) ; légende de case enrichie.
+7. **Tests** (dans des sous-dossiers `tests/`) : sur 200 graines, environ 90 % de réussite par navire à portée ; portée 3 avec capteurs dégradés ; aucun bonus côtier ; plusieurs navires identifiés dans une recherche ; un contact identifié par navire, actualisé ; seule la zone de la cible identifiée disparaît ; la zone d'un autre navire reste ; le tirage passif reste appliqué ; action spéciale une fois par activation, dans les deux ordres avec le déplacement ; refus sans consommation ; `source` absente de la projection, des événements et du journal ; « ancien » ; expiration ; sauvegarde 3 et refus de la version 2 ; vérification visuelle dans le navigateur.
+8. **Hors périmètre** : détection et IA hostiles, discrétion de l'émetteur, planification des déplacements face aux contacts, panneau de fiche, synthèse de cycle, autres actions spéciales.
+9. **Rappels** : nommage `nom.categorie.ts` (`sensor` pour les capteurs), `hostile` et non `enemy`, complexité ≤ 10, commentaire sur chaque fonction non triviale, aucune valeur de jeu en dur, `TRACEABILITY.md` et `HANDOFF.md` à jour.
 
 ## Pièges techniques rencontrés
 
