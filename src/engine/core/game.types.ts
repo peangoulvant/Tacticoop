@@ -1,4 +1,5 @@
 import type { PurchasableShipClass, ShipClass } from '../config/game.config';
+import type { Contact } from '../detection/contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
 import type {
@@ -37,6 +38,12 @@ export interface MissionState {
   carrierNavigation: CarrierNavigation | null;
   /** Résultat de la mission une fois terminée ; les commandes sont alors refusées. */
   outcome: MissionOutcome | null;
+  /** Contacts suspects du camp ami, issus de la veille passive (SF-04, AB-18). */
+  friendContacts: Contact[];
+  /** Numéro du prochain contact : les identifiants ne sont jamais réutilisés (AB-21). */
+  nextContactNumber: number;
+  /** État du générateur de hasard, conservé pour que la reprise poursuive la même suite (AB-24). */
+  rngState: number;
 }
 
 export type GameState = PreparationState | MissionState;
@@ -76,6 +83,8 @@ export type GameEvent =
   | { type: 'CYCLE_STARTED'; cycle: number }
   | { type: 'CARRIER_ORDERED'; order: CarrierOrder; cycle: number }
   | { type: 'CARRIER_MOVED'; from: Hex; to: Hex; cycle: number }
+  /** Contact suspect issu de la veille passive : sans cible, classe ni détecteur (AB-21). */
+  | { type: 'CONTACT_DETECTED'; contactId: string; cycle: number; zone: Hex[] }
   | { type: 'MISSION_WON'; cycle: number };
 
 export type GameErrorCode =

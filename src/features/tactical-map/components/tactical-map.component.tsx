@@ -15,6 +15,7 @@ import type { MoveDraft } from '../../commands';
 import { ShipGlyph, terrainFill } from './glyphs.component';
 import { HEX_POINTS, hexCenter, mapViewBox } from '../services/hex-geometry.service';
 import { CarrierRouteOverlay } from './carrier-route-overlay.component';
+import { ContactOverlay } from './contact-overlay.component';
 import { MoveOverlay } from './move-overlay.component';
 import { useMapView } from '../services/use-map-view';
 
@@ -114,18 +115,22 @@ function HexCaption({
   map,
   hex,
   unit,
+  contacts,
 }: {
   map: engine.GameMap;
   hex: engine.Hex | null;
   unit?: engine.Unit;
+  contacts: readonly engine.Contact[];
 }) {
   const text = hex
     ? `(${hex.col}, ${hex.row}) — ${labels.terrainLabel[engine.terrainAt(map, hex)]}`
     : 'Sélectionnez un hexagone';
   const ship = unit ? ` — ${engine.defaultConfig.ships[unit.shipClass].label}` : '';
+  const covering = hex ? contacts.filter((c) => c.zone.some((z) => engine.sameHex(z, hex))) : [];
+  const suspects = covering.map((contact) => ` — ${labels.contactCaption(contact)}`).join('');
   return (
     <Typography variant="caption" sx={{ ...overlay, left: 8, bottom: 8, px: 1, py: 0.25 }}>
-      {`${text}${ship} · ${map.width}×${map.height}`}
+      {`${text}${ship}${suspects} · ${map.width}×${map.height}`}
     </Typography>
   );
 }
@@ -145,7 +150,7 @@ export function TacticalMap({
 }) {
   // La carte n'affiche que ce que le joueur connaît : jamais une unité hostile non détectée.
   const observation = useMemo(() => engine.observeFriend(mission), [mission]);
-  const { map, units, start, goal } = observation;
+  const { map, units, start, goal, contacts } = observation;
   const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
   const content = mapViewBox(map);
 
@@ -195,6 +200,7 @@ export function TacticalMap({
           {view && (
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
               <TerrainLayer map={map} />
+              <ContactOverlay contacts={contacts} />
               <MoveOverlay move={move} />
               <CarrierRouteOverlay view={carrierRoute} />
               {selected && (
@@ -215,6 +221,7 @@ export function TacticalMap({
         map={map}
         hex={selectedHex}
         unit={units.find((u) => selectedHex && engine.sameHex(u.position, selectedHex))}
+        contacts={contacts}
       />
     </Box>
   );

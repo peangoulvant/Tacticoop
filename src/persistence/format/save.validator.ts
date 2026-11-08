@@ -149,6 +149,36 @@ function checkCarrierNavigation(state: Json, map: engine.GameMap, escort: boolea
     : 'navigation du porte-avions absente';
 }
 
+/** Un contact : identifiant de forme connue, cycle plausible, zone dans la carte. */
+function checkContact(contact: unknown, map: engine.GameMap, cycle: number): Problem {
+  if (!isRecord(contact)) return 'contact illisible';
+  if (typeof contact.id !== 'string' || !engine.CONTACT_ID_PATTERN.test(contact.id)) {
+    return 'identifiant de contact invalide';
+  }
+  if (!isPositive(contact.cycle) || contact.cycle > cycle)
+    return `cycle invalide pour le contact ${contact.id}`;
+  const zone = contact.zone;
+  const valid =
+    Array.isArray(zone) &&
+    zone.length >= 1 &&
+    zone.length <= engine.defaultConfig.detection.zoneSize &&
+    zone.every((hex) => isHexOn(map, hex));
+  return valid ? null : `zone invalide pour le contact ${contact.id}`;
+}
+
+/** Contacts du camp ami, compteur de numéros et état du générateur (AB-24). */
+function checkDetection(state: Json, map: engine.GameMap): Problem {
+  if (!isPositive(state.nextContactNumber)) return 'compteur de contacts invalide';
+  if (!isCount(state.rngState) || state.rngState > 0xffffffff) return 'état du hasard invalide';
+  const contacts = state.friendContacts;
+  if (!Array.isArray(contacts)) return 'contacts illisibles';
+  const cycle = state.cycle as number;
+  const first = contacts.map((c) => checkContact(c, map, cycle)).find((p) => p !== null);
+  if (first) return first;
+  const ids = new Set(contacts.map((c: Json) => c.id));
+  return ids.size === contacts.length ? null : 'identifiants de contact en double';
+}
+
 /** Contrôle de l'état d'une mission en cours ; renvoie le premier problème, ou `null`. */
 export function checkMissionState(state: unknown): Problem {
   if (!isRecord(state)) return 'état de la partie illisible';
@@ -162,6 +192,7 @@ export function checkMissionState(state: unknown): Problem {
     () => checkEndpoints(state, map, escort),
     () => checkUnits(state, map, escort),
     () => checkCarrierNavigation(state, map, escort),
+    () => checkDetection(state, map),
   ]);
 }
 
@@ -184,6 +215,16 @@ function isMove(event: Json): boolean {
   );
 }
 
+/** Zone de contact : de 1 à `zoneSize` hexagones. */
+function isZone(zone: unknown): boolean {
+  return (
+    Array.isArray(zone) &&
+    zone.length >= 1 &&
+    zone.length <= engine.defaultConfig.detection.zoneSize &&
+    zone.every(isHex)
+  );
+}
+
 /** Drapeau facultatif : absent, ou vrai (un drapeau faux n'est jamais écrit). */
 function isAbsentOrTrue(value: unknown): boolean {
   return value === undefined || value === true;
@@ -195,6 +236,11 @@ const EVENT_CHECKS: Record<engine.GameEvent['type'], (event: Json) => boolean> =
   CYCLE_STARTED: (e) => isPositive(e.cycle),
   CARRIER_ORDERED: (e) => isCarrierOrder(e.order) && isPositive(e.cycle),
   CARRIER_MOVED: (e) => isHex(e.from) && isHex(e.to) && isPositive(e.cycle),
+  CONTACT_DETECTED: (e) =>
+    typeof e.contactId === 'string' &&
+    engine.CONTACT_ID_PATTERN.test(e.contactId) &&
+    isPositive(e.cycle) &&
+    isZone(e.zone),
   MISSION_WON: (e) => isPositive(e.cycle),
 };
 

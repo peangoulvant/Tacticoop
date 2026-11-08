@@ -2,8 +2,11 @@ import * as engine from '../../engine';
 import { isRecord } from './guards.validator';
 import { checkEvents, checkMissionState } from './save.validator';
 
-/** Version du format. Une autre version est refusée : aucune migration n'existe en V1. */
-export const SAVE_SCHEMA_VERSION = 1;
+/**
+ * Version du format. La version 2 ajoute les contacts et l'état du générateur (AB-24). Une autre
+ * version, la version 1 comprise, est refusée : aucune migration n'existe en V1 (AB-08).
+ */
+export const SAVE_SCHEMA_VERSION = 2;
 
 /** Pourquoi une sauvegarde est refusée (diagnostic ; aucun message n'est affiché au joueur, voir AB-08). */
 export const SaveErrorCode = {
@@ -15,8 +18,9 @@ export type SaveErrorCode = (typeof SaveErrorCode)[keyof typeof SaveErrorCode];
 
 /**
  * Sauvegarde d'une mission en cours : l'état de la partie et le journal de bord. La sélection et
- * les brouillons d'action relèvent de l'interface et ne sont jamais sauvegardés. Aucun hasard n'est
- * conservé : la carte est dans l'état, et les graines ne servent qu'au lancement.
+ * les brouillons d'action relèvent de l'interface et ne sont jamais sauvegardés. Le hasard est
+ * conservé sous forme d'état du générateur dans la mission (`rngState`), jamais de graine : une
+ * reprise poursuit la même suite de tirages (AB-24).
  */
 export interface SaveFile {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;

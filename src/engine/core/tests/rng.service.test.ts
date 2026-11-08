@@ -2,7 +2,7 @@ import { defaultConfig } from '../../config/game.config';
 import { initialSetup } from '../../missions/setup.service';
 import { executeCommand } from '../execute-command.service';
 import type { GameState } from '../game.types';
-import { createRng, pickWeighted, randomInt, shuffle } from '../rng.service';
+import { createRng, pickWeighted, randomInt, restoreRng, shuffle } from '../rng.service';
 
 /** Les `count` premiers tirages d'un générateur. */
 function draws(seed: number, count: number): number[] {
@@ -105,8 +105,17 @@ describe('hasard au lancement : la graine suffit à reproduire la mission', () =
     expect(launched(11)).not.toEqual(launched(12));
   });
 
-  it("ne conserve aucune graine dans l'état de la mission : le hasard ne sert qu'au lancement", () => {
+  it("conserve l'état du générateur dans la mission, jamais la graine (AB-24)", () => {
     const state = launched(11);
-    expect(JSON.stringify(state)).not.toMatch(/seed|rng/i);
+    expect(JSON.stringify(state)).not.toMatch(/seed/i);
+    expect(state.status === 'in_progress' && Number.isInteger(state.rngState)).toBe(true);
+  });
+
+  it("l'état conservé reprend exactement la suite de tirages interrompue", () => {
+    const rng = createRng(11);
+    rng();
+    rng();
+    const resumed = restoreRng(rng.state());
+    expect([resumed(), resumed(), resumed()]).toEqual([rng(), rng(), rng()]);
   });
 });

@@ -1,0 +1,289 @@
+import { defaultConfig, type ShipClass } from '../../config/game.config';
+import type { MissionState } from '../../core/game.types';
+import { createRng } from '../../core/rng.service';
+import type { Hex } from '../../map/hex.service';
+import type { Terrain } from '../../map/terrain.model';
+import { initialSetup, type Constraint } from '../../missions/setup.service';
+import { createUnit, type Side, type Unit } from '../../units/unit.model';
+import type { Contact } from '../contact.types';
+import { resolvePassiveWatch } from '../passive-watch.service';
+
+const SIZE = 15;
+const NO_MODIFIERS = { ammoFactor: 1, movementCap: null } as const;
+
+function unit(id: string, side: Side, shipClass: ShipClass, position: Hex): Unit {
+  return createUnit(id, side, shipClass, position, defaultConfig, NO_MODIFIERS);
+}
+
+/** Mission d'essai en mer ouverte : seuls les détecteurs et cibles fournis comptent. */
+function mission(
+  units: Unit[],
+  options: {
+    seed?: number;
+    cycle?: number;
+    constraints?: Constraint[];
+    contacts?: Contact[];
+    terrain?: Terrain;
+  } = {},
+): MissionState {
+  const { seed = 1, cycle = 1, constraints = [], contacts = [], terrain = 'deep_sea' } = options;
+  return {
+    status: 'in_progress',
+    setup: { ...initialSetup(), mission: 'naval_combat', constraints },
+    map: { width: SIZE, height: SIZE, terrain: Array<Terrain>(SIZE * SIZE).fill(terrain) },
+    start: { col: 0, row: 7 },
+    goal: null,
+    units,
+    cycle,
+    carrierNavigation: null,
+    outcome: null,
+    friendContacts: contacts,
+    nextContactNumber: contacts.length + 1,
+    rngState: createRng(seed).state(),
+  };
+}
+
+const AT = { col: 7, row: 7 };
+function friend(shipClass: ShipClass = 'frigate_da', position: Hex = AT): Unit {
+  return unit('f1', 'friend', shipClass, position);
+}
+
+function hostile(shipClass: ShipClass = 'frigate_asm', position: Hex = { col: 9, row: 7 }): Unit {
+  return unit('h1', 'hostile', shipClass, position);
+}
+
+/** Nombre de cycles, sur autant de graines, où la veille passive crée au moins un contact. */
+function detectionRate(build: (seed: number) => MissionState, runs = 3000): number {
+  let detected = 0;
+  for (let seed = 1; seed <= runs; seed++) {
+    if (resolvePassiveWatch(build(seed), defaultConfig).state.friendContacts.length > 0) detected++;
+  }
+  return detected / runs;
+}
+
+describe('veille passive : éligibilité et probabilité (G-08.2, G-08.4)', () => {
+  it('détecte à environ 60 % une cible à portée (distance 2)', () => {
+    const rate = detectionRate((seed) => mission([friend(), hostile()], { seed }));
+    expect(rate).toBeGreaterThan(0.55);
+    expect(rate).toBeLessThan(0.65);
+  });
+
+  it('ne détecte jamais une cible hors de portée (distance 3)', () => {
+    const far = hostile('frigate_asm', { col: 10, row: 7 });
+    expect(detectionRate((seed) => mission([friend(), far], { seed }), 500)).toBe(0);
+  });
+
+  it('un sous-marin allié détecte comme une frégate', () => {
+    const rate = detectionRate((seed) => mission([friend('submarine'), hostile()], { seed }));
+    expect(rate).toBeGreaterThan(0.55);
+    expect(rate).toBeLessThan(0.65);
+  });
+
+  it('le porte-avions ne détecte pas (aucune ligne dans G-08.4, D-04)', () => {
+    const carrier = unit('c', 'friend', 'carrier', AT);
+    expect(detectionRate((seed) => mission([carrier, hostile()], { seed }), 500)).toBe(0);
+  });
+
+  it('ne tire rien sans cible ni détecteur, et ne crée aucun contact', () => {
+    const result = resolvePassiveWatch(mission([friend()]), defaultConfig);
+    expect(result.state.friendContacts).toEqual([]);
+    expect(result.events).toEqual([]);
+  });
+
+  it('une unité hostile ne crée pas de contact : seuls les détecteurs alliés comptent', () => {
+    const hostileDetector = unit('h0', 'hostile', 'frigate_da', AT);
+    const carrier = unit('c', 'friend', 'carrier', { col: 8, row: 7 });
+    expect(detectionRate((seed) => mission([hostileDetector, carrier], { seed }), 500)).toBe(0);
+  });
+});
+
+describe('veille passive : mer côtière (AB-22)', () => {
+  it('relève à 80 % la détection d’un sous-marin hostile en mer côtière', () => {
+    const submarine = hostile('submarine');
+    const rate = detectionRate((seed) =>
+      mission([friend(), submarine], { seed, terrain: 'coastal_sea' }),
+    );
+    expect(rate).toBeGreaterThan(0.75);
+    expect(rate).toBeLessThan(0.85);
+  });
+
+  it('ne relève pas la détection d’une frégate en mer côtière', () => {
+    const rate = detectionRate((seed) =>
+      mission([friend(), hostile()], { seed, terrain: 'coastal_sea' }),
+    );
+    expect(rate).toBeGreaterThan(0.55);
+    expect(rate).toBeLessThan(0.65);
+  });
+
+  it('ne relève pas la détection d’un sous-marin en haute mer', () => {
+    const rate = detectionRate((seed) => mission([friend(), hostile('submarine')], { seed }));
+    expect(rate).toBeLessThan(0.65);
+  });
+});
+
+describe('veille passive : capteurs dégradés (SF-01 §4)', () => {
+  it('réduit la portée passive à 1 pour les alliés : une cible à 2 hexagones n’est plus détectée', () => {
+    const build = (seed: number) =>
+      mission([friend(), hostile()], { seed, constraints: ['degraded_sensors'] });
+    expect(detectionRate(build, 500)).toBe(0);
+  });
+
+  it('garde une cible adjacente détectable à 60 %', () => {
+    const adjacent = hostile('frigate_asm', { col: 8, row: 7 });
+    const rate = detectionRate((seed) =>
+      mission([friend(), adjacent], { seed, constraints: ['degraded_sensors'] }),
+    );
+    expect(rate).toBeGreaterThan(0.55);
+    expect(rate).toBeLessThan(0.65);
+  });
+});
+
+describe('veille passive : contacts (AB-18, AB-21)', () => {
+  /** Mission où la détection est sûre : sous-marin hostile côtier face à plusieurs détecteurs. */
+  function sureDetection(units: Unit[], seed = 1): MissionState {
+    return mission(units, { seed, terrain: 'coastal_sea' });
+  }
+
+  it('crée un contact par cible détectée, numéroté à partir de 1, avec un événement', () => {
+    let state = sureDetection([
+      friend(),
+      friend('frigate_asm', { col: 8, row: 8 }),
+      hostile('submarine'),
+    ]);
+    for (let seed = 1; state.friendContacts.length === 0 && seed < 100; seed++) {
+      state = resolvePassiveWatch(
+        sureDetection([friend(), hostile('submarine')], seed),
+        defaultConfig,
+      ).state;
+    }
+    expect(state.friendContacts.map((c) => c.id)).toEqual(['C-1']);
+    expect(state.nextContactNumber).toBe(2);
+  });
+
+  it('une cible vue par deux détecteurs ne donne qu’un contact et une zone', () => {
+    const detectors = [friend(), friend('frigate_asm', { col: 8, row: 8 })].map((u, i) => ({
+      ...u,
+      id: `f${i}`,
+    }));
+    for (let seed = 1; seed <= 300; seed++) {
+      const result = resolvePassiveWatch(
+        sureDetection([...detectors, hostile('submarine', { col: 8, row: 7 })], seed),
+        defaultConfig,
+      );
+      expect(result.state.friendContacts.length).toBeLessThanOrEqual(1);
+      expect(result.events.length).toBe(result.state.friendContacts.length);
+    }
+  });
+
+  it('numérote sans réutiliser les identifiants et crée un contact par cible', () => {
+    const targets = [
+      unit('h1', 'hostile', 'submarine', { col: 8, row: 7 }),
+      unit('h2', 'hostile', 'submarine', { col: 6, row: 7 }),
+    ];
+    let found = false;
+    for (let seed = 1; seed <= 300 && !found; seed++) {
+      const state = resolvePassiveWatch(
+        sureDetection([friend(), ...targets], seed),
+        defaultConfig,
+      ).state;
+      if (state.friendContacts.length === 2) {
+        expect(state.friendContacts.map((c) => c.id)).toEqual(['C-1', 'C-2']);
+        expect(state.nextContactNumber).toBe(3);
+        found = true;
+      }
+    }
+    expect(found).toBe(true);
+  });
+
+  it('un contact de zone contient la cible, jamais ne la désigne, et porte le cycle de détection', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const target = hostile('submarine', { col: 8, row: 7 });
+      const result = resolvePassiveWatch(sureDetection([friend(), target], seed), defaultConfig);
+      for (const contact of result.state.friendContacts) {
+        expect(contact.cycle).toBe(1);
+        expect(contact.zone.some((h) => h.col === 8 && h.row === 7)).toBe(true);
+      }
+    }
+  });
+
+  it("n'écrit aucune information cachée dans l'événement : ni cible, ni classe, ni détecteur", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const result = resolvePassiveWatch(
+        sureDetection([friend(), hostile('submarine', { col: 8, row: 7 })], seed),
+        defaultConfig,
+      );
+      const text = JSON.stringify([result.events, result.state.friendContacts]);
+      expect(text).not.toContain('hostile');
+      expect(text).not.toContain('h1');
+      expect(text).not.toContain('f1');
+      expect(text).not.toContain('submarine');
+      expect(text).not.toContain('frigate');
+    }
+  });
+
+  it('expire les contacts détectés avant ce cycle et garde ceux du cycle', () => {
+    const old: Contact = { id: 'C-1', cycle: 1, zone: [{ col: 1, row: 1 }] };
+    const recent: Contact = { id: 'C-2', cycle: 2, zone: [{ col: 2, row: 2 }] };
+    const state = resolvePassiveWatch(
+      mission([friend()], { cycle: 2, contacts: [old, recent] }),
+      defaultConfig,
+    ).state;
+    expect(state.friendContacts.map((c) => c.id)).toEqual(['C-2']);
+  });
+
+  it('un contact reste visible jusqu’à la fin du cycle suivant sa détection', () => {
+    const detectedAt1: Contact = { id: 'C-1', cycle: 1, zone: [{ col: 1, row: 1 }] };
+    const endOfCycle1 = resolvePassiveWatch(
+      mission([friend()], { cycle: 1, contacts: [detectedAt1] }),
+      defaultConfig,
+    ).state;
+    expect(endOfCycle1.friendContacts.map((c) => c.id)).toEqual(['C-1']);
+    const endOfCycle2 = resolvePassiveWatch({ ...endOfCycle1, cycle: 2 }, defaultConfig).state;
+    expect(endOfCycle2.friendContacts).toEqual([]);
+  });
+
+  it('une nouvelle détection crée un nouveau contact, sans actualiser le précédent (AB-18)', () => {
+    const previous: Contact = { id: 'C-1', cycle: 1, zone: [{ col: 1, row: 1 }] };
+    for (let seed = 1; seed <= 300; seed++) {
+      const state = resolvePassiveWatch(
+        mission([friend(), hostile('submarine', { col: 8, row: 7 })], {
+          seed,
+          cycle: 2,
+          terrain: 'coastal_sea',
+          contacts: [previous],
+        }),
+        defaultConfig,
+      ).state;
+      if (state.friendContacts.length > 0) {
+        // C-1 (cycle 1) expire à la fin du cycle 2 ; le nouveau contact a un nouvel identifiant.
+        expect(state.friendContacts.map((c) => [c.id, c.cycle])).toEqual([['C-2', 2]]);
+        return;
+      }
+    }
+    throw new Error('aucune détection obtenue');
+  });
+});
+
+describe('veille passive : hasard conservé (AB-24)', () => {
+  it('est reproductible et fait avancer l’état du générateur', () => {
+    const start = mission([friend(), hostile()], { seed: 4 });
+    const a = resolvePassiveWatch(start, defaultConfig);
+    const b = resolvePassiveWatch(start, defaultConfig);
+    expect(a).toEqual(b);
+    expect(a.state.rngState).not.toBe(start.rngState);
+  });
+
+  it("reprend la même suite après une sauvegarde : l'état conservé donne les mêmes résultats", () => {
+    const start = mission([friend(), hostile()], { seed: 4 });
+    const first = resolvePassiveWatch(start, defaultConfig).state;
+    const reloaded = JSON.parse(JSON.stringify(first)) as MissionState;
+    expect(resolvePassiveWatch({ ...reloaded, cycle: 2 }, defaultConfig)).toEqual(
+      resolvePassiveWatch({ ...first, cycle: 2 }, defaultConfig),
+    );
+  });
+
+  it("ne tire rien quand aucune paire n'est éligible : l'état du générateur est inchangé", () => {
+    const start = mission([friend(), hostile('frigate_asm', { col: 12, row: 7 })]);
+    expect(resolvePassiveWatch(start, defaultConfig).state.rngState).toBe(start.rngState);
+  });
+});

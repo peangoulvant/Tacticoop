@@ -14,6 +14,8 @@ function describe(event: engine.GameEvent): string {
       return `${engine.defaultConfig.ships[event.shipClass].label} : déplacement de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
     case 'CYCLE_STARTED':
       return `Cycle ${event.cycle} ouvert`;
+    case 'CONTACT_DETECTED':
+      return labels.contactEventLabel(event);
     default:
       return labels.carrierEventLabel(event);
   }

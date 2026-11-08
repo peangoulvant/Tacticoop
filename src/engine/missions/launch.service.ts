@@ -1,6 +1,7 @@
 import type { GameConfig, ShipClass } from '../config/game.config';
 import { PURCHASABLE_CLASSES } from '../config/game.config';
 import { createRng, type Rng } from '../core/rng.service';
+import type { Contact } from '../detection/contact.types';
 import {
   generateEscortMap,
   generateNavalCombatMap,
@@ -20,6 +21,10 @@ import type { MissionSetup } from './setup.service';
 export interface LaunchedMission extends ScenarioMap {
   units: Unit[];
   carrierNavigation: CarrierNavigation | null;
+  friendContacts: Contact[];
+  nextContactNumber: number;
+  /** État du générateur après les tirages du lancement (AB-24). */
+  rngState: number;
 }
 
 /** Classes à placer : le porte-avions du scénario d'abord, puis la force choisie. */
@@ -88,5 +93,8 @@ export function launchMission(
     ...scenario,
     units: [...allies, ...hostiles],
     carrierNavigation: initialCarrierNavigation(setup.mission),
+    friendContacts: [],
+    nextContactNumber: 1,
+    rngState: rng.state(),
   };
 }

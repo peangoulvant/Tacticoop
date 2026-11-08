@@ -32,6 +32,9 @@ function escort(): MissionState {
     cycle: 1,
     carrierNavigation: { mode: 'continue', waypoint: null, orderUsed: false },
     outcome: null,
+    friendContacts: [],
+    nextContactNumber: 1,
+    rngState: 1,
     units: [
       make('carrier', 'carrier', { col: 0, row: 4 }),
       make('a', 'fremm', { col: 2, row: 2 }),

@@ -28,6 +28,9 @@ function mission(hostileAt: Hex): MissionState {
     cycle: 1,
     carrierNavigation: null,
     outcome: null,
+    friendContacts: [],
+    nextContactNumber: 1,
+    rngState: 1,
     units: [
       make('a', 'friend', 'fremm', { col: 2, row: 4 }),
       make('b', 'friend', 'frigate_da', { col: 2, row: 7 }),

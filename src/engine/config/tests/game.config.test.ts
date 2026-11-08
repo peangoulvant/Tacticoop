@@ -12,6 +12,7 @@ describe('defaultConfig', () => {
       maxCount: 2,
       ammoFactor: 0.7,
       badWeatherMaxMovement: 2,
+      sensorsFactor: 0.8,
     });
   });
 
@@ -62,13 +63,33 @@ describe('defaultConfig', () => {
     expect(Object.values(hostile.frigateClassWeights)).toEqual([1, 1, 1]);
   });
 
-  it('reprend les portées validées (D-05, G-08.4)', () => {
-    expect(defaultConfig.ranges).toEqual({
-      missile: 8,
-      torpedo: 5,
-      passiveDetection: 2,
-      activeDetection: 4,
+  it("reprend les portées d'armes (D-05)", () => {
+    expect(defaultConfig.weaponRanges).toEqual({ missile: 8, torpedo: 5 });
+  });
+
+  it.each(['fremm', 'frigate_da', 'frigate_asm', 'submarine'] as const)(
+    'donne à %s les capteurs validés (G-08.4)',
+    (shipClass) => {
+      expect(defaultConfig.ships[shipClass].detection).toEqual({
+        passiveRange: 2,
+        passiveProbability: 0.6,
+        activeRange: 4,
+        activeProbability: 0.9,
+      });
+    },
+  );
+
+  it("n'a pas de capteurs pour le porte-avions (D-04)", () => {
+    expect(defaultConfig.ships.carrier.detection).toBeNull();
+  });
+
+  it('définit la détection passive arbitrée (AB-20, AB-22, SF-01 §4)', () => {
+    expect(defaultConfig.detection).toEqual({
+      zoneSize: 7,
+      zoneMaxAttempts: 200,
+      coastalSubmarinePassiveBonus: 0.2,
     });
+    expect(defaultConfig.constraints.sensorsFactor).toBe(0.8);
   });
 
   /**
@@ -79,8 +100,11 @@ describe('defaultConfig', () => {
   it.each([35, 50])(
     'garde les distances minimales de départ au-delà des portées, sur une carte de %i',
     (width) => {
-      const { ranges, missions } = defaultConfig;
-      const reach = Math.max(ranges.missile, ranges.torpedo) + ranges.activeDetection;
+      const { weaponRanges, missions, ships } = defaultConfig;
+      const activeRanges = Object.values(ships).map((spec) => spec.detection?.activeRange ?? 0);
+      const reach =
+        Math.max(weaponRanges.missile, weaponRanges.torpedo, ...activeRanges) +
+        Math.max(...activeRanges);
       const distance = (ratio: number) => Math.round(width * ratio);
       expect(distance(missions.navalCombat.minStartDistanceRatio)).toBeGreaterThan(reach);
       expect(distance(missions.escort.minDistanceFromStartRatio)).toBeGreaterThan(reach);

@@ -133,6 +133,32 @@ export function carrierEventLabel(event: CarrierEvent): string {
 
 /*****************************
  *
+ * PARTIE CONTACTS
+ *
+ *****************************/
+
+/** Coordonnées d'une liste d'hexagones, dans l'ordre reçu, au format du journal. */
+function coordinatesLabel(hexes: readonly engine.Hex[]): string {
+  return hexes.map((hex) => `(${hex.col}, ${hex.row})`).join(' ');
+}
+
+/**
+ * Texte du journal pour un contact de veille passive (AB-21) : « contact suspect » et « zone
+ * approximative », toutes les cases citées, sans jamais désigner la cible.
+ */
+export function contactEventLabel(
+  event: Extract<engine.GameEvent, { type: 'CONTACT_DETECTED' }>,
+): string {
+  return `Veille passive : contact suspect ${event.contactId}, zone approximative ${coordinatesLabel(event.zone)}`;
+}
+
+/** Légende d'une case appartenant à la zone d'un contact (AB-23). */
+export function contactCaption(contact: engine.Contact): string {
+  return `Contact suspect ${contact.id} (zone approximative de ${contact.zone.length} hexagones, détecté au cycle ${contact.cycle})`;
+}
+
+/*****************************
+ *
  * PARTIE UNITÉS
  *
  *****************************/

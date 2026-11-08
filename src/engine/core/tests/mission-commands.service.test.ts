@@ -29,6 +29,9 @@ function mission(): MissionState {
     cycle: 1,
     carrierNavigation: null,
     outcome: null,
+    friendContacts: [],
+    nextContactNumber: 1,
+    rngState: 1,
     units: [
       make('carrier', 'carrier', { col: 0, row: 4 }),
       make('a', 'fremm', { col: 2, row: 2 }),

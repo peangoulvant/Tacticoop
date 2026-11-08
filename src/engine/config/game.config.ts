@@ -21,6 +21,16 @@ export interface ShipSpec {
   missiles: number;
   torpedoes: number;
   helicopters: number;
+  /** Capteurs de détection (G-08.4) ; `null` pour une unité qui ne détecte pas (porte-avions, D-04). */
+  detection: DetectorSpec | null;
+}
+
+/** Portées en hexagones et probabilités de détection d'un type de bâtiment (G-08.4, SF-04 §2-§3). */
+export interface DetectorSpec {
+  passiveRange: number;
+  passiveProbability: number;
+  activeRange: number;
+  activeProbability: number;
 }
 
 /** Classes de frégate que l'ennemi peut aligner (AB-11). */
@@ -66,21 +76,29 @@ export interface MissionsConfig {
 }
 
 /**
- * Portées validées en hexagones (D-05 pour les armes, G-08.4 pour la détection). Elles servent pour
- * l'instant au contrôle de cohérence des distances de départ ; le combat et la détection les
- * utiliseront.
+ * Portées d'armes validées en hexagones (D-05). Elles servent pour l'instant au contrôle de
+ * cohérence des distances de départ avec les portées de détection ; le combat les utilisera.
  */
-export interface RangesConfig {
+export interface WeaponRangesConfig {
   missile: number;
   torpedo: number;
-  passiveDetection: number;
-  activeDetection: number;
+}
+
+/** Paramètres communs de la détection passive (AB-20, AB-22). */
+export interface DetectionConfig {
+  /** Nombre d'hexagones d'une zone de contact, cible comprise (G-08.2.2). */
+  zoneSize: number;
+  /** Tentatives pour obtenir une zone sans terre avant le repli (AB-20). */
+  zoneMaxAttempts: number;
+  /** Points de probabilité de détection passive gagnés contre un sous-marin en mer côtière (AB-22). */
+  coastalSubmarinePassiveBonus: number;
 }
 
 export interface GameConfig {
   map: { width: number; height: number };
   missions: MissionsConfig;
-  ranges: RangesConfig;
+  weaponRanges: WeaponRangesConfig;
+  detection: DetectionConfig;
   budget: { normal: number; limitedMeans: number };
   constraints: {
     /** Nombre maximal de contraintes initiales (0 à ce maximum, SF-01 §4). */
@@ -89,6 +107,8 @@ export interface GameConfig {
     ammoFactor: number;
     /** Plafond de déplacement des unités alliées avec « Météo défavorable ». */
     badWeatherMaxMovement: number;
+    /** Part de la portée de détection conservée avec « Capteurs dégradés », arrondie à l'inférieur (SF-01 §4). */
+    sensorsFactor: number;
   };
   ships: Record<ShipClass, ShipSpec>;
 }
@@ -111,6 +131,14 @@ const HOSTILE_FORCE: HostileForceSpec = {
   frigateClassWeights: { fremm: 1, frigate_da: 1, frigate_asm: 1 },
 };
 
+/** Portées et probabilités initiales de la frégate et du sous-marin, identiques (G-08.4). */
+const DETECTOR: DetectorSpec = {
+  passiveRange: 2,
+  passiveProbability: 0.6,
+  activeRange: 4,
+  activeProbability: 0.9,
+};
+
 export const defaultConfig: GameConfig = {
   map: { width: 35, height: 35 },
   missions: {
@@ -129,9 +157,10 @@ export const defaultConfig: GameConfig = {
       hostile: HOSTILE_FORCE,
     },
   },
-  ranges: { missile: 8, torpedo: 5, passiveDetection: 2, activeDetection: 4 },
+  weaponRanges: { missile: 8, torpedo: 5 },
+  detection: { zoneSize: 7, zoneMaxAttempts: 200, coastalSubmarinePassiveBonus: 0.2 },
   budget: { normal: 100, limitedMeans: 70 },
-  constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2 },
+  constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2, sensorsFactor: 0.8 },
   ships: {
     fremm: {
       label: 'FREMM multimission',
@@ -143,6 +172,7 @@ export const defaultConfig: GameConfig = {
       missiles: 4,
       torpedoes: 4,
       helicopters: 1,
+      detection: DETECTOR,
     },
     frigate_da: {
       label: 'Frégate DA',
@@ -154,6 +184,7 @@ export const defaultConfig: GameConfig = {
       missiles: 6,
       torpedoes: 2,
       helicopters: 1,
+      detection: DETECTOR,
     },
     frigate_asm: {
       label: 'Frégate ASM',
@@ -165,6 +196,7 @@ export const defaultConfig: GameConfig = {
       missiles: 2,
       torpedoes: 6,
       helicopters: 2,
+      detection: DETECTOR,
     },
     submarine: {
       label: 'Sous-marin',
@@ -176,6 +208,7 @@ export const defaultConfig: GameConfig = {
       missiles: 0,
       torpedoes: 4,
       helicopters: 0,
+      detection: DETECTOR,
     },
     carrier: {
       label: 'Porte-avions',
@@ -187,6 +220,7 @@ export const defaultConfig: GameConfig = {
       missiles: 0,
       torpedoes: 0,
       helicopters: 0,
+      detection: null,
     },
   },
 };

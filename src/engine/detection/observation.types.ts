@@ -1,3 +1,4 @@
+import type { Contact } from './contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
 import type { CarrierNavigation, MissionOutcome } from '../units/carrier-orders.service';
@@ -16,8 +17,10 @@ export interface FriendObservation {
   cycle: number;
   outcome: MissionOutcome | null;
   carrierNavigation: CarrierNavigation | null;
-  /** Unités connues du joueur : les siennes, et plus tard les hostiles détectés (contacts). */
+  /** Unités connues du joueur : les siennes, et plus tard les hostiles identifiés (recherche active). */
   units: Unit[];
+  /** Contacts suspects de la veille passive : zones approximatives, jamais une unité (AB-23). */
+  contacts: Contact[];
 }
 
 /**
