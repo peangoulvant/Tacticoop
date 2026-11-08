@@ -129,6 +129,7 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #33 | Arbitrage de la détection passive, du journal des contacts et de la mer côtière (AB-18 à AB-24), documents seuls | Fusionnée |
 | #34 | Jalon 5, PR B : veille passive du camp ami (contacts, zones, journal, affichage) | Fusionnée |
 | #35 | Arbitrage de la recherche active (AB-25 à AB-30), documents seuls | Fusionnée |
+| #36 | Jalon 5, PR C : recherche active du camp ami (moteur, persistance `schemaVersion` 3, interface) | Ouverte |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
