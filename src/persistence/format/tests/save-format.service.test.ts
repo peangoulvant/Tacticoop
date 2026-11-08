@@ -123,10 +123,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 3;
+      save.schemaVersion = 4;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 3/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 4/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -354,15 +354,32 @@ describe('refus d’un journal invalide', () => {
   });
 });
 
-describe('contacts et état du hasard (version 2)', () => {
-  const validContact = { id: 'C-1', cycle: 1, zone: [{ col: 3, row: 3 }] };
+/** Identifiant d'un navire hostile de la sauvegarde, cible interne des contacts d'essai. */
+function hostileId(save: TamperedSave): string {
+  return save.state.units.find((u: { side: string }) => u.side === 'hostile').id;
+}
 
+/** Contact suspect valide de la sauvegarde, modifié par `patch`. */
+function validContact(save: TamperedSave, patch: object = {}) {
+  return {
+    kind: 'suspect',
+    id: 'C-1',
+    cycle: 1,
+    zone: [{ col: 3, row: 3 }],
+    source: hostileId(save),
+    ...patch,
+  };
+}
+
+describe('contacts et état du hasard (version 2)', () => {
   it('relit une mission avec contacts, compteur et état du générateur', () => {
+    let expected: unknown;
     const result = parseTampered('naval_combat', (s) => {
-      s.state.friendContacts = [validContact];
+      expected = validContact(s);
+      s.state.friendContacts = [expected];
       s.state.nextContactNumber = 2;
     });
-    expect(result.ok && result.save.state.friendContacts).toEqual([validContact]);
+    expect(result.ok && result.save.state.friendContacts).toEqual([expected]);
   });
 
   it('relit un événement de contact', () => {
@@ -371,7 +388,7 @@ describe('contacts et état du hasard (version 2)', () => {
         type: 'CONTACT_DETECTED',
         contactId: 'C-1',
         cycle: 1,
-        zone: validContact.zone,
+        zone: [{ col: 3, row: 3 }],
       });
     });
     expect(result.ok).toBe(true);
@@ -380,36 +397,36 @@ describe('contacts et état du hasard (version 2)', () => {
   it.each([
     [
       'un identifiant mal formé',
-      (s: TamperedSave) => (s.state.friendContacts = [{ ...validContact, id: 'X-1' }]),
+      (s: TamperedSave) => (s.state.friendContacts = [validContact(s, { id: 'X-1' })]),
       /identifiant de contact/,
     ],
     [
       'un cycle futur',
-      (s: TamperedSave) => (s.state.friendContacts = [{ ...validContact, cycle: 999 }]),
+      (s: TamperedSave) => (s.state.friendContacts = [validContact(s, { cycle: 999 })]),
       /cycle invalide/,
     ],
     [
       'une zone hors de la carte',
       (s: TamperedSave) =>
-        (s.state.friendContacts = [{ ...validContact, zone: [{ col: 999, row: 0 }] }]),
+        (s.state.friendContacts = [validContact(s, { zone: [{ col: 999, row: 0 }] })]),
       /zone invalide/,
     ],
     [
       'une zone vide',
-      (s: TamperedSave) => (s.state.friendContacts = [{ ...validContact, zone: [] }]),
+      (s: TamperedSave) => (s.state.friendContacts = [validContact(s, { zone: [] })]),
       /zone invalide/,
     ],
     [
       'une zone de plus de 7 hexagones',
       (s: TamperedSave) =>
         (s.state.friendContacts = [
-          { ...validContact, zone: Array.from({ length: 8 }, (_, col) => ({ col, row: 0 })) },
+          validContact(s, { zone: Array.from({ length: 8 }, (_, col) => ({ col, row: 0 })) }),
         ]),
       /zone invalide/,
     ],
     [
       'des identifiants en double',
-      (s: TamperedSave) => (s.state.friendContacts = [validContact, validContact]),
+      (s: TamperedSave) => (s.state.friendContacts = [validContact(s), validContact(s)]),
       /en double/,
     ],
     [
@@ -446,10 +463,190 @@ describe('contacts et état du hasard (version 2)', () => {
     );
   });
 
-  it('refuse une sauvegarde de version 1, sans migration (AB-08, AB-24)', () => {
-    const result = parseTampered('escort', (s) => {
-      s.schemaVersion = 1;
+  it.each([1, 2])(
+    'refuse une sauvegarde de version %i, sans migration (AB-08, AB-24, AB-30)',
+    (version) => {
+      const result = parseTampered('escort', (s) => {
+        s.schemaVersion = version;
+      });
+      expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
+    },
+  );
+});
+
+/**
+ * Mission jouée jusqu'à une recherche active menée près d'un navire hostile, puis l'activation
+ * terminée : une sauvegarde ne se fait qu'entre deux séquences complètes.
+ */
+function searchedMission(): { state: engine.MissionState; events: engine.GameEvent[] } {
+  const { state, events } = playedMission('naval_combat');
+  const target = state.units.find((u) => u.side === 'hostile')!;
+  const searcher = state.units.find((u) => u.side === 'friend' && u.activation === 'available')!;
+  const position = { col: target.position.col - 1, row: target.position.row };
+  const placed = state.units.map((u) => (u.id === searcher.id ? { ...u, position } : u));
+  // Recherche sûre : le test porte sur la sauvegarde, pas sur le tirage.
+  const detection = { ...engine.defaultConfig.ships.fremm.detection!, activeProbability: 1 };
+  const config: engine.GameConfig = {
+    ...engine.defaultConfig,
+    ships: {
+      ...engine.defaultConfig.ships,
+      fremm: { ...engine.defaultConfig.ships.fremm, detection },
+      submarine: { ...engine.defaultConfig.ships.submarine, detection },
+    },
+  };
+  let current: engine.GameState = { ...state, units: placed };
+  const produced: engine.GameEvent[] = [];
+  for (const command of [
+    { type: 'ACTIVE_SEARCH', unitId: searcher.id },
+    { type: 'END_ACTIVATION', unitId: searcher.id },
+  ] satisfies engine.GameCommand[]) {
+    const result = engine.executeCommand(current, command, config);
+    if (!result.ok) throw new Error(result.error.message);
+    current = result.state;
+    produced.push(...result.events);
+  }
+  if (current.status !== 'in_progress') throw new Error('mission non en cours');
+  return { state: current, events: [...events, ...produced] };
+}
+
+describe('recherche active (version 3)', () => {
+  const identified = (s: TamperedSave, patch: object = {}) => ({
+    kind: 'identified',
+    id: 'C-1',
+    cycle: 1,
+    targetType: 'frigate',
+    position: { col: 4, row: 4 },
+    source: hostileId(s),
+    ...patch,
+  });
+
+  it("aller-retour d'une mission où une recherche active a eu lieu", () => {
+    const { state, events } = searchedMission();
+    const result = parseSave(serializeSave(state, events, SAVED_AT));
+    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 3 } });
+    expect(result.ok && result.save.state).toEqual(state);
+    expect(events.some((e) => e.type === 'ACTIVE_SEARCH_PERFORMED')).toBe(true);
+    expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);
+  });
+
+  it('le journal sauvegardé ne contient aucune cible (non-divulgation, AB-26, AB-28)', () => {
+    const { state, events } = searchedMission();
+    const saved = JSON.parse(serializeSave(state, events, SAVED_AT));
+    const text = JSON.stringify(saved.events);
+    expect(text).not.toContain('source');
+    for (const unit of state.units.filter((u) => u.side === 'hostile')) {
+      expect(text).not.toContain(unit.id);
+    }
+  });
+
+  it('relit un contact identifié et un événement de recherche, avec ou sans résultat', () => {
+    const result = parseTampered('naval_combat', (s) => {
+      s.state.friendContacts = [identified(s)];
+      s.state.nextContactNumber = 2;
+      s.events.push(
+        {
+          type: 'ACTIVE_SEARCH_PERFORMED',
+          cycle: 1,
+          unitId: 'x',
+          shipClass: 'fremm',
+          identified: [],
+        },
+        {
+          type: 'ACTIVE_SEARCH_PERFORMED',
+          cycle: 1,
+          unitId: 'x',
+          shipClass: 'fremm',
+          identified: [{ contactId: 'C-1', targetType: 'frigate', position: { col: 4, row: 4 } }],
+        },
+      );
     });
-    expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
+    expect(result.ok).toBe(true);
+  });
+
+  it.each([
+    [
+      'une forme de contact inconnue',
+      (s: TamperedSave) => (s.state.friendContacts = [identified(s, { kind: 'autre' })]),
+      /forme inconnue/,
+    ],
+    [
+      'un type de navire inconnu',
+      (s: TamperedSave) => (s.state.friendContacts = [identified(s, { targetType: 'fremm' })]),
+      /identification invalide/,
+    ],
+    [
+      'une position hors de la carte',
+      (s: TamperedSave) =>
+        (s.state.friendContacts = [identified(s, { position: { col: 999, row: 0 } })]),
+      /identification invalide/,
+    ],
+    [
+      'une cible inconnue',
+      (s: TamperedSave) => (s.state.friendContacts = [identified(s, { source: 'fantome' })]),
+      /cible de contact/,
+    ],
+    [
+      'une cible alliée',
+      (s: TamperedSave) =>
+        (s.state.friendContacts = [
+          identified(s, {
+            source: s.state.units.find((u: { side: string }) => u.side === 'friend').id,
+          }),
+        ]),
+      /cible de contact/,
+    ],
+    [
+      'une cible absente',
+      (s: TamperedSave) => (s.state.friendContacts = [identified(s, { source: undefined })]),
+      /cible de contact/,
+    ],
+    [
+      'deux contacts identifiés pour un même navire',
+      (s: TamperedSave) => (s.state.friendContacts = [identified(s), identified(s, { id: 'C-2' })]),
+      /même navire/,
+    ],
+    [
+      'une action spéciale illisible',
+      (s: TamperedSave) => (s.state.units[1].specialActionUsed = 'oui'),
+      /action spéciale/,
+    ],
+    [
+      'une action spéciale absente',
+      (s: TamperedSave) => delete s.state.units[1].specialActionUsed,
+      /action spéciale/,
+    ],
+  ])('refuse %s', (_name, mutate, detail) => {
+    expectInvalidData(parseTampered('naval_combat', mutate), detail);
+  });
+
+  it.each([
+    ['sans unité', { unitId: undefined }],
+    ['avec une classe inconnue', { shipClass: 'croiseur' }],
+    ['avec un résultat non listé', { identified: 'aucun' }],
+    [
+      'avec un type inconnu',
+      { identified: [{ contactId: 'C-1', targetType: 'fremm', position: { col: 1, row: 1 } }] },
+    ],
+    [
+      'avec une position invalide',
+      { identified: [{ contactId: 'C-1', targetType: 'frigate', position: { col: 'a', row: 1 } }] },
+    ],
+    [
+      'avec un identifiant mal formé',
+      { identified: [{ contactId: 'X', targetType: 'frigate', position: { col: 1, row: 1 } }] },
+    ],
+  ])('refuse un événement de recherche active %s', (_name, patch) => {
+    const event = {
+      type: 'ACTIVE_SEARCH_PERFORMED',
+      cycle: 1,
+      unitId: 'x',
+      shipClass: 'fremm',
+      identified: [],
+      ...patch,
+    };
+    expectInvalidData(
+      parseTampered('naval_combat', (s) => s.events.push(event)),
+      /du journal invalide/,
+    );
   });
 });
