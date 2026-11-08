@@ -152,9 +152,80 @@ export function contactEventLabel(
   return `Veille passive : contact suspect ${event.contactId}, zone approximative ${coordinatesLabel(event.zone)}`;
 }
 
-/** Légende d'une case appartenant à la zone d'un contact (AB-23). */
-export function contactCaption(contact: engine.Contact): string {
-  return `Contact suspect ${contact.id} (zone approximative de ${contact.zone.length} hexagones, détecté au cycle ${contact.cycle})`;
+/** Type de navire révélé par une recherche active : frégate ou sous-marin, jamais la classe (AB-25). */
+export const contactTargetLabel: Record<engine.ContactTargetType, string> = {
+  frigate: 'frégate',
+  submarine: 'sous-marin',
+};
+
+/** Badge d'un contact identifié : « F » ou « SM », jamais une silhouette de classe (AB-30). */
+export const contactBadgeLabel: Record<engine.ContactTargetType, string> = {
+  frigate: 'F',
+  submarine: 'SM',
+};
+
+/** Légende d'une case appartenant à un contact : zone suspecte (AB-23) ou navire identifié (AB-30). */
+export function contactCaption(contact: engine.FriendContact): string {
+  if (contact.kind === 'suspect') {
+    return `Contact suspect ${contact.id} (zone approximative de ${contact.zone.length} hexagones, détecté au cycle ${contact.cycle})`;
+  }
+  const { col, row } = contact.position;
+  const old = contact.stale ? ' (ancien)' : '';
+  return `Contact identifié ${contact.id} : ${contactTargetLabel[contact.targetType]}, position exacte (${col}, ${row}), détecté au cycle ${contact.cycle}${old}`;
+}
+
+/** Navires identifiés par une recherche, au format du journal : « C-5, sous-marin en (14, 22) ». */
+function identificationsLabel(identified: readonly engine.Identification[]): string {
+  return identified
+    .map(
+      (item) =>
+        `${item.contactId}, ${contactTargetLabel[item.targetType]} en (${item.position.col}, ${item.position.row})`,
+    )
+    .join(' ; ');
+}
+
+/**
+ * Texte du journal pour une recherche active (AB-28) : toujours une entrée, réussie ou non. Les
+ * mots sont les mêmes pour une première identification et une actualisation ; ni cible réelle ni
+ * zone retirée.
+ */
+export function activeSearchEventLabel(
+  event: Extract<engine.GameEvent, { type: 'ACTIVE_SEARCH_PERFORMED' }>,
+): string {
+  const unit = engine.defaultConfig.ships[event.shipClass].label;
+  const { identified } = event;
+  if (identified.length === 0) return `Recherche active (${unit}) : aucun nouveau contact`;
+  const noun = identified.length > 1 ? 'contacts identifiés' : 'contact identifié';
+  return `Recherche active (${unit}) : ${noun} ${identificationsLabel(identified)}`;
+}
+
+/*****************************
+ *
+ * PARTIE RECHERCHE ACTIVE
+ *
+ *****************************/
+
+/** Textes de l'action « Recherche active » (AB-30). */
+export const searchText = {
+  button: 'Recherche active',
+  title: 'Cherche les navires hostiles à portée',
+  confirm: 'Confirmer',
+  cancel: 'Annuler',
+  noNewContact: 'Aucun nouveau contact',
+  identified: 'Contact identifié',
+  identifiedSeveral: 'Contacts identifiés',
+};
+
+/** Consigne de la barre de confirmation d'une recherche active en préparation. */
+export function searchDraftLabel(unitLabel: string, range: number, cells: number): string {
+  const plural = range > 1 ? 's' : '';
+  return `${unitLabel} : recherche active, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour la lancer.`;
+}
+
+/** Retour explicite d'une recherche, affiché 4 secondes : identification ou absence de résultat. */
+export function searchResultLabel(identified: number): string {
+  if (identified === 0) return searchText.noNewContact;
+  return identified > 1 ? searchText.identifiedSeveral : searchText.identified;
 }
 
 /*****************************
