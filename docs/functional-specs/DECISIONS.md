@@ -20,6 +20,8 @@ Ces décisions sont retenues pour la V1 ; les chiffres sont des **paramètres pr
 
 - **Ennemis et départs (AB-11 à AB-17) :** lutte navale à 3 ennemis (quatre configurations équiprobables, frégates tirées parmi FREMM, DA et ASM), zones de départ et distances proportionnelles à la largeur de la carte, forces d'interception de l'escorte présentes dès le lancement, sous-marin autorisé en mer côtière avec détection facilitée (chiffrage ouvert), paramètres sous `GameConfig.missions`, nommage `.ai.service.ts`. Détail dans le [registre Game Design](../game-design/DECISIONS.md) et dans SF-02 §4.
 
+- **Détection (AB-18 à AB-24) :** un contact distinct par observation passive, une zone par cible et par cycle ; zones de 7 hexagones sans terre, forme tirée puis alignée sur une case uniforme ; événement `CONTACT_DETECTED` ; bonus de +20 points pour le sous-marin en mer côtière (veille passive) ; affichage ambre avec légende de case ; état du générateur conservé et `schemaVersion` 2. Détail dans le [registre Game Design](../game-design/DECISIONS.md), SF-04 et SF-07.
+
 Les éléments non précisés ci-dessus (autonomies, probabilités de panne/interception, leurres, cas limites de l'IA et de la détection) ne sont pas automatiquement validés.
 
 ## Priorité 1 — Cohérence des règles et version jouable
@@ -28,19 +30,19 @@ Les éléments non précisés ci-dessus (autonomies, probabilités de panne/inte
 |---|---|---|---|
 | D-04 (compléments) | G-07, G-09, SF-05 | Préciser le catalogue réellement disponible des actions spéciales, leurs préconditions et les règles d'engagement ; préciser les hélicoptères et la préparation des torpilles ou les reporter explicitement. | Empêche de coder des commandes sans règle d'exécution. |
 | D-05 (compléments) | G-09, SF-05 | Définir vitesses/autonomies/portées, dégâts, probabilités d'impact, de panne et d'interception, leurres et perte de PV liée à la coque ; déterminer l'ordre fixe des projectiles et les égalités de défense. | Rend les combats déterminables et testables. |
-| D-07 | G-08, SF-04 | Définir la génération des zones passives contiguës de forme variable, la gestion des bords, la réassociation de contacts et le traitement de plusieurs observations. | Évite les fuites de renseignement et les contacts incohérents. |
+| D-07 | G-08, SF-04 | Définir la génération des zones passives contiguës de forme variable, la gestion des bords, la réassociation de contacts et le traitement de plusieurs observations. | Évite les fuites de renseignement et les contacts incohérents.  Génération et contacts distincts arbitrés (AB-18, AB-20) ; reste la priorité passif/actif. |
 | D-08 | G-10, SF-01, SF-06 | Définir les critères tactiques minimaux distinguant **Classique** et **Expert**, sans modifier les statistiques ni les renseignements disponibles. | Permet deux niveaux de difficulté observables. |
 
 ## Priorité 2 — Précisions de comportement et restitution
 
 | ID | Références | Question à arbitrer |
 |---|---|---|
-| D-09 | G-08, SF-04 | Effets de la recherche active sur la discrétion ; obstacles, types de mer et contacts anciens ; priorité active/passive. Inclut le chiffrage du surcroît de détection du sous-marin en mer côtière (principe validé : AB-15). |
+| D-09 | G-08, SF-04 | Effets de la recherche active sur la discrétion ; obstacles, types de mer et contacts anciens ; priorité active/passive. Inclut le chiffrage du surcroît de détection du sous-marin en mer côtière (principe validé : AB-15).  Surcroît côtier chiffré pour la veille passive (AB-22). |
 | D-10 | G-09, SF-05 | Passage répété d'un projectile dans la zone d'un même leurre ; modalités de tentative d'interception après échec, sans déroger à la règle « cycle ultérieur ». |
-| D-11 | G-12, SF-07 | Catalogue des événements significatifs, champs du journal, rubriques des synthèses et niveau de détail du parcours historique. |
+| D-11 | G-12, SF-07 | Catalogue des événements significatifs, champs du journal, rubriques des synthèses et niveau de détail du parcours historique.  Événement de contact arbitré (AB-21) ; synthèses de cycle toujours ouvertes. |
 | D-12 | G-12, G-13, SF-08 | Liste des statistiques factuelles, modalités de révélation des événements ennemis après la mission et conservation des résultats. |
 | D-13 | G-10, SF-06 | Politique de sélection et départage des unités ennemies, cibles et comportements en absence de contact. |
-| D-14 | SF-04 à SF-08 | Confirmer ou amender les choix de présentation et de consultation proposés dans les SF (zones, fiches, confirmations, journal, bilan et retour au menu). |
+| D-14 | SF-04 à SF-08 | Confirmer ou amender les choix de présentation et de consultation proposés dans les SF (zones, fiches, confirmations, journal, bilan et retour au menu).  Affichage des contacts arbitré (AB-23). |
 
 ## Cohérence documentaire repérée
 

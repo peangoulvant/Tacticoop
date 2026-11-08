@@ -56,7 +56,7 @@ Le code actuel couvre **la préparation de mission (SF-01), la génération de c
 | SF-02 §1 | Six terrains | `engine/map/terrain.model.ts` → `TERRAINS` | `generate.service.test.ts` | Implémenté | |
 | SF-02 §1 | Terrains en ensembles cohérents, non en dispersion indépendante | `engine/map/generate.service.ts` → `generateTerrain()`, `smooth()`, `assignTerrains()` | `generate.service.test.ts` | Non vérifié | Le test ne vérifie que le déterminisme et la présence des six terrains, pas la cohérence spatiale. |
 | SF-02 §1 | Zoom sans modifier les dimensions de la carte | `features/tactical-map/services/use-map-view.ts` → `useMapView()`<br>`features/tactical-map/services/view-transform.service.ts` → `zoomAt()`, `clampView()`, `coverScale()` | `view-transform.service.test.ts` | Implémenté | Les calculs sont testés ; le câblage molette, glisser et boutons ne l'est pas. |
-| SF-02 §2 (SF-02.3, SF-02.9) | Navigabilité par terrain et par catégorie d'unité | `engine/map/terrain.model.ts` → `isNavigable()`, `NAVIGABLE` | `game-map.service.test.ts`, `execute-command.service.test.ts` | Implémenté | Tests indirects (plage interdite à la frégate, unités placées sur des cases valides). La table n'est pas testée directement, par exemple mer côtière interdite au sous-marin. Les unités ennemies n'existent pas. **AB-15 :** le sous-marin sera autorisé en mer côtière avec détection facilitée ; la table n'est modifiée qu'avec le chiffrage de la détection (GD-07, D-09). |
+| SF-02 §2 (SF-02.3, SF-02.9) | Navigabilité par terrain et par catégorie d'unité | `engine/map/terrain.model.ts` → `isNavigable()`, `NAVIGABLE` | `game-map.service.test.ts`, `execute-command.service.test.ts` | Implémenté | Tests indirects (plage interdite à la frégate, unités placées sur des cases valides). La table n'est pas testée directement, par exemple mer côtière interdite au sous-marin. Les unités ennemies n'existent pas. **AB-15, AB-22 :** le sous-marin sera autorisé en mer côtière avec +20 points de détection passive ; la table est modifiée avec l'implémentation de la veille passive. |
 | SF-02 §2 | Une seule unité navale par hexagone, au placement et en déplacement | `engine/missions/launch.service.ts` → `placeUnits()`<br>`engine/map/game-map.service.ts` → `nearestNavigableHex()`<br>`engine/units/unit-movement.service.ts` → `planMove()`, `reachableHexes()` | `execute-command.service.test.ts`, `game-map.service.test.ts`, `unit-movement.service.test.ts` | Implémenté | Une case occupée est infranchissable (hypothèse validée). |
 | SF-02 §3 (SF-02.4, SF-02.17, SF-02.18) | Trajet navigable A→B garanti pour le porte-avions | `engine/map/generate.service.ts` → `generateEscortMap()`, `carveCorridor()`<br>`engine/map/game-map.service.ts` → `shortestPath()` | `generate.service.test.ts`, `game-map.service.test.ts` | Implémenté | Testé sur 30 graines. |
 | SF-02 §3 | Itinéraires alternatifs possibles en escorte | `engine/map/generate.service.ts` → `withAlternativeRoute()`, `hasAlternativeRoute()` | `generate.service.test.ts` | Partiel | Un contournement (second trajet sans case commune avec le plus court, hors A et B) est favorisé : creusé au nord ou au sud quand la carte n'offre qu'un passage, sans aléa. Mesuré : 195 cartes sur 200 en offrent un (environ la moitié avant). Les cas restants sont un A ou B au fond d'une crique à une seule sortie. Aucun nombre minimal d'itinéraires n'est imposé (la spécification n'en fixe pas) et la sécurité tactique n'est pas évaluée. |
@@ -94,10 +94,10 @@ Les paragraphes de SF-04 n'ont pas d'identifiant par exigence.
 | Référence | Exigence (résumé) | Code | Tests | Statut | Remarque |
 |---|---|---|---|---|---|
 | SF-04 §1 | Visibilité : aucune information ennemie révélée sans renseignement légitime | `engine/detection/observation.service.ts` → `observeFriend()`, `observeHostile()`, `isKnownToFriend()`<br>`features/tactical-map/components/tactical-map.component.tsx` → `TacticalMap()`<br>`features/commands/services/use-move-draft.ts` → `useMoveDraft()` | `observation.service.test.ts`, `fog-of-war.test.ts` | Partiel | Filtrage en place : la carte, les destinations accessibles et les refus de déplacement ne reposent que sur `FriendObservation`. Aucun contact n'existe : aucune unité hostile n'est connue, bien que 3 ennemis soient créés au lancement ; le panneau des forces passe lui aussi par la projection amie. Restent à faire avec SF-04 : les contacts et leur expiration, et le filtrage du journal (aucun événement caché n'existe). `HostileObservation` existe sans consommateur (pas d'IA). |
-| SF-04 §2 | Veille passive (zone contiguë d'au plus 7 hexagones, 60 %, portée 2) | — | — | Non implémenté | Génération des zones : D-07 ouvert. |
-| SF-04 §3 | Recherche active (portée 4, 90 %) | — | — | Non implémenté | |
-| SF-04 §4 | Expiration et actualisation des contacts | — | — | Non implémenté | |
-| SF-04 §5 | Fiche de contact, non-divulgation | — | — | Non implémenté | |
+| SF-04 §2 | Veille passive (zone contiguë d'au plus 7 hexagones, 60 %, portée 2) | — | — | Non implémenté (arbitré) | AB-18 à AB-20, AB-22 : contacts distincts, zone de 7 hexagones sans terre alignée sur une case uniforme, +20 points pour le sous-marin côtier. À implémenter (jalon 5, PR A). |
+| SF-04 §3 | Recherche active (portée 4, 90 %) | — | — | Non implémenté | Dépend de l'action spéciale (SF-03) ; lot suivant (AB-19). Valeur côtière à définir. |
+| SF-04 §4 | Expiration et actualisation des contacts | — | — | Non implémenté (arbitré) | AB-18 : un contact distinct par observation passive ; l'état « ancien » n'apparaît qu'avec la recherche active (AB-23). |
+| SF-04 §5 | Fiche de contact, non-divulgation | — | — | Non implémenté (arbitré) | AB-23 : légende de case avec identifiant, nature, cycle et taille de la zone ; panneau dédié reporté (D-14). |
 
 ## SF-05 — Combats
 
@@ -128,7 +128,7 @@ Les paragraphes de SF-07 n'ont pas d'identifiant par exigence.
 |---|---|---|---|---|---|
 | SF-07 §1 | Journal de bord sous le bloc « Force » | `features/logbook/components/logbook-panel.component.tsx` → `LogbookPanel()`<br>`features/tactical-map/components/tactical-screen.component.tsx` → `TacticalScreen()` | — | Non vérifié | SF-07 §1 est aligné sur la maquette : colonne de droite, sous le panneau de l'unité (G-12.1 ne fixe plus d'emplacement). Disposition non testée. |
 | SF-07 §2 | Événements majeurs, synthèse de fin de cycle, ordre chronologique | `engine/core/game.types.ts` → `GameEvent`<br>`store/game.store.ts` → `useGameStore` (`events`) | — | Partiel | Six événements (`MISSION_LAUNCHED`, `UNIT_MOVED`, `CYCLE_STARTED`, `CARRIER_ORDERED`, `CARRIER_MOVED`, `MISSION_WON`), provisoires. Pas de synthèse. Catalogue ouvert (D-11). |
-| SF-07 §3 | Confidentialité tactique | — | — | Non implémenté | Aucun événement caché n'existe. |
+| SF-07 §3 | Confidentialité tactique | — | — | Non implémenté | Aucun événement caché n'existe. Événement de contact arbitré (AB-21) : sans cible, classe ni détecteur, cases triées. |
 | SF-07 §4 | Consultation de tout l'historique, accès direct à un cycle | `features/logbook/components/logbook-panel.component.tsx` → `LogbookPanel()` | — | Partiel | Liste complète des événements du store ; pas de navigation par cycle. |
 | SF-07 §5 | Articulation avec le débriefing | — | — | Non implémenté | |
 
@@ -185,13 +185,13 @@ Les chapitres G-xx dupliquent en partie les SF. Les lignes renvoient aux section
 | G-07.2, G-07.3 | Actions envisagées ; recherche active | — | — | Non implémenté | |
 | G-07.4 à G-07.6 | Préconditions, catalogue, effets d'échec | — | — | Non implémenté (ouvert) | |
 | G-08.1.1 à G-08.1.4 | Détection hybride, brouillard, tirage probabiliste, paramétrage par type | — | — | Non implémenté | |
-| G-08.1.5 | Mêmes principes pour les deux camps (`PROPOSÉ`) | — | — | Non implémenté (ouvert) | |
-| G-08.2.1 à G-08.2.6 | Veille passive, zone d'au plus 7 hexagones | — | — | Non implémenté | |
+| G-08.1.5 | Mêmes principes pour les deux camps | — | — | Non implémenté (arbitré) | Validé (AB-19) ; détection hostile avec l'IA. |
+| G-08.2.1 à G-08.2.7 | Veille passive, zone d'au plus 7 hexagones, un contact par cible et par cycle | — | — | Non implémenté (arbitré) | AB-18, AB-20. |
 | G-08.3.1 à G-08.3.3 | Recherche active | — | — | Non implémenté | |
 | G-08.3.4, G-08.3.5 | Position non actualisée ; discrétion (`PROPOSÉ`, `À DÉFINIR`) | — | — | Non implémenté (ouvert) | |
-| G-08.6.1 à G-08.6.5 | Expiration des contacts | — | — | Non implémenté | |
+| G-08.6.1 à G-08.6.5 | Expiration des contacts | — | — | Non implémenté (arbitré) | G-08.6.4 précisé par AB-18. |
 | G-08.6.6 | Information ancienne marquée (`PROPOSÉ`) | — | — | Non implémenté (ouvert) | |
-| G-08 §« Probabilités et portées initiales », §« Construction d'une zone passive », §« États affichés » | Sections sans identifiant | — | — | Non implémenté | |
+| G-08 §« Probabilités et portées initiales », §« Construction d'une zone passive », §« États affichés » | Sections sans identifiant | — | — | Non implémenté (arbitré) | AB-20 (zone), AB-22 (mer côtière, capteurs dégradés), AB-23 (affichage). Porte-avions non détecteur : `PROPOSÉ`. |
 | G-09 §2 à §4 (« G-09.1 à G-09.6 », « G-09.5 / G-09.7 », « G-09.8 ») | Armes, projectiles, dégâts, composants, leurres | — | — | Non implémenté | Sous-sections sans identifiant. |
 | G-09.9.1 à G-09.9.12 | Défense active antimissile | — | — | Non implémenté | |
 | G-09.10.1 à G-09.10.4 | Ordonnancement des engagements | — | — | Non implémenté | |
