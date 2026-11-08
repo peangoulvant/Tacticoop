@@ -11,8 +11,8 @@ import {
 import { hexDistance } from '../hex.service';
 import { isNavigable } from '../terrain.model';
 
-const ESCORT = defaultConfig.scenarios.escort;
-const NAVAL = defaultConfig.scenarios.navalCombat;
+const ESCORT = defaultConfig.missions.escort;
+const NAVAL = defaultConfig.missions.navalCombat;
 
 /** Carte 4×1 : mer, plage, mer, mer. */
 const strip: GameMap = { width: 4, height: 1, terrain: ['sea', 'beach', 'sea', 'sea'] };

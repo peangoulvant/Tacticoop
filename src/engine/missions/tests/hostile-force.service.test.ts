@@ -5,7 +5,7 @@ import { indexOf, terrainAt } from '../../map/game-map.service';
 import { hexDistance } from '../../map/hex.service';
 import { isNavigable } from '../../map/terrain.model';
 import type { Unit } from '../../units/unit.model';
-import { createEnemyUnits, drawEnemyClasses, enemyZoneOf } from '../enemy-force.service';
+import { createHostileUnits, drawHostileClasses, hostileZoneOf } from '../hostile-force.service';
 import { launchMission, type LaunchedMission } from '../launch.service';
 import { initialSetup, type MissionKind, type MissionSetup } from '../setup.service';
 
@@ -17,7 +17,7 @@ function setupFor(mission: MissionKind, overrides: Partial<MissionSetup> = {}): 
   return { ...base, mission, force: { ...base.force, frigate_da: 2 }, ...overrides };
 }
 
-function enemiesOf(mission: LaunchedMission): Unit[] {
+function hostilesOf(mission: LaunchedMission): Unit[] {
   return mission.units.filter((unit) => unit.side === 'hostile');
 }
 
@@ -32,11 +32,11 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
 
     it('aligne trois ennemis en camp hostile, inactifs pour le joueur, avec leur fiche de classe', () => {
       for (const launched of missions) {
-        const enemies = enemiesOf(launched);
-        expect(enemies).toHaveLength(3);
-        for (const enemy of enemies) {
-          expect(enemy.activation).toBe('not_activable');
-          expect(enemy.hp).toBe(defaultConfig.ships[enemy.shipClass].maxHp);
+        const hostiles = hostilesOf(launched);
+        expect(hostiles).toHaveLength(3);
+        for (const hostile of hostiles) {
+          expect(hostile.activation).toBe('not_activable');
+          expect(hostile.hp).toBe(defaultConfig.ships[hostile.shipClass].maxHp);
         }
       }
     });
@@ -45,21 +45,21 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
       for (const launched of missions) {
         const keys = launched.units.map((unit) => indexOf(launched.map, unit.position));
         expect(new Set(keys).size).toBe(keys.length);
-        for (const enemy of enemiesOf(launched)) {
-          const terrain = terrainAt(launched.map, enemy.position);
-          expect(isNavigable(terrain, defaultConfig.ships[enemy.shipClass].category)).toBe(true);
+        for (const hostile of hostilesOf(launched)) {
+          const terrain = terrainAt(launched.map, hostile.position);
+          expect(isNavigable(terrain, defaultConfig.ships[hostile.shipClass].category)).toBe(true);
         }
       }
     });
 
     it('respecte la zone de départ et les distances minimales du scénario', () => {
       for (const launched of missions) {
-        const zone = enemyZoneOf(mission, launched, defaultConfig);
-        for (const enemy of enemiesOf(launched)) {
-          expect(enemy.position.col).toBeGreaterThanOrEqual(zone.fromCol);
-          expect(enemy.position.col).toBeLessThanOrEqual(zone.toCol);
+        const zone = hostileZoneOf(mission, launched, defaultConfig);
+        for (const hostile of hostilesOf(launched)) {
+          expect(hostile.position.col).toBeGreaterThanOrEqual(zone.fromCol);
+          expect(hostile.position.col).toBeLessThanOrEqual(zone.toCol);
           for (const { from, distance } of zone.minDistances) {
-            expect(hexDistance(enemy.position, from)).toBeGreaterThanOrEqual(distance);
+            expect(hexDistance(hostile.position, from)).toBeGreaterThanOrEqual(distance);
           }
         }
       }
@@ -69,10 +69,10 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
       const compositions = new Set<string>();
       const frigateClasses = new Set<ShipClass>();
       for (const launched of missions) {
-        const enemies = enemiesOf(launched);
-        const subs = enemies.filter((unit) => unit.shipClass === 'submarine').length;
+        const hostiles = hostilesOf(launched);
+        const subs = hostiles.filter((unit) => unit.shipClass === 'submarine').length;
         compositions.add(`${3 - subs}F+${subs}S`);
-        enemies
+        hostiles
           .filter((u) => u.shipClass !== 'submarine')
           .forEach((u) => frigateClasses.add(u.shipClass));
       }
@@ -93,7 +93,7 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
         defaultConfig,
         31,
       );
-      expect(enemiesOf(other)).toEqual(enemiesOf(plain));
+      expect(hostilesOf(other)).toEqual(hostilesOf(plain));
     });
 
     it("ne révèle aucun ennemi au joueur : la projection amie n'en contient aucun", () => {
@@ -109,14 +109,14 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
 describe('zones de départ', () => {
   it('lutte navale : bande est de 25 % de la largeur (colonnes 27 à 34 à 35 de large)', () => {
     const launched = launchMission(setupFor('naval_combat'), defaultConfig, 1);
-    const zone = enemyZoneOf('naval_combat', launched, defaultConfig);
+    const zone = hostileZoneOf('naval_combat', launched, defaultConfig);
     expect([zone.fromCol, zone.toCol]).toEqual([27, WIDTH - 1]);
     expect(zone.minDistances.map((d) => d.distance)).toEqual([14]);
   });
 
   it("escorte : partie centrale (colonnes 10 à 29) à l'écart de A (14) et de B (9)", () => {
     const launched = launchMission(setupFor('escort'), defaultConfig, 1);
-    const zone = enemyZoneOf('escort', launched, defaultConfig);
+    const zone = hostileZoneOf('escort', launched, defaultConfig);
     expect([zone.fromCol, zone.toCol]).toEqual([10, 29]);
     expect(zone.minDistances.map((d) => d.distance)).toEqual([14, 9]);
   });
@@ -124,7 +124,7 @@ describe('zones de départ', () => {
   it('proportionnelle à la largeur : la bande est suit une carte de 50 de large', () => {
     const launched = launchMission(setupFor('naval_combat'), defaultConfig, 1);
     const wide = { ...launched, map: { ...launched.map, width: 50 } };
-    const zone = enemyZoneOf('naval_combat', wide, defaultConfig);
+    const zone = hostileZoneOf('naval_combat', wide, defaultConfig);
     expect([zone.fromCol, zone.toCol]).toEqual([38, 49]);
     expect(zone.minDistances[0]?.distance).toBe(20);
   });
@@ -160,7 +160,7 @@ describe('tirage de la composition', () => {
     };
     const rng = createRng(2);
     for (let i = 0; i < 100; i++) {
-      expect(drawEnemyClasses(force, rng)).toEqual(['frigate_asm', 'submarine', 'submarine']);
+      expect(drawHostileClasses(force, rng)).toEqual(['frigate_asm', 'submarine', 'submarine']);
     }
   });
 });
@@ -170,7 +170,14 @@ describe('placement impossible', () => {
     const launched = launchMission(setupFor('naval_combat'), defaultConfig, 1);
     const zone = { fromCol: 0, toCol: 0, minDistances: [{ from: launched.start, distance: 99 }] };
     expect(() =>
-      createEnemyUnits(['frigate_da'], launched.map, zone, new Set(), defaultConfig, createRng(1)),
+      createHostileUnits(
+        ['frigate_da'],
+        launched.map,
+        zone,
+        new Set(),
+        defaultConfig,
+        createRng(1),
+      ),
     ).toThrow(/Aucun hexagone de départ ennemi/);
   });
 });

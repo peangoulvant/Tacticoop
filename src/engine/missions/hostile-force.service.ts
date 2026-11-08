@@ -1,7 +1,7 @@
 import type {
-  EnemyComposition,
-  EnemyForceSpec,
-  EnemyFrigateClass,
+  HostileComposition,
+  HostileForceSpec,
+  HostileFrigateClass,
   GameConfig,
   ShipClass,
 } from '../config/game.config';
@@ -23,7 +23,7 @@ interface MinDistance {
 }
 
 /** Zone de départ ennemie : colonnes autorisées (bornes incluses) et distances minimales (AB-12, AB-13). */
-export interface EnemyZone {
+export interface HostileZone {
   fromCol: number;
   toCol: number;
   minDistances: MinDistance[];
@@ -39,21 +39,21 @@ function distanceOfRatio(width: number, ratio: number): number {
  * Lutte navale : bande est, loin du point de départ allié. Escorte : partie centrale, loin de A
  * et de B (SF-02 §4). L'itinéraire initial du porte-avions n'est pas exclu (AB-09).
  */
-export function enemyZoneOf(
+export function hostileZoneOf(
   mission: MissionKind,
   { map, start, goal }: ScenarioMap,
   config: GameConfig,
-): EnemyZone {
+): HostileZone {
   const { width } = map;
   if (mission === 'naval_combat') {
-    const cfg = config.scenarios.navalCombat;
+    const cfg = config.missions.navalCombat;
     return {
-      fromCol: width - Math.floor(width * cfg.enemyZoneWidthRatio),
+      fromCol: width - Math.floor(width * cfg.hostileZoneWidthRatio),
       toCol: width - 1,
       minDistances: [{ from: start, distance: distanceOfRatio(width, cfg.minStartDistanceRatio) }],
     };
   }
-  const cfg = config.scenarios.escort;
+  const cfg = config.missions.escort;
   const minDistances = [
     { from: start, distance: distanceOfRatio(width, cfg.minDistanceFromStartRatio) },
   ];
@@ -71,8 +71,10 @@ export function enemyZoneOf(
 }
 
 /** Force ennemie du scénario (AB-11, AB-13). */
-export function enemyForceSpecOf(mission: MissionKind, config: GameConfig): EnemyForceSpec {
-  return mission === 'escort' ? config.scenarios.escort.enemy : config.scenarios.navalCombat.enemy;
+export function hostileForceSpecOf(mission: MissionKind, config: GameConfig): HostileForceSpec {
+  return mission === 'escort'
+    ? config.missions.escort.hostile
+    : config.missions.navalCombat.hostile;
 }
 
 /**
@@ -80,9 +82,9 @@ export function enemyForceSpecOf(mission: MissionKind, config: GameConfig): Enem
  * puis la classe de chaque frégate, indépendamment (AB-11). Les frégates précèdent les
  * sous-marins dans le résultat. La difficulté n'intervient pas (G-10.10).
  */
-export function drawEnemyClasses(force: EnemyForceSpec, rng: Rng): ShipClass[] {
-  const composition: EnemyComposition = pickWeighted(force.compositions, (c) => c.weight, rng);
-  const frigateClasses = Object.keys(force.frigateClassWeights) as EnemyFrigateClass[];
+export function drawHostileClasses(force: HostileForceSpec, rng: Rng): ShipClass[] {
+  const composition: HostileComposition = pickWeighted(force.compositions, (c) => c.weight, rng);
+  const frigateClasses = Object.keys(force.frigateClassWeights) as HostileFrigateClass[];
   const frigates = Array.from({ length: composition.frigates }, () =>
     pickWeighted(frigateClasses, (cls) => force.frigateClassWeights[cls], rng),
   );
@@ -98,7 +100,7 @@ function farEnough(hex: Hex, minDistances: readonly MinDistance[]): boolean {
 /** Hexagones libres de la zone où une unité de la catégorie peut partir. */
 function candidateHexes(
   map: GameMap,
-  zone: EnemyZone,
+  zone: HostileZone,
   category: NavalCategory,
   taken: ReadonlySet<number>,
 ): Hex[] {
@@ -118,10 +120,10 @@ function candidateHexes(
  * indépendamment les unes des autres. Les cases déjà occupées (`taken`, indices) sont exclues.
  * Si aucun hexagone ne convient, le lancement échoue plutôt que d'élargir la zone (AB-12).
  */
-export function createEnemyUnits(
+export function createHostileUnits(
   classes: readonly ShipClass[],
   map: GameMap,
-  zone: EnemyZone,
+  zone: HostileZone,
   taken: ReadonlySet<number>,
   config: GameConfig,
   rng: Rng,

@@ -10,11 +10,11 @@ import { indexOf, nearestNavigableHex } from '../map/game-map.service';
 import { createUnit, type Unit, type UnitModifiers } from '../units/unit.model';
 import { initialCarrierNavigation, type CarrierNavigation } from './carrier-orders.service';
 import {
-  createEnemyUnits,
-  drawEnemyClasses,
-  enemyForceSpecOf,
-  enemyZoneOf,
-} from './enemy-force.service';
+  createHostileUnits,
+  drawHostileClasses,
+  hostileForceSpecOf,
+  hostileZoneOf,
+} from './hostile-force.service';
 import type { MissionSetup } from './setup.service';
 
 export interface LaunchedMission extends ScenarioMap {
@@ -61,7 +61,7 @@ function placeUnits(
 /** Génère la carte du scénario, avec les colonnes de départ lues dans `GameConfig` (AB-14, AB-16). */
 function generateScenario(setup: MissionSetup, config: GameConfig, rng: Rng): ScenarioMap {
   const { width, height } = config.map;
-  const { navalCombat, escort } = config.scenarios;
+  const { navalCombat, escort } = config.missions;
   return setup.mission === 'escort'
     ? generateEscortMap(width, height, rng, escort.startColumnRatio, escort.goalColumnRatio)
     : generateNavalCombatMap(width, height, rng, navalCombat.alliedStartColumnRatio);
@@ -80,13 +80,13 @@ export function launchMission(
   const rng = createRng(seed);
   const scenario = generateScenario(setup, config, rng);
   const allies = placeUnits(rosterOf(setup), scenario, config, modifiersOf(setup, config));
-  const classes = drawEnemyClasses(enemyForceSpecOf(setup.mission, config), rng);
-  const zone = enemyZoneOf(setup.mission, scenario, config);
+  const classes = drawHostileClasses(hostileForceSpecOf(setup.mission, config), rng);
+  const zone = hostileZoneOf(setup.mission, scenario, config);
   const taken = new Set(allies.map((unit) => indexOf(scenario.map, unit.position)));
-  const enemies = createEnemyUnits(classes, scenario.map, zone, taken, config, rng);
+  const hostiles = createHostileUnits(classes, scenario.map, zone, taken, config, rng);
   return {
     ...scenario,
-    units: [...allies, ...enemies],
+    units: [...allies, ...hostiles],
     carrierNavigation: initialCarrierNavigation(setup.mission),
   };
 }

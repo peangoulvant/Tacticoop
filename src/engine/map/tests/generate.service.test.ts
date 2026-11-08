@@ -4,7 +4,7 @@ import { generateEscortMap, generateTerrain, hasAlternativeRoute } from '../gene
 import { shortestPath } from '../game-map.service';
 import { TERRAINS } from '../terrain.model';
 
-const ESCORT = defaultConfig.scenarios.escort;
+const ESCORT = defaultConfig.missions.escort;
 
 describe('génération de carte', () => {
   it('est déterministe pour une même graine', () => {

@@ -32,10 +32,10 @@ describe('defaultConfig', () => {
   });
 
   it('définit les scénarios arbitrés (AB-11 à AB-14)', () => {
-    const { navalCombat, escort } = defaultConfig.scenarios;
+    const { navalCombat, escort } = defaultConfig.missions;
     expect(navalCombat).toMatchObject({
       alliedStartColumnRatio: 0.06,
-      enemyZoneWidthRatio: 0.25,
+      hostileZoneWidthRatio: 0.25,
       minStartDistanceRatio: 0.4,
     });
     expect(escort).toMatchObject({
@@ -48,18 +48,18 @@ describe('defaultConfig', () => {
   });
 
   it.each([
-    ['lutte navale', defaultConfig.scenarios.navalCombat.enemy],
-    ['escorte', defaultConfig.scenarios.escort.enemy],
-  ])('aligne 3 ennemis dans quatre configurations équiprobables en %s', (_name, enemy) => {
-    expect(enemy.compositions.map((c) => [c.frigates, c.submarines])).toEqual([
+    ['lutte navale', defaultConfig.missions.navalCombat.hostile],
+    ['escorte', defaultConfig.missions.escort.hostile],
+  ])('aligne 3 ennemis dans quatre configurations équiprobables en %s', (_name, hostile) => {
+    expect(hostile.compositions.map((c) => [c.frigates, c.submarines])).toEqual([
       [3, 0],
       [2, 1],
       [1, 2],
       [0, 3],
     ]);
-    expect(enemy.compositions.every((c) => c.frigates + c.submarines === 3)).toBe(true);
-    expect(new Set(enemy.compositions.map((c) => c.weight))).toEqual(new Set([1]));
-    expect(Object.values(enemy.frigateClassWeights)).toEqual([1, 1, 1]);
+    expect(hostile.compositions.every((c) => c.frigates + c.submarines === 3)).toBe(true);
+    expect(new Set(hostile.compositions.map((c) => c.weight))).toEqual(new Set([1]));
+    expect(Object.values(hostile.frigateClassWeights)).toEqual([1, 1, 1]);
   });
 
   it('reprend les portées validées (D-05, G-08.4)', () => {
@@ -79,11 +79,11 @@ describe('defaultConfig', () => {
   it.each([35, 50])(
     'garde les distances minimales de départ au-delà des portées, sur une carte de %i',
     (width) => {
-      const { ranges, scenarios } = defaultConfig;
+      const { ranges, missions } = defaultConfig;
       const reach = Math.max(ranges.missile, ranges.torpedo) + ranges.activeDetection;
       const distance = (ratio: number) => Math.round(width * ratio);
-      expect(distance(scenarios.navalCombat.minStartDistanceRatio)).toBeGreaterThan(reach);
-      expect(distance(scenarios.escort.minDistanceFromStartRatio)).toBeGreaterThan(reach);
+      expect(distance(missions.navalCombat.minStartDistanceRatio)).toBeGreaterThan(reach);
+      expect(distance(missions.escort.minDistanceFromStartRatio)).toBeGreaterThan(reach);
     },
   );
 });

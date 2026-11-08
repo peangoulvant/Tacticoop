@@ -80,11 +80,11 @@ describe('aller-retour', () => {
     (mission) => {
       const { state, events } = playedMission(mission);
       const result = parseSave(serializeSave(state, events, SAVED_AT));
-      const enemies = (result.ok ? result.save.state.units : []).filter(
+      const hostiles = (result.ok ? result.save.state.units : []).filter(
         (u) => u.side === 'hostile',
       );
-      expect(enemies).toHaveLength(3);
-      expect(enemies).toEqual(state.units.filter((u) => u.side === 'hostile'));
+      expect(hostiles).toHaveLength(3);
+      expect(hostiles).toEqual(state.units.filter((u) => u.side === 'hostile'));
     },
   );
 

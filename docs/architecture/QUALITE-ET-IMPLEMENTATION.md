@@ -70,7 +70,7 @@ Dans chaque dossier qui contient des tests, ceux-ci sont rangés dans un sous-do
 
 ## Blocs de séparation par sujet
 
-Dans un fichier où cohabitent **plusieurs sections significatives** (par exemple les commandes d'unités et de porte-avions de `mission-commands.service.ts`), les groupes de constantes et de fonctions sont introduits par un bloc de titre court :
+Dans un fichier où cohabitent **plusieurs sections significatives** (par exemple les commandes d'unités et de porte-avions de `mission-commands.service.ts`, ou le relief, les itinéraires et les cartes de mission de `generate.service.ts`), les groupes de constantes et de fonctions sont introduits par un bloc de titre court :
 
 ```ts
 /*****************************
