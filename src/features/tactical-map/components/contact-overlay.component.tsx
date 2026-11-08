@@ -1,5 +1,6 @@
 import * as engine from '../../../engine';
 import { palette } from '../../../app/theme.config';
+import * as assets from '../../../shared/assets.config';
 import * as labels from '../../../shared/ui.label';
 import { contactTint } from '../services/contact-tint.service';
 import { HEX_POINTS, hexCenter, zoneContour } from '../services/hex-geometry.service';
@@ -51,9 +52,10 @@ function ContactZone({ contact }: { contact: engine.SuspectContact }) {
 const STALE_OPACITY = 0.55;
 
 /**
- * Un navire identifié par recherche active (AB-30) : case à la position exacte, contour de la
- * couleur hostile, badge de type « F » ou « SM » (jamais une silhouette de classe) et étiquette.
- * Un contact « ancien » a un contour en pointillés et une opacité réduite (AB-27).
+ * Un navire identifié par recherche active (AB-30) : case rouge (couleur hostile) à la position
+ * exacte, silhouette de son type seulement (jamais de sa classe), retournée pour que l'avant
+ * fasse face aux alliés, et au-dessus « F C-3 » ou « SM C-3 » (type et identifiant). Un contact
+ * « ancien » a un contour en pointillés et une opacité réduite (AB-27).
  */
 function IdentifiedContactToken({
   contact,
@@ -61,7 +63,6 @@ function IdentifiedContactToken({
   contact: Extract<engine.FriendContact, { kind: 'identified' }>;
 }) {
   const { x, y } = hexCenter(contact.position);
-  const tint = contactTint(contact.id, palette.contactTints);
   return (
     <g
       transform={`translate(${x.toFixed(2)} ${y.toFixed(2)})`}
@@ -73,32 +74,30 @@ function IdentifiedContactToken({
       <polygon
         points={HEX_POINTS}
         transform="scale(0.92)"
-        fill={tint}
-        fillOpacity={0.4}
-        stroke={palette.enemy}
-        strokeWidth="1.8"
+        fill={palette.enemy}
+        stroke="#ff8a8a"
+        strokeWidth="1.4"
         strokeDasharray={contact.stale ? '3 2' : undefined}
       />
       <text
-        y="-1"
-        fontSize="6"
-        fontWeight="bold"
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={palette.text}
-      >
-        {labels.contactBadgeLabel[contact.targetType]}
-      </text>
-      <text
-        y="5.2"
+        y="-5.2"
         fontSize="3.6"
         fontWeight="bold"
         textAnchor="middle"
         dominantBaseline="middle"
         fill={palette.text}
       >
-        {contact.id}
+        {`${labels.contactBadgeLabel[contact.targetType]} ${contact.id}`}
       </text>
+      <image
+        href={assets.contactTargetIcon[contact.targetType]}
+        transform="translate(0 1.5) scale(-1 1)"
+        x="-6.5"
+        y="-3.5"
+        width="13"
+        height="7"
+        preserveAspectRatio="xMidYMid meet"
+      />
     </g>
   );
 }
