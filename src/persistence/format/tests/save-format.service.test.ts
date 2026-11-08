@@ -75,6 +75,19 @@ describe('aller-retour', () => {
     },
   );
 
+  it.each<engine.MissionKind>(['naval_combat', 'escort'])(
+    'conserve la force ennemie cachée dans la sauvegarde (%s)',
+    (mission) => {
+      const { state, events } = playedMission(mission);
+      const result = parseSave(serializeSave(state, events, SAVED_AT));
+      const enemies = (result.ok ? result.save.state.units : []).filter(
+        (u) => u.side === 'hostile',
+      );
+      expect(enemies).toHaveLength(3);
+      expect(enemies).toEqual(state.units.filter((u) => u.side === 'hostile'));
+    },
+  );
+
   it('relit une mission gagnée', () => {
     const { state, events } = playedMission('escort');
     const won: engine.MissionState = { ...state, outcome: 'victory' };

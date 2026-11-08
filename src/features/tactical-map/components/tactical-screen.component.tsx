@@ -152,7 +152,7 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
         <Splitter onDrag={dragSplitter} />
         <LogbookPanel events={events} />
       </Box>
-      <FleetPanel units={mission.units} />
+      <FleetPanel units={engine.observeFriend(mission).units} />
       <Snackbar open={lastError !== null} autoHideDuration={4000} onClose={clearError}>
         <Alert severity="warning" onClose={clearError}>
           {lastError?.message}

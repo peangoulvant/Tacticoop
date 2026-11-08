@@ -128,7 +128,9 @@ describe('executeCommand — lancement', () => {
       { type: 'ADD_SHIP', shipClass: 'fremm' },
       { type: 'ADD_SHIP', shipClass: 'submarine' },
     ]);
-    expect(state.units.map((u) => u.shipClass)).toEqual(['carrier', 'fremm', 'submarine']);
+    const friends = state.units.filter((u) => u.side === 'friend');
+    expect(friends.map((u) => u.shipClass)).toEqual(['carrier', 'fremm', 'submarine']);
+    expect(state.units.filter((u) => u.side === 'hostile')).toHaveLength(3);
     expect(state.goal).not.toBeNull();
     const keys = new Set(state.units.map((u) => `${u.position.col},${u.position.row}`));
     expect(keys.size).toBe(state.units.length);
@@ -137,7 +139,7 @@ describe('executeCommand — lancement', () => {
         isNavigable(terrainAt(state.map, u.position), defaultConfig.ships[u.shipClass].category),
       ).toBe(true);
     }
-    expect(sameHex(state.units[0]!.position, state.start)).toBe(true);
+    expect(sameHex(friends[0]!.position, state.start)).toBe(true);
   });
 
   it('en lutte navale : pas de porte-avions ni de point B', () => {
@@ -146,7 +148,9 @@ describe('executeCommand — lancement', () => {
       { type: 'ADD_SHIP', shipClass: 'fremm' },
     ]);
     expect(state.goal).toBeNull();
-    expect(state.units.map((u) => u.shipClass)).toEqual(['fremm']);
+    const friends = state.units.filter((u) => u.side === 'friend');
+    expect(friends.map((u) => u.shipClass)).toEqual(['fremm']);
+    expect(state.units.filter((u) => u.side === 'hostile')).toHaveLength(3);
   });
 
   it('applique les contraintes : munitions −30 % (arrondi inférieur) et déplacement plafonné à 2', () => {

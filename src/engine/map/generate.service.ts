@@ -128,11 +128,24 @@ function withAlternativeRoute(map: GameMap, start: Hex, goal: Hex): GameMap {
   return candidates.sort((a, b) => changedCells(map, a) - changedCells(map, b))[0] ?? map;
 }
 
-/** Lutte navale : les alliés partent de l'ouest, au milieu de la carte. */
-export function generateNavalCombatMap(width: number, height: number, rng: Rng): ScenarioMap {
+/** Colonne située à une part `ratio` de la largeur (0 = bord ouest, 1 = bord est). */
+export function columnAtRatio(width: number, ratio: number): number {
+  return Math.round(ratio * (width - 1));
+}
+
+/**
+ * Lutte navale : les alliés partent de l'ouest, au milieu de la carte, à la colonne donnée par
+ * `startColumnRatio` (AB-14).
+ */
+export function generateNavalCombatMap(
+  width: number,
+  height: number,
+  rng: Rng,
+  startColumnRatio: number,
+): ScenarioMap {
   const map = generateTerrain(width, height, rng);
-  const start = nearestNavigableHex(map, { col: 2, row: Math.floor(height / 2) }, 'submarine');
-  return { map, start, goal: null };
+  const target = { col: columnAtRatio(width, startColumnRatio), row: Math.floor(height / 2) };
+  return { map, start: nearestNavigableHex(map, target, 'submarine'), goal: null };
 }
 
 /**
@@ -140,11 +153,19 @@ export function generateNavalCombatMap(width: number, height: number, rng: Rng):
  * porte-avions ; si le relief le coupe, un couloir de mer classique est creusé (SF-02 §3). Un
  * contournement est ensuite favorisé quand la carte n'en offre pas (`withAlternativeRoute`).
  */
-export function generateEscortMap(width: number, height: number, rng: Rng): EscortMap {
+export function generateEscortMap(
+  width: number,
+  height: number,
+  rng: Rng,
+  startColumnRatio: number,
+  goalColumnRatio: number,
+): EscortMap {
   const generated = generateTerrain(width, height, rng);
   const middle = Math.floor(height / 2);
-  const start = nearestNavigableHex(generated, { col: 2, row: middle }, 'carrier');
-  const goal = nearestNavigableHex(generated, { col: width - 3, row: middle }, 'carrier');
+  const startTarget = { col: columnAtRatio(width, startColumnRatio), row: middle };
+  const goalTarget = { col: columnAtRatio(width, goalColumnRatio), row: middle };
+  const start = nearestNavigableHex(generated, startTarget, 'carrier');
+  const goal = nearestNavigableHex(generated, goalTarget, 'carrier');
   const connected = shortestPath(generated, start, goal, 'carrier') !== null;
   const reachable = connected ? generated : carveCorridor(generated, start, goal);
   return { map: withAlternativeRoute(reachable, start, goal), start, goal };

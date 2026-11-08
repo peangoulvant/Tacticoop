@@ -25,3 +25,18 @@ export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
   }
   return copy;
 }
+
+/**
+ * Tire un élément avec une probabilité proportionnelle à son poids. Les poids sont positifs ou
+ * nuls et leur somme est strictement positive.
+ */
+export function pickWeighted<T>(items: readonly T[], weightOf: (item: T) => number, rng: Rng): T {
+  const total = items.reduce((sum, item) => sum + weightOf(item), 0);
+  if (total <= 0) throw new Error('Aucun poids de tirage positif');
+  let threshold = rng() * total;
+  for (const item of items) {
+    threshold -= weightOf(item);
+    if (threshold < 0) return item;
+  }
+  return items[items.length - 1] as T;
+}

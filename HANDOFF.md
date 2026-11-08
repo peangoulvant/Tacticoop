@@ -92,14 +92,14 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Périmètre de la navigation | Navigation et victoire à l'arrivée en B (résultat binaire, commandes ensuite refusées), avec un simple bandeau de résultat ; ni bilan ni débriefing (D-12 ouvert) |
 | Export et import JSON (AB-10) | **Retirés de la V1** (nouvelle décision) : PR C3 abandonnée, réévaluation possible après la V1. La sérialisation interne, la validation, `schemaVersion` et la reprise IndexedDB restent |
 | Clôture de cycle et résultat | `closeCycle()` = `resolveCycleEnd()` (phases de fin de cycle) puis `determineOutcome()` (défaite avant victoire, AB-01) puis fin de mission ou cycle suivant. Les phases ennemies, la veille passive, les projectiles (AB-02) et la défaite (AB-03) sont **reportés** avec le combat, sans stub : ils s'ajouteront dans `resolveCycleEnd()` et `determineOutcome()` |
-| Force ennemie (AB-11 à AB-13) | Arbitrée, **pas encore créée dans le code**. Lutte navale et escorte : 3 ennemis, quatre configurations équiprobables, frégates tirées parmi FREMM, DA et ASM ; bande est (25 %) en lutte navale, partie centrale (30 % à 85 %) en escorte ; distances minimales proportionnelles à la largeur ; difficulté sans effet sur composition et placement |
+| Force ennemie (AB-11 à AB-13) | Arbitrée et **créée au lancement** (`engine/missions/enemy-force.service.ts`), inerte et cachée. Lutte navale et escorte : 3 ennemis, quatre configurations équiprobables, frégates tirées parmi FREMM, DA et ASM ; bande est (25 %) en lutte navale, partie centrale (30 % à 85 %) en escorte ; distances minimales proportionnelles à la largeur ; difficulté sans effet sur composition et placement |
 | Sous-marin en mer côtière (AB-15) | Autorisé en principe, détection facilitée ; chiffrage ouvert (GD-07, D-09) ; la table `NAVIGABLE` ne change qu'avec lui |
 | Paramétrage (AB-16) | `GameConfig.scenarios` ; portées non mises à l'échelle, test de cohérence de configuration ; littéraux d'escorte à externaliser |
 | Nommage de l'IA (AB-17) | `nom.ai.service.ts` pour les fichiers de `engine/ai/` qui ont un homologue côté unités |
 
 ## État d'avancement
 
-Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. Navigation du porte-avions et victoire à l'arrivée en B, moteur et interface. Sauvegarde automatique et reprise de la partie en cours. **Rien** côté ennemis, détection, combat, IA, actions spéciales, écran de fin de mission.
+Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. Navigation du porte-avions et victoire à l'arrivée en B, moteur et interface. Sauvegarde automatique et reprise de la partie en cours. Force ennemie créée au lancement (composition et placement, AB-11 à AB-16), inerte et cachée. **Rien** côté détection, combat, IA, actions spéciales, écran de fin de mission.
 
 | PR | Contenu | État |
 |---|---|---|
@@ -122,6 +122,7 @@ Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparat
 | #24 | CI GitHub Actions sur les PR vers `main` | Fusionnée |
 | #25 | Retrait de l'export/import manuel JSON de la V1 (AB-10) | Fusionnée |
 | #26 | Noms de fichiers en kebab-case avec suffixes, tests dans `tests/`, `UnitPanel` dans `fleet`, blocs de séparation | Ouverte |
+| #31 | Arbitrage de la force ennemie et des zones de départ (AB-11 à AB-17), documents seuls | Fusionnée |
 
 ## Pistes pour la suite (à arbitrer avec le propriétaire)
 
@@ -137,11 +138,11 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
 
 **Navigation du porte-avions** : faite (PR A moteur, PR B interface). **Persistance (jalon 4, PR C)** : en deux PR. C1 : module `persistence/` (fait, sans interface ; revu pour séparer format, contrat de stockage et IndexedDB). C2 : store, sauvegarde automatique, reprise au démarrage, interface (faite). Le comportement est arbitré (AB-08, voir `PERSISTANCE.md`). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
 
-**Prochaine étape d'implémentation (jalon 5, première PR) : force ennemie au lancement** (composition, zones de départ, forces d'interception), voir le plan de la session d'arbitrage. Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
+**Prochaine étape (jalon 5) : détection (SF-04), puis combat et IA.** Le premier tirage en cours de partie imposera de conserver l'état du générateur dans `MissionState` (`schemaVersion` à 2, voir « Hasard et reprise »). Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
 
-## Plan d'implémentation : force ennemie au lancement (jalon 5, PR suivante)
+## Force ennemie au lancement (jalon 5, première PR) : faite
 
-À exécuter après fusion de la PR d'arbitrage (AB-11 à AB-17). Aucune PR de code n'est ouverte à ce stade.
+Plan exécuté, avec ces écarts : pas de clé `enemyCount` (l'effectif découle des configurations, pas de doublon) ; ajout de `GameConfig.ranges` (portées D-05 et G-08.4) pour le test de cohérence d'AB-16 ; `FleetPanel` passe désormais par `observeFriend()`. Détail du plan d'origine :
 
 1. **`GameConfig.scenarios`** (`engine/config/game.config.ts`) : valeurs d'AB-16 (effectifs, configurations et poids, poids des classes de frégate, ratios de zones et de distances, colonnes de départ). Externaliser `col: 2` et `width - 3` de `generate.service.ts`. Mettre à jour `game.config.test.ts` avec le test de cohérence (distance minimale > portée d'arme maximale + portée active de détection).
 2. **Composition** : `engine/missions/enemy-force.service.ts` → tirage de la configuration puis des classes de frégate, via `createRng`, ordre des tirages : carte, composition, classes, positions.
