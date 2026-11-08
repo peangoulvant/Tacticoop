@@ -83,7 +83,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Textes du moteur | `shared/engine.label.ts` (et non `label-core`, qui prêtait à confusion avec `engine/core/`). Le moteur peut dépendre de `shared/` ; les libellés de catalogue (`ShipSpec.label`, `description`) restent dans `GameConfig` |
 | Règles ESLint | Imports profonds entre features : interdits (PR 2/4). Style des fonctions (premier niveau des modules) : imposé en PR 4/4 (#18) |
 | Réexport de `accept` / `reject` | Refusé : ils restent dans `engine/core/results.service.ts` |
-| Départ du camp allié | Heuristique provisoire près du bord ouest ; **à valider** avec les zones de départ du scénario |
+| Départ du camp allié (AB-14) | Validé : groupe autour de A en escorte ; en lutte navale, point de départ allié à 6 % de la largeur, mi-hauteur. Heuristique actuelle conforme, test sur 200 graines concluant |
 | Navigation du porte-avions | Arbitrée (AB-05 à AB-07) : ordres et quota validés tels que rédigés (ordre par défaut Poursuivre vers B, Stopper persistant) ; route bloquée = arrêt avant la case occupée, sans contournement ; dernière occasion d'ordre = pause du cycle et bouton « Clôturer le cycle » (nom proche de « Terminer le cycle » de la fin anticipée : à vérifier à l'implémentation de l'interface) |
 | Sauvegardes (AB-08) | Un seul emplacement, reprise proposée au démarrage, état et journal, sauvegarde automatique illisible ou incompatible traitée comme absente, sans message ni effacement (décision du propriétaire) ; mission gagnée sauvegardée, effacée au retour à la préparation (détail : `PERSISTANCE.md`) |
 | Hasard et reprise | `createRng(seed)` est une fermeture sans état global ; le hasard ne sert qu'au lancement et la graine n'est pas dans l'état. **Aucun état de générateur n'est ajouté tant qu'aucun tirage n'existe en cours de partie** : le premier tirage (détection, combat, IA) imposera de le conserver dans `MissionState`, de monter `schemaVersion` à 2 et d'arbitrer le sort des sauvegardes v1 (voir `MOTEUR-ET-ETAT.md`) |
@@ -92,7 +92,10 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Périmètre de la navigation | Navigation et victoire à l'arrivée en B (résultat binaire, commandes ensuite refusées), avec un simple bandeau de résultat ; ni bilan ni débriefing (D-12 ouvert) |
 | Export et import JSON (AB-10) | **Retirés de la V1** (nouvelle décision) : PR C3 abandonnée, réévaluation possible après la V1. La sérialisation interne, la validation, `schemaVersion` et la reprise IndexedDB restent |
 | Clôture de cycle et résultat | `closeCycle()` = `resolveCycleEnd()` (phases de fin de cycle) puis `determineOutcome()` (défaite avant victoire, AB-01) puis fin de mission ou cycle suivant. Les phases ennemies, la veille passive, les projectiles (AB-02) et la défaite (AB-03) sont **reportés** avec le combat, sans stub : ils s'ajouteront dans `resolveCycleEnd()` et `determineOutcome()` |
-| Force ennemie | Non créée : la lutte navale se lance sans adversaire tant que la composition n'est pas arbitrée |
+| Force ennemie (AB-11 à AB-13) | Arbitrée, **pas encore créée dans le code**. Lutte navale et escorte : 3 ennemis, quatre configurations équiprobables, frégates tirées parmi FREMM, DA et ASM ; bande est (25 %) en lutte navale, partie centrale (30 % à 85 %) en escorte ; distances minimales proportionnelles à la largeur ; difficulté sans effet sur composition et placement |
+| Sous-marin en mer côtière (AB-15) | Autorisé en principe, détection facilitée ; chiffrage ouvert (GD-07, D-09) ; la table `NAVIGABLE` ne change qu'avec lui |
+| Paramétrage (AB-16) | `GameConfig.scenarios` ; portées non mises à l'échelle, test de cohérence de configuration ; littéraux d'escorte à externaliser |
+| Nommage de l'IA (AB-17) | `nom.ai.service.ts` pour les fichiers de `engine/ai/` qui ont un homologue côté unités |
 
 ## État d'avancement
 
@@ -134,7 +137,19 @@ Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEM
 
 **Navigation du porte-avions** : faite (PR A moteur, PR B interface). **Persistance (jalon 4, PR C)** : en deux PR. C1 : module `persistence/` (fait, sans interface ; revu pour séparer format, contrat de stockage et IndexedDB). C2 : store, sauvegarde automatique, reprise au démarrage, interface (faite). Le comportement est arbitré (AB-08, voir `PERSISTANCE.md`). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
 
-Restent aussi bloquants (voir les registres `DECISIONS.md`) : composition et zones de départ ennemies, génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
+**Prochaine étape d'implémentation (jalon 5, première PR) : force ennemie au lancement** (composition, zones de départ, forces d'interception), voir le plan de la session d'arbitrage. Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones passives (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
+
+## Plan d'implémentation : force ennemie au lancement (jalon 5, PR suivante)
+
+À exécuter après fusion de la PR d'arbitrage (AB-11 à AB-17). Aucune PR de code n'est ouverte à ce stade.
+
+1. **`GameConfig.scenarios`** (`engine/config/game.config.ts`) : valeurs d'AB-16 (effectifs, configurations et poids, poids des classes de frégate, ratios de zones et de distances, colonnes de départ). Externaliser `col: 2` et `width - 3` de `generate.service.ts`. Mettre à jour `game.config.test.ts` avec le test de cohérence (distance minimale > portée d'arme maximale + portée active de détection).
+2. **Composition** : `engine/missions/enemy-force.service.ts` → tirage de la configuration puis des classes de frégate, via `createRng`, ordre des tirages : carte, composition, classes, positions.
+3. **Placement** : fonction de zone par scénario (bande est ; partie centrale avec distances à A et B), sur hexagones libres navigables pour le type, échec explicite si impossible. Alliés : point de départ allié de lutte navale lu dans la configuration.
+4. **Intégration** : `launch.service.ts` → `launchMission()` ajoute les unités `hostile` (identifiants `hostile-<classe>-<n>`) ; vérifier que `observeFriend()` les masque, que le validateur de sauvegarde (`persistence/format/save.validator.ts`) accepte des unités hostiles, et que `schemaVersion` reste inchangé (aucun tirage en cours de partie). Mettre à jour le commentaire de `launchMission()`.
+5. **Tests** (dans des sous-dossiers `tests/`) : déterminisme par graine ; sur 200 graines, trois ennemis, positions dans la zone, navigables pour leur type, distances minimales respectées, aucune case occupée deux fois, quatre configurations toutes obtenues ; l'interface ne reçoit aucun ennemi (fog-of-war) ; pas de changement de la navigabilité du sous-marin (AB-15 attend le chiffrage de la détection).
+6. **Hors périmètre** : IA (D-13, fichiers `engine/ai/*.ai.service.ts` plus tard), détection, combat, bonus du sous-marin côtier, équilibrage (G-03.1.5).
+7. **Conventions à rappeler** : nommage `nom.categorie.ts`, complexité ≤ 10, commentaire sur chaque fonction non triviale, aucune valeur de jeu en dur, mise à jour de `TRACEABILITY.md` et de `HANDOFF.md`.
 
 ## Pièges techniques rencontrés
 

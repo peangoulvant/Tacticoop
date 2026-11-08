@@ -62,6 +62,7 @@ Règles :
 3. Exceptions, qui gardent leur nom : `index.ts`, les points d'entrée (`main.tsx`, `App.tsx`), les fichiers attendus par les outils (`test-setup.ts`, configurations), et les **hooks React**, nommés `use-xxx.ts` en kebab-case (un `.service.ts` y serait trompeur). Le hook exporte `useXxx`.
 4. Un fichier n'est ni déplacé ni découpé pour le seul plaisir de la convention : on ne change que son nom.
 5. Un test porte le nom de son fichier testé suivi de `.test.ts` ; un test qui couvre un comportement transversal garde un nom descriptif (`carrier-commands.test.ts`).
+6. **Qualificatif `.ai` (AB-17).** Un fichier de l'IA ennemie qui a un homologue côté unités ou missions porte le qualificatif `.ai` avant la catégorie : `unit-movement.ai.service.ts` (décision de l'IA) à côté de `unit-movement.service.ts` (règle). C'est un qualificatif de la catégorie `.service`, pas une catégorie nouvelle : la règle 2 reste valable. Le test suit la règle 5 (`unit-movement.ai.service.test.ts`). Aucune règle ESLint ne l'impose.
 
 ## Organisation des tests
 

@@ -18,6 +18,8 @@ Ces décisions sont retenues pour la V1 ; les chiffres sont des **paramètres pr
 - **Navigation du porte-avions (AB-05 à AB-07) :** ordres et quota (G-03.2.10, G-06.5.6) validés ; route bloquée (G-03.2.13) : arrêt avant la case occupée ; dernière occasion d'ordre : pause du cycle et bouton « Clôturer le cycle ». Les dégâts de vitesse et l'immobilisation définitive (G-03.2.11) restent à définir avec le combat. Détail dans le [registre Game Design](../game-design/DECISIONS.md).
 - **Sauvegardes (AB-08) et route bloquée (AB-09) :** un seul emplacement, reprise proposée, état et journal, sauvegarde automatique illisible ou incompatible traitée comme absente ; export et import manuels de fichiers JSON retirés de la V1 (AB-10) ; le blocage du porte-avions par un navire est le comportement voulu. Détail dans [PERSISTANCE.md](../architecture/PERSISTANCE.md) et le registre Game Design.
 
+- **Ennemis et départs (AB-11 à AB-17) :** lutte navale à 3 ennemis (quatre configurations équiprobables, frégates tirées parmi FREMM, DA et ASM), zones de départ et distances proportionnelles à la largeur de la carte, forces d'interception de l'escorte présentes dès le lancement, sous-marin autorisé en mer côtière avec détection facilitée (chiffrage ouvert), paramètres sous `GameConfig.scenarios`, nommage `.ai.service.ts`. Détail dans le [registre Game Design](../game-design/DECISIONS.md) et dans SF-02 §4.
+
 Les éléments non précisés ci-dessus (autonomies, probabilités de panne/interception, leurres, cas limites de l'IA et de la détection) ne sont pas automatiquement validés.
 
 ## Priorité 1 — Cohérence des règles et version jouable
@@ -33,7 +35,7 @@ Les éléments non précisés ci-dessus (autonomies, probabilités de panne/inte
 
 | ID | Références | Question à arbitrer |
 |---|---|---|
-| D-09 | G-08, SF-04 | Effets de la recherche active sur la discrétion ; obstacles, types de mer et contacts anciens ; priorité active/passive. |
+| D-09 | G-08, SF-04 | Effets de la recherche active sur la discrétion ; obstacles, types de mer et contacts anciens ; priorité active/passive. Inclut le chiffrage du surcroît de détection du sous-marin en mer côtière (principe validé : AB-15). |
 | D-10 | G-09, SF-05 | Passage répété d'un projectile dans la zone d'un même leurre ; modalités de tentative d'interception après échec, sans déroger à la règle « cycle ultérieur ». |
 | D-11 | G-12, SF-07 | Catalogue des événements significatifs, champs du journal, rubriques des synthèses et niveau de détail du parcours historique. |
 | D-12 | G-12, G-13, SF-08 | Liste des statistiques factuelles, modalités de révélation des événements ennemis après la mission et conservation des résultats. |
