@@ -37,7 +37,7 @@ Un développeur doit savoir **d'où vient** une fonction ou un type en lisant un
 - `plan` désigne le calcul du moteur : `engine.planMove`, `engine.MovePlan`.
 - `draft` (« brouillon ») désigne l'état d'interface d'une action en préparation, pas encore exécutée : `useMoveDraft`, `MoveDraft`, `useMoveDraftStore`.
 - Un hook s'appelle `useXxx`, un store Zustand `useXxxStore` ; un composant React porte un nom de rôle (`UnitPanel`, `MoveBar`).
-- Deux notions de déplacement ne partagent pas un nom : `units/unit-movement.service.ts` (déplacement d'une unité par le joueur) et `missions/carrier-movement.service.ts` (navigation automatique du porte-avions).
+- Deux notions de déplacement ne partagent pas un nom : `units/unit-movement.service.ts` (déplacement d'une unité par le joueur) et `units/carrier-movement.service.ts` (navigation automatique du porte-avions).
 - Avant de nommer, chercher les noms déjà proches dans les autres couches et choisir un mot distinct.
 
 ## Nommage des fichiers
@@ -70,7 +70,7 @@ Dans chaque dossier qui contient des tests, ceux-ci sont rangés dans un sous-do
 
 ## Blocs de séparation par sujet
 
-Dans un fichier où cohabitent **plusieurs sections significatives** (par exemple les commandes d'unités et de porte-avions de `mission-commands.service.ts`), les groupes de constantes et de fonctions sont introduits par un bloc de titre court :
+Dans un fichier où cohabitent **plusieurs sections significatives** (par exemple les commandes d'unités et de porte-avions de `mission-commands.service.ts`, ou le relief, les itinéraires et les cartes de mission de `generate.service.ts`), les groupes de constantes et de fonctions sont introduits par un bloc de titre court :
 
 ```ts
 /*****************************

@@ -9,6 +9,12 @@ import {
 import { type Hex, hexLine, hexNeighbors } from './hex.service';
 import { isNavigable, TERRAINS, type Terrain } from './terrain.model';
 
+/*****************************
+ *
+ * PARTIE TERRAIN : génération procédurale du relief
+ *
+ *****************************/
+
 /**
  * Part de la carte attribuée à chaque terrain, de la mer profonde à la montagne.
  * Paramètres de génération provisoires (GD-06 non arbitré).
@@ -23,17 +29,6 @@ const TERRAIN_SHARES: Record<Terrain, number> = {
 };
 
 const SMOOTHING_PASSES = 9;
-
-/** Carte générée, avec le point de départ allié (A) et, en escorte, le point d'arrivée (B). */
-export interface ScenarioMap {
-  map: GameMap;
-  start: Hex;
-  goal: Hex | null;
-}
-
-export interface EscortMap extends ScenarioMap {
-  goal: Hex;
-}
 
 /** Remplace chaque valeur par la moyenne de la case et de ses voisines : crée des ensembles cohérents. */
 function smooth(field: readonly number[], width: number, height: number): number[] {
@@ -67,6 +62,12 @@ export function generateTerrain(width: number, height: number, rng: Rng): GameMa
   for (let pass = 0; pass < SMOOTHING_PASSES; pass++) field = smooth(field, width, height);
   return { width, height, terrain: assignTerrains(field) };
 }
+
+/*****************************
+ *
+ * PARTIE ITINÉRAIRES : couloirs et contournements du porte-avions
+ *
+ *****************************/
 
 /** Creuse un couloir de mer classique le long de la ligne droite entre deux points. */
 function carveCorridor(map: GameMap, from: Hex, to: Hex): GameMap {
@@ -128,23 +129,69 @@ function withAlternativeRoute(map: GameMap, start: Hex, goal: Hex): GameMap {
   return candidates.sort((a, b) => changedCells(map, a) - changedCells(map, b))[0] ?? map;
 }
 
-/** Lutte navale : les alliés partent de l'ouest, au milieu de la carte. */
-export function generateNavalCombatMap(width: number, height: number, rng: Rng): ScenarioMap {
-  const map = generateTerrain(width, height, rng);
-  const start = nearestNavigableHex(map, { col: 2, row: Math.floor(height / 2) }, 'submarine');
-  return { map, start, goal: null };
+/*****************************
+ *
+ * PARTIE SCÉNARIOS : cartes de mission et points de départ
+ *
+ *****************************/
+
+/** Carte générée, avec le point de départ allié (A) et, en escorte, le point d'arrivée (B). */
+export interface ScenarioMap {
+  map: GameMap;
+  start: Hex;
+  goal: Hex | null;
+}
+
+export interface EscortMap extends ScenarioMap {
+  goal: Hex;
+}
+
+/** Colonne située à une part `ratio` de la largeur (0 = bord ouest, 1 = bord est). */
+export function columnAtRatio(width: number, ratio: number): number {
+  return Math.round(ratio * (width - 1));
 }
 
 /**
- * Carte d'escorte : A à l'ouest, B à l'est. Garantit au moins un trajet navigable A→B pour le
+ * Lutte navale : les alliés partent de l'ouest, au milieu de la carte, à la colonne donnée par
+ * `startColumnRatio` (AB-14).
+ *
+ * `rng` est le générateur à graine de la mission : il sert uniquement à tirer le relief
+ * (`generateTerrain`). Une même graine redonne donc exactement la même carte (reproductibilité des
+ * tests et reprise d'une partie), et une nouvelle graine à chaque partie donne une nouvelle carte
+ * (SF-02 §3). Le point de départ allié, lui, est déterministe : l'hexagone navigable le plus proche
+ * de la colonne visée.
+ */
+export function generateNavalCombatMap(
+  width: number,
+  height: number,
+  rng: Rng,
+  startColumnRatio: number,
+): ScenarioMap {
+  const map = generateTerrain(width, height, rng);
+  const target = { col: columnAtRatio(width, startColumnRatio), row: Math.floor(height / 2) };
+  return { map, start: nearestNavigableHex(map, target, 'submarine'), goal: null };
+}
+
+/**
+ * Carte d'escorte : A à l'ouest, B à l'est. `rng` ne tire que le relief, comme en lutte navale
+ * (`generateNavalCombatMap`) ; les points A et B, le couloir et le contournement sont déterministes.
+ * Garantit au moins un trajet navigable A→B pour le
  * porte-avions ; si le relief le coupe, un couloir de mer classique est creusé (SF-02 §3). Un
  * contournement est ensuite favorisé quand la carte n'en offre pas (`withAlternativeRoute`).
  */
-export function generateEscortMap(width: number, height: number, rng: Rng): EscortMap {
+export function generateEscortMap(
+  width: number,
+  height: number,
+  rng: Rng,
+  startColumnRatio: number,
+  goalColumnRatio: number,
+): EscortMap {
   const generated = generateTerrain(width, height, rng);
   const middle = Math.floor(height / 2);
-  const start = nearestNavigableHex(generated, { col: 2, row: middle }, 'carrier');
-  const goal = nearestNavigableHex(generated, { col: width - 3, row: middle }, 'carrier');
+  const startTarget = { col: columnAtRatio(width, startColumnRatio), row: middle };
+  const goalTarget = { col: columnAtRatio(width, goalColumnRatio), row: middle };
+  const start = nearestNavigableHex(generated, startTarget, 'carrier');
+  const goal = nearestNavigableHex(generated, goalTarget, 'carrier');
   const connected = shortestPath(generated, start, goal, 'carrier') !== null;
   const reachable = connected ? generated : carveCorridor(generated, start, goal);
   return { map: withAlternativeRoute(reachable, start, goal), start, goal };

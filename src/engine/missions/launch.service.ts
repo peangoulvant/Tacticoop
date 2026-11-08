@@ -1,6 +1,6 @@
 import type { GameConfig, ShipClass } from '../config/game.config';
 import { PURCHASABLE_CLASSES } from '../config/game.config';
-import { createRng } from '../core/rng.service';
+import { createRng, type Rng } from '../core/rng.service';
 import {
   generateEscortMap,
   generateNavalCombatMap,
@@ -8,7 +8,13 @@ import {
 } from '../map/generate.service';
 import { indexOf, nearestNavigableHex } from '../map/game-map.service';
 import { createUnit, type Unit, type UnitModifiers } from '../units/unit.model';
-import { initialCarrierNavigation, type CarrierNavigation } from './carrier-orders.service';
+import { initialCarrierNavigation, type CarrierNavigation } from '../units/carrier-orders.service';
+import {
+  createHostileUnits,
+  drawHostileClasses,
+  hostileForceSpecOf,
+  hostileZoneOf,
+} from '../units/hostile-force.service';
 import type { MissionSetup } from './setup.service';
 
 export interface LaunchedMission extends ScenarioMap {
@@ -52,9 +58,19 @@ function placeUnits(
   });
 }
 
+/** Génère la carte du scénario, avec les colonnes de départ lues dans `GameConfig` (AB-14, AB-16). */
+function generateScenario(setup: MissionSetup, config: GameConfig, rng: Rng): ScenarioMap {
+  const { width, height } = config.map;
+  const { navalCombat, escort } = config.missions;
+  return setup.mission === 'escort'
+    ? generateEscortMap(width, height, rng, escort.startColumnRatio, escort.goalColumnRatio)
+    : generateNavalCombatMap(width, height, rng, navalCombat.alliedStartColumnRatio);
+}
+
 /**
- * Crée la carte et place les unités alliées automatiquement (aucun déploiement manuel).
- * La force ennemie n'est pas créée : sa composition et ses zones de départ ne sont pas arbitrées.
+ * Crée la carte, place les unités alliées automatiquement (aucun déploiement manuel), puis la
+ * force ennemie : composition tirée, puis positions tirées dans la zone de départ du scénario
+ * (AB-11 à AB-13). Ordre des tirages : carte, composition, classes de frégate, positions.
  */
 export function launchMission(
   setup: MissionSetup,
@@ -62,11 +78,15 @@ export function launchMission(
   seed: number,
 ): LaunchedMission {
   const rng = createRng(seed);
-  const { width, height } = config.map;
-  const scenario =
-    setup.mission === 'escort'
-      ? generateEscortMap(width, height, rng)
-      : generateNavalCombatMap(width, height, rng);
-  const units = placeUnits(rosterOf(setup), scenario, config, modifiersOf(setup, config));
-  return { ...scenario, units, carrierNavigation: initialCarrierNavigation(setup.mission) };
+  const scenario = generateScenario(setup, config, rng);
+  const allies = placeUnits(rosterOf(setup), scenario, config, modifiersOf(setup, config));
+  const classes = drawHostileClasses(hostileForceSpecOf(setup.mission, config), rng);
+  const zone = hostileZoneOf(setup.mission, scenario, config);
+  const taken = new Set(allies.map((unit) => indexOf(scenario.map, unit.position)));
+  const hostiles = createHostileUnits(classes, scenario.map, zone, taken, config, rng);
+  return {
+    ...scenario,
+    units: [...allies, ...hostiles],
+    carrierNavigation: initialCarrierNavigation(setup.mission),
+  };
 }

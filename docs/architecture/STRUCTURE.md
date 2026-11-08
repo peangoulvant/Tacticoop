@@ -10,11 +10,11 @@ src/
   engine/
     core/                # Types métier, commandes, résultats
     map/                 # Calculs hexagonaux et déplacements
-    units/               # Modèle des unités
+    units/               # Modèle et comportement des unités : déplacement, porte-avions (ordres et navigation), force hostile au lancement
     detection/           # Contacts et observations filtrées
     combat/              # Résolution des combats
     ai/                  # Décisions du camp Hostile
-    missions/            # Coordination des missions et des phases
+    missions/            # Coordination des missions et des phases : préparation, lancement, activations, cycles
     config/              # Paramètres de jeu
   features/
     mission-setup/       # Préparation de partie

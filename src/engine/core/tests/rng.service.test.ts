@@ -2,7 +2,7 @@ import { defaultConfig } from '../../config/game.config';
 import { initialSetup } from '../../missions/setup.service';
 import { executeCommand } from '../execute-command.service';
 import type { GameState } from '../game.types';
-import { createRng, randomInt, shuffle } from '../rng.service';
+import { createRng, pickWeighted, randomInt, shuffle } from '../rng.service';
 
 /** Les `count` premiers tirages d'un générateur. */
 function draws(seed: number, count: number): number[] {
@@ -48,6 +48,35 @@ describe('générateur pseudo-aléatoire à graine', () => {
     expect(shuffled).toEqual(shuffle(items, createRng(3)));
     expect([...shuffled].sort((x, y) => x - y)).toEqual(items);
     expect(items).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+});
+
+describe('tirage pondéré', () => {
+  it('est reproductible pour une même graine', () => {
+    const items = ['a', 'b', 'c'];
+    const pick = (seed: number) => pickWeighted(items, () => 1, createRng(seed));
+    expect(pick(8)).toBe(pick(8));
+  });
+
+  it('ne tire jamais un élément de poids nul', () => {
+    const rng = createRng(4);
+    for (let i = 0; i < 300; i++) {
+      expect(pickWeighted(['a', 'b'], (item) => (item === 'a' ? 0 : 1), rng)).toBe('b');
+    }
+  });
+
+  it('respecte approximativement les poids relatifs', () => {
+    const rng = createRng(21);
+    const picks = Array.from({ length: 4000 }, () =>
+      pickWeighted(['a', 'b'], (item) => (item === 'a' ? 1 : 3), rng),
+    );
+    const shareOfB = picks.filter((item) => item === 'b').length / picks.length;
+    expect(shareOfB).toBeGreaterThan(0.7);
+    expect(shareOfB).toBeLessThan(0.8);
+  });
+
+  it('refuse une somme de poids nulle', () => {
+    expect(() => pickWeighted(['a'], () => 0, createRng(1))).toThrow();
   });
 });
 

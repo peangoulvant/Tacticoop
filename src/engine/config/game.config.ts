@@ -23,8 +23,64 @@ export interface ShipSpec {
   helicopters: number;
 }
 
+/** Classes de frégate que l'ennemi peut aligner (AB-11). */
+export type HostileFrigateClass = Extract<ShipClass, 'fremm' | 'frigate_da' | 'frigate_asm'>;
+
+/** Une configuration possible de la force ennemie et son poids de tirage (AB-11). */
+export interface HostileComposition {
+  frigates: number;
+  submarines: number;
+  weight: number;
+}
+
+/** Force ennemie d'un scénario : configurations pondérées, puis classe de chaque frégate (AB-11, AB-13). */
+export interface HostileForceSpec {
+  compositions: readonly HostileComposition[];
+  frigateClassWeights: Record<HostileFrigateClass, number>;
+}
+
+/**
+ * Paramètres de chaque scénario (AB-12 à AB-16). Les colonnes sont des parts de la largeur de la
+ * carte ; les distances et zones en sont aussi des parts, pour rester valables si la taille change.
+ */
+export interface MissionsConfig {
+  navalCombat: {
+    /** Colonne du point de départ allié, en part de la largeur (0 = bord ouest). */
+    alliedStartColumnRatio: number;
+    /** Largeur de la bande est où partent les ennemis, en part de la largeur de la carte. */
+    hostileZoneWidthRatio: number;
+    /** Distance minimale entre un ennemi et le point de départ allié, en part de la largeur. */
+    minStartDistanceRatio: number;
+    hostile: HostileForceSpec;
+  };
+  escort: {
+    /** Colonnes de A et de B, en part de la largeur (0 = bord ouest, 1 = bord est). */
+    startColumnRatio: number;
+    goalColumnRatio: number;
+    /** Colonnes de la zone d'interception, en part de la largeur de la carte. */
+    interceptionZone: { fromRatio: number; toRatio: number };
+    minDistanceFromStartRatio: number;
+    minDistanceFromGoalRatio: number;
+    hostile: HostileForceSpec;
+  };
+}
+
+/**
+ * Portées validées en hexagones (D-05 pour les armes, G-08.4 pour la détection). Elles servent pour
+ * l'instant au contrôle de cohérence des distances de départ ; le combat et la détection les
+ * utiliseront.
+ */
+export interface RangesConfig {
+  missile: number;
+  torpedo: number;
+  passiveDetection: number;
+  activeDetection: number;
+}
+
 export interface GameConfig {
   map: { width: number; height: number };
+  missions: MissionsConfig;
+  ranges: RangesConfig;
   budget: { normal: number; limitedMeans: number };
   constraints: {
     /** Nombre maximal de contraintes initiales (0 à ce maximum, SF-01 §4). */
@@ -44,8 +100,36 @@ export const PURCHASABLE_CLASSES: readonly PurchasableShipClass[] = [
   'submarine',
 ];
 
+/** Quatre configurations équiprobables, 3 navires (AB-11). */
+const HOSTILE_FORCE: HostileForceSpec = {
+  compositions: [
+    { frigates: 3, submarines: 0, weight: 1 },
+    { frigates: 2, submarines: 1, weight: 1 },
+    { frigates: 1, submarines: 2, weight: 1 },
+    { frigates: 0, submarines: 3, weight: 1 },
+  ],
+  frigateClassWeights: { fremm: 1, frigate_da: 1, frigate_asm: 1 },
+};
+
 export const defaultConfig: GameConfig = {
   map: { width: 35, height: 35 },
+  missions: {
+    navalCombat: {
+      alliedStartColumnRatio: 0.06,
+      hostileZoneWidthRatio: 0.25,
+      minStartDistanceRatio: 0.4,
+      hostile: HOSTILE_FORCE,
+    },
+    escort: {
+      startColumnRatio: 0.06,
+      goalColumnRatio: 0.94,
+      interceptionZone: { fromRatio: 0.3, toRatio: 0.85 },
+      minDistanceFromStartRatio: 0.4,
+      minDistanceFromGoalRatio: 0.25,
+      hostile: HOSTILE_FORCE,
+    },
+  },
+  ranges: { missile: 8, torpedo: 5, passiveDetection: 2, activeDetection: 4 },
   budget: { normal: 100, limitedMeans: 70 },
   constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2 },
   ships: {

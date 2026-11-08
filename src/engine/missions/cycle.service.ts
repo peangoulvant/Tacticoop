@@ -1,8 +1,8 @@
 import type { GameConfig } from '../config/game.config';
 import type { MissionState, Progress } from '../core/game.types';
 import type { Unit } from '../units/unit.model';
-import { hasCarrierArrived, moveCarrier } from './carrier-movement.service';
-import type { MissionOutcome } from './carrier-orders.service';
+import { hasCarrierArrived, moveCarrier } from '../units/carrier-movement.service';
+import type { MissionOutcome } from '../units/carrier-orders.service';
 
 /** Une unité alliée peut encore recevoir des ordres ce cycle. */
 function isPending(unit: Unit): boolean {

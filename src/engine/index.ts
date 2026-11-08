@@ -43,20 +43,20 @@ export { MOVE_REFUSAL_MESSAGES, planMove, reachableHexes } from './units/unit-mo
 export { BLOCKER_MESSAGES, moveBlocker, orderBlocker } from './missions/activation.service';
 export type { MoveBlocker, OrderBlocker } from './missions/activation.service';
 export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle.service';
-export { plannedRoute } from './missions/carrier-movement.service';
+export { plannedRoute } from './units/carrier-movement.service';
 export { observeFriend, observeHostile } from './detection/observation.service';
 export type { FriendObservation, HostileObservation } from './detection/observation.types';
 export {
   WAYPOINT_REFUSAL_MESSAGES,
   carrierOf,
   waypointRefusal,
-} from './missions/carrier-orders.service';
-export { CarrierOrderKind } from './missions/carrier-orders.service';
+} from './units/carrier-orders.service';
+export { CarrierOrderKind } from './units/carrier-orders.service';
 export type {
   CarrierMode,
   CarrierNavigation,
   CarrierOrder,
   MissionOutcome,
   WaypointRefusal,
-} from './missions/carrier-orders.service';
+} from './units/carrier-orders.service';
 export type { MovePlan, MoveRefusal } from './units/unit-movement.service';

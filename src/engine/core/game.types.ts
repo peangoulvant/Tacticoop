@@ -6,7 +6,7 @@ import type {
   CarrierOrder,
   MissionOutcome,
   WaypointRefusal,
-} from '../missions/carrier-orders.service';
+} from '../units/carrier-orders.service';
 import type {
   Constraint,
   Difficulty,
