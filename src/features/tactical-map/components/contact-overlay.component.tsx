@@ -80,7 +80,7 @@ function IdentifiedContactToken({
         strokeDasharray={contact.stale ? '3 2' : undefined}
       />
       <text
-        y="-5.2"
+        y="-2.6"
         fontSize="3.6"
         fontWeight="bold"
         textAnchor="middle"
@@ -91,7 +91,7 @@ function IdentifiedContactToken({
       </text>
       <image
         href={assets.contactTargetIcon[contact.targetType]}
-        transform="translate(0 1.5) scale(-1 1)"
+        transform="translate(0 2.6) scale(-1 1)"
         x="-6.5"
         y="-3.5"
         width="13"
