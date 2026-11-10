@@ -22,6 +22,15 @@ export const shipIcon: Record<engine.ShipClass, string> = {
   carrier,
 };
 
+/**
+ * Silhouette d'un contact identifié, selon son seul type (AB-30) : l'icône de frégate est la même
+ * pour les trois classes, donc aucune classe n'est révélée.
+ */
+export const contactTargetIcon: Record<engine.ContactTargetType, string> = {
+  frigate,
+  submarine,
+};
+
 export const weaponIcon = { missile, torpedo, helicopter };
 
 export const terrainIcon: Record<engine.Terrain, string> = {

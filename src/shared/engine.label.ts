@@ -14,6 +14,13 @@ export const moveBlockerMessages = {
   ALREADY_MOVED: 'Cette unité s’est déjà déplacée pendant son activation.',
 };
 
+/** Pourquoi une unité ne peut pas utiliser son action spéciale (AB-30), en plus des motifs d'ordre. */
+export const specialActionBlockerMessages = {
+  SPECIAL_ACTION_USED:
+    'L’action spéciale de cette unité a déjà été utilisée pendant son activation.',
+  NO_SENSORS: 'Cette unité ne porte pas de capteurs.',
+};
+
 /** Pourquoi une destination est refusée (SF-02 §6). */
 export const moveRefusalMessages = {
   SAME_HEX: 'La destination est la position actuelle de l’unité.',

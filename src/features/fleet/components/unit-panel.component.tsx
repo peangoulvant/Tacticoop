@@ -3,15 +3,15 @@ import CloseIcon from '@mui/icons-material/Close';
 import * as engine from '../../../engine';
 import * as assets from '../../../shared/assets.config';
 import * as labelEngine from '../../../shared/engine.label';
+import * as labels from '../../../shared/ui.label';
 import { useSelectionStore } from '../../../store/selection.store';
-import { endActivation, startMoveDraft } from '../../commands';
+import { endActivation, startMoveDraft, startSearchDraft } from '../../commands';
 import { ActivationBadge } from './activation-badge.component';
 import { CarrierPanel } from './carrier-panel.component';
 import { HpBar, StockLine } from './unit-stats.component';
 
 /** Commandes de la maquette encore sans règle d'exécution (actions spéciales : D-04, D-05). */
 const UNAVAILABLE_COMMANDS = [
-  'Recherche sonar',
   'Lancer hélicoptère',
   'Tirer missile',
   'Tirer torpille',
@@ -28,8 +28,38 @@ function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): 
   return `${prefix} : ${engine.BLOCKER_MESSAGES[blocker]}`;
 }
 
+/**
+ * Motif propre à la recherche active (action déjà utilisée, absence de capteurs), ou `null`. Les
+ * motifs d'ordre sont déjà affichés par `unavailabilityReason`.
+ */
+function searchOwnReason(mission: engine.MissionState, unit: engine.Unit): string | null {
+  const friends = engine.observeFriend(mission).units;
+  const blocker = engine.specialActionBlocker(friends, unit, engine.defaultConfig);
+  if (blocker !== 'SPECIAL_ACTION_USED' && blocker !== 'NO_SENSORS') return null;
+  return `Recherche active indisponible : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
+}
+
+/** Bouton « Recherche active » : ouvre le brouillon ; désactivé avec son motif sinon (AB-30). */
+function SearchButton({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
+  const friends = engine.observeFriend(mission).units;
+  const blocker = engine.specialActionBlocker(friends, unit, engine.defaultConfig);
+  const disabled = mission.outcome !== null || blocker !== null;
+  const reason = searchOwnReason(mission, unit) ?? unavailabilityReason(mission, unit);
+  return (
+    <Button
+      variant="outlined"
+      disabled={disabled}
+      title={disabled && reason ? reason : labels.searchText.title}
+      onClick={() => startSearchDraft(unit.id)}
+    >
+      {labels.searchText.button}
+    </Button>
+  );
+}
+
 function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
   const reason = unavailabilityReason(mission, unit);
+  const searchReason = searchOwnReason(mission, unit);
   const ended = mission.outcome !== null;
   return (
     <>
@@ -41,6 +71,7 @@ function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit:
         >
           Déplacement
         </Button>
+        <SearchButton mission={mission} unit={unit} />
         {UNAVAILABLE_COMMANDS.map((label) => (
           <Button key={label} variant="outlined" disabled title="Non disponible dans cette version">
             {label}
@@ -54,10 +85,13 @@ function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit:
           Terminer l’activation
         </Button>
       </Box>
-      {reason && (
-        <Typography variant="caption" color="warning.main">
-          {reason}
-        </Typography>
+      {[reason, searchReason].map(
+        (text) =>
+          text && (
+            <Typography key={text} variant="caption" color="warning.main">
+              {text}
+            </Typography>
+          ),
       )}
     </>
   );
@@ -117,7 +151,7 @@ export function UnitPanel({ mission }: { mission: engine.MissionState }) {
             <>
               <CommandButtons mission={mission} unit={unit} />
               <Typography variant="caption" color="text.secondary">
-                Les actions spéciales seront activées avec leurs règles d’exécution.
+                Les autres actions spéciales seront activées avec leurs règles d’exécution.
               </Typography>
             </>
           )}

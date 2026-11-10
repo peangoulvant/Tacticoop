@@ -8,7 +8,10 @@ import {
   MissionResultBanner,
   MoveBar,
   NewGameButton,
+  SearchBar,
+  SearchResultToast,
   useMoveDraft,
+  useSearchDraft,
 } from '../../commands';
 import {
   CarrierOrderBar,
@@ -106,6 +109,7 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
   const lastError = useGameStore((s) => s.lastError);
   const clearError = useGameStore((s) => s.clearError);
   const move = useMoveDraft(mission);
+  const search = useSearchDraft(mission);
   const carrierDraft = useCarrierOrderDraft(mission);
   const carrierRoute = useCarrierRouteView(mission, carrierDraft);
   const sideRef = useRef<HTMLDivElement>(null);
@@ -133,8 +137,9 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
         <TopBar mission={mission} />
       </Box>
       <Paper sx={{ position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-        <TacticalMap mission={mission} move={move} carrierRoute={carrierRoute} />
+        <TacticalMap mission={mission} move={move} search={search} carrierRoute={carrierRoute} />
         <MoveBar move={move} />
+        <SearchBar search={search} />
         <CarrierOrderBar mission={mission} draft={carrierDraft} />
         <MissionResultBanner mission={mission} />
       </Paper>
@@ -153,6 +158,7 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
         <LogbookPanel events={events} />
       </Box>
       <FleetPanel units={engine.observeFriend(mission).units} />
+      <SearchResultToast />
       <Snackbar open={lastError !== null} autoHideDuration={4000} onClose={clearError}>
         <Alert severity="warning" onClose={clearError}>
           {lastError?.message}

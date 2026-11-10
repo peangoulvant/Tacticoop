@@ -40,13 +40,36 @@ export type { Terrain } from './map/terrain.model';
 export { ACTIVATION_STATUSES, SIDES } from './units/unit.model';
 export type { ActivationStatus, Side, Unit } from './units/unit.model';
 export { MOVE_REFUSAL_MESSAGES, planMove, reachableHexes } from './units/unit-movement.service';
-export { BLOCKER_MESSAGES, moveBlocker, orderBlocker } from './missions/activation.service';
-export type { MoveBlocker, OrderBlocker } from './missions/activation.service';
+export {
+  BLOCKER_MESSAGES,
+  SPECIAL_ACTION_BLOCKER_MESSAGES,
+  moveBlocker,
+  orderBlocker,
+  specialActionBlocker,
+} from './missions/activation.service';
+export type {
+  MoveBlocker,
+  OrderBlocker,
+  SpecialActionBlocker,
+} from './missions/activation.service';
 export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle.service';
 export { plannedRoute } from './units/carrier-movement.service';
 export { observeFriend, observeHostile } from './detection/observation.service';
-export { CONTACT_ID_PATTERN } from './detection/contact.types';
-export type { Contact } from './detection/contact.types';
+export { activeSearchArea, activeSearchRange } from './detection/active-search.service';
+export {
+  CONTACT_ID_PATTERN,
+  CONTACT_TARGET_TYPES,
+  contactHexes,
+  contactNumber,
+} from './detection/contact.types';
+export type {
+  Contact,
+  ContactTargetType,
+  FriendContact,
+  IdentifiedContact,
+  Identification,
+  SuspectContact,
+} from './detection/contact.types';
 export type { FriendObservation, HostileObservation } from './detection/observation.types';
 export {
   WAYPOINT_REFUSAL_MESSAGES,

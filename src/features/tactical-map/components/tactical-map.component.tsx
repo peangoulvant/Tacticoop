@@ -11,12 +11,13 @@ import { useCarrierOrderDraftStore } from '../../../store/carrier-order-draft.st
 import { useMoveDraftStore } from '../../../store/move-draft.store';
 import { useSelectionStore } from '../../../store/selection.store';
 import type { CarrierRouteView } from '../../fleet';
-import type { MoveDraft } from '../../commands';
+import type { MoveDraft, SearchDraft } from '../../commands';
 import { ShipGlyph, terrainFill } from './glyphs.component';
 import { HEX_POINTS, hexCenter, mapViewBox } from '../services/hex-geometry.service';
 import { CarrierRouteOverlay } from './carrier-route-overlay.component';
 import { ContactOverlay } from './contact-overlay.component';
 import { MoveOverlay } from './move-overlay.component';
+import { SearchOverlay } from './search-overlay.component';
 import { useMapView } from '../services/use-map-view';
 
 /**
@@ -120,13 +121,15 @@ function HexCaption({
   map: engine.GameMap;
   hex: engine.Hex | null;
   unit?: engine.Unit;
-  contacts: readonly engine.Contact[];
+  contacts: readonly engine.FriendContact[];
 }) {
   const text = hex
     ? `(${hex.col}, ${hex.row}) — ${labels.terrainLabel[engine.terrainAt(map, hex)]}`
     : 'Sélectionnez un hexagone';
   const ship = unit ? ` — ${engine.defaultConfig.ships[unit.shipClass].label}` : '';
-  const covering = hex ? contacts.filter((c) => c.zone.some((z) => engine.sameHex(z, hex))) : [];
+  const covering = hex
+    ? contacts.filter((c) => engine.contactHexes(c).some((h) => engine.sameHex(h, hex)))
+    : [];
   const suspects = covering.map((contact) => ` — ${labels.contactCaption(contact)}`).join('');
   return (
     <Typography variant="caption" sx={{ ...overlay, left: 8, bottom: 8, px: 1, py: 0.25 }}>
@@ -142,10 +145,12 @@ function HexCaption({
 export function TacticalMap({
   mission,
   move,
+  search,
   carrierRoute,
 }: {
   mission: engine.MissionState;
   move: MoveDraft | null;
+  search: SearchDraft | null;
   carrierRoute: CarrierRouteView | null;
 }) {
   // La carte n'affiche que ce que le joueur connaît : jamais une unité hostile non détectée.
@@ -201,6 +206,7 @@ export function TacticalMap({
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
               <TerrainLayer map={map} />
               <ContactOverlay contacts={contacts} />
+              <SearchOverlay search={search} />
               <MoveOverlay move={move} />
               <CarrierRouteOverlay view={carrierRoute} />
               {selected && (

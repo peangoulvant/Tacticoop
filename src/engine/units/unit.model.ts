@@ -37,6 +37,8 @@ export interface Unit {
   activation: ActivationStatus;
   /** Un déplacement a déjà été exécuté pendant l'activation en cours (un seul par activation). */
   hasMoved: boolean;
+  /** L'action spéciale de l'activation en cours est consommée (une par activation, G-07.1). */
+  specialActionUsed: boolean;
 }
 
 export interface UnitModifiers {
@@ -76,5 +78,6 @@ export function createUnit(
     helicopters: spec.helicopters,
     activation: initialActivation(side, spec.category),
     hasMoved: false,
+    specialActionUsed: false,
   };
 }

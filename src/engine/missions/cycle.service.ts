@@ -18,11 +18,11 @@ export function hasActivationInProgress(units: readonly Unit[]): boolean {
   return units.some((unit) => unit.activation === 'in_progress');
 }
 
-/** Début d'un cycle : les unités activables redeviennent disponibles, leur déplacement est renouvelé. */
+/** Début d'un cycle : les unités activables redeviennent disponibles, leur déplacement et leur action spéciale sont renouvelés. */
 function reopen(unit: Unit): Unit {
   return unit.activation === 'not_activable'
     ? unit
-    : { ...unit, activation: 'available', hasMoved: false };
+    : { ...unit, activation: 'available', hasMoved: false, specialActionUsed: false };
 }
 
 /**

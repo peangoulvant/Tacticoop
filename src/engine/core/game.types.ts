@@ -1,5 +1,5 @@
 import type { PurchasableShipClass, ShipClass } from '../config/game.config';
-import type { Contact } from '../detection/contact.types';
+import type { Contact, Identification } from '../detection/contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
 import type {
@@ -38,7 +38,7 @@ export interface MissionState {
   carrierNavigation: CarrierNavigation | null;
   /** Résultat de la mission une fois terminée ; les commandes sont alors refusées. */
   outcome: MissionOutcome | null;
-  /** Contacts suspects du camp ami, issus de la veille passive (SF-04, AB-18). */
+  /** Contacts du camp ami : zones de la veille passive et navires identifiés (SF-04, AB-18, AB-25). */
   friendContacts: Contact[];
   /** Numéro du prochain contact : les identifiants ne sont jamais réutilisés (AB-21). */
   nextContactNumber: number;
@@ -58,12 +58,13 @@ export type PreparationCommand =
   | { type: 'REMOVE_SHIP'; shipClass: PurchasableShipClass }
   | { type: 'LAUNCH_MISSION'; seed: number };
 
-/** Commandes d'une mission en cours : déplacement et activations (SF-02 §6, SF-03). */
+/** Commandes d'une mission en cours : déplacement, activations et action spéciale (SF-02 §6, SF-03). */
 export type MissionCommand =
   | { type: 'MOVE_UNIT'; unitId: string; destination: Hex }
   | { type: 'END_ACTIVATION'; unitId: string }
   | { type: 'END_CYCLE_EARLY' }
   | { type: 'ORDER_CARRIER'; order: CarrierOrder }
+  | { type: 'ACTIVE_SEARCH'; unitId: string }
   | { type: 'CLOSE_CYCLE' };
 
 export type GameCommand = PreparationCommand | MissionCommand;
@@ -85,6 +86,17 @@ export type GameEvent =
   | { type: 'CARRIER_MOVED'; from: Hex; to: Hex; cycle: number }
   /** Contact suspect issu de la veille passive : sans cible, classe ni détecteur (AB-21). */
   | { type: 'CONTACT_DETECTED'; contactId: string; cycle: number; zone: Hex[] }
+  /**
+   * Recherche active du camp ami, toujours journalisée (AB-28) : l'unité émettrice et les navires
+   * identifiés. Ni cible réelle, ni zone retirée, ni tirage.
+   */
+  | {
+      type: 'ACTIVE_SEARCH_PERFORMED';
+      cycle: number;
+      unitId: string;
+      shipClass: ShipClass;
+      identified: Identification[];
+    }
   | { type: 'MISSION_WON'; cycle: number };
 
 export type GameErrorCode =
@@ -98,6 +110,8 @@ export type GameErrorCode =
   | 'UNIT_ALREADY_ACTIVATED'
   | 'ACTIVATION_IN_PROGRESS'
   | 'ALREADY_MOVED'
+  | 'SPECIAL_ACTION_USED'
+  | 'NO_SENSORS'
   | 'MOVE_REFUSED'
   | 'NOT_ESCORT_MISSION'
   | 'NAVIGATION_QUOTA_USED'
