@@ -60,7 +60,7 @@ function hostile(
   return unit(id, 'hostile', shipClass, position);
 }
 
-/** Configuration où la balayage réussit toujours, pour isoler la portée et les contacts. */
+/** Configuration où le balayage réussit toujours, pour isoler la portée et les contacts. */
 const SURE: GameConfig = {
   ...defaultConfig,
   ships: {

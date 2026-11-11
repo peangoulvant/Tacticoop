@@ -24,7 +24,13 @@ export function useSweepDraft(mission: engine.MissionState): SweepDraft | null {
   const possible =
     unit !== undefined &&
     observation.outcome === null &&
-    engine.specialActionBlocker(observation.units, unit, engine.defaultConfig) === null;
+    engine.specialActionBlocker(
+      observation.units,
+      unit,
+      'sweep',
+      observation.cycle,
+      engine.defaultConfig,
+    ) === null;
 
   return useMemo(() => {
     if (!unit || !possible) return null;

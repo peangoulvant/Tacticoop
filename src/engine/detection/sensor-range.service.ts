@@ -4,7 +4,7 @@ import type { Unit } from '../units/unit.model';
 
 /**
  * Portée effective d'un capteur : « Capteurs dégradés » réduit celle des unités alliées, arrondie
- * à l'inférieur (SF-01 §4). Commune à la veille et à la balayage.
+ * à l'inférieur (SF-01 §4). Commune à la veille et au balayage.
  */
 export function effectiveRange(
   baseRange: number,

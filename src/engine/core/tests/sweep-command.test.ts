@@ -138,13 +138,38 @@ describe('commande SWEEP (G-07.7, AB-30)', () => {
     expect(moveFirst.friendContacts).toHaveLength(1);
   });
 
-  it('laisse « Terminer l’activation » disponible, et renouvelle l’action au cycle suivant', () => {
+  it('laisse « Terminer l’activation » disponible ; l’action de l’activation est renouvelée au cycle suivant', () => {
     const searched = accepted(mission(), search()).state;
     const ended = accepted(searched, { type: 'END_ACTIVATION', unitId: 'a' }).state;
     expect(unitOf(ended, 'a').activation).toBe('activated');
     const next = accepted(ended, { type: 'END_CYCLE_EARLY' }).state;
     expect(unitOf(next, 'a')).toMatchObject({ activation: 'available', specialActionUsed: false });
-    expect(accepted(next, search()).state.cycle).toBe(2);
+  });
+
+  it('enregistre le cycle du balayage, qui déclenche le délai de récupération (AB-34)', () => {
+    const { state } = accepted(mission(), search());
+    expect(unitOf(state, 'a').lastSpecialActionCycle).toEqual({ sweep: 1 });
+  });
+
+  it('refuse le balayage au cycle suivant (récupération), puis le permet au cycle d’après (AB-34)', () => {
+    const swept = accepted(mission(), search()).state;
+    const cycle2 = accepted(swept, { type: 'END_CYCLE_EARLY' }).state;
+    expect(cycle2.cycle).toBe(2);
+    expect(refusedCode(cycle2, search())).toBe('ON_COOLDOWN');
+    // Un refus ne consomme rien : ni action, ni activation engagée.
+    expect(unitOf(cycle2, 'a')).toMatchObject({
+      activation: 'available',
+      specialActionUsed: false,
+    });
+    const cycle3 = accepted(cycle2, { type: 'END_CYCLE_EARLY' }).state;
+    expect(cycle3.cycle).toBe(3);
+    expect(accepted(cycle3, search()).state.friendContacts.length).toBeGreaterThan(0);
+  });
+
+  it('une autre unité du même camp n’est pas en récupération', () => {
+    const swept = accepted(mission(), search()).state;
+    const cycle2 = accepted(swept, { type: 'END_CYCLE_EARLY' }).state;
+    expect(accepted(cycle2, search('b')).state.cycle).toBe(2);
   });
 
   it('refuse sans consommer : unité inconnue, porte-avions, hostile, déjà activée, autre en cours', () => {
@@ -172,8 +197,10 @@ describe('commande SWEEP (G-07.7, AB-30)', () => {
       ships: { ...SURE.ships, fremm: { ...SURE.ships.fremm, detection: null } },
     };
     const state = mission();
-    expect(specialActionBlocker(state.units, unitOf(state, 'a'), blind)).toBe('NO_SENSORS');
-    expect(specialActionBlocker(state.units, unitOf(state, 'a'), SURE)).toBeNull();
+    expect(specialActionBlocker(state.units, unitOf(state, 'a'), 'sweep', 1, blind)).toBe(
+      'NO_SENSORS',
+    );
+    expect(specialActionBlocker(state.units, unitOf(state, 'a'), 'sweep', 1, SURE)).toBeNull();
     const result = run(state, search(), blind);
     expect(result).toMatchObject({ ok: false, error: { code: 'NO_SENSORS' } });
   });

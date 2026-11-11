@@ -1,4 +1,4 @@
-import type { GameConfig, ShipClass } from '../config/game.config';
+import type { GameConfig, ShipClass, SpecialActionKind } from '../config/game.config';
 import type { Hex } from '../map/hex.service';
 import type { NavalCategory } from '../map/terrain.model';
 
@@ -39,6 +39,11 @@ export interface Unit {
   hasMoved: boolean;
   /** L'action spéciale de l'activation en cours est consommée (une par activation, G-07.1). */
   specialActionUsed: boolean;
+  /**
+   * Cycle du dernier usage de chaque action spéciale ; sert au délai de récupération et au bruit
+   * du balayage (AB-33, AB-34). Une action jamais utilisée n'a pas d'entrée.
+   */
+  lastSpecialActionCycle: Partial<Record<SpecialActionKind, number>>;
 }
 
 export interface UnitModifiers {
@@ -79,5 +84,6 @@ export function createUnit(
     activation: initialActivation(side, spec.category),
     hasMoved: false,
     specialActionUsed: false,
+    lastSpecialActionCycle: {},
   };
 }

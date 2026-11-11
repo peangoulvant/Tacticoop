@@ -3,6 +3,7 @@ import type { MissionState, Progress } from '../core/game.types';
 import { restoreRng, type Rng } from '../core/rng.service';
 import { terrainAt } from '../map/game-map.service';
 import { hexDistance } from '../map/hex.service';
+import { usedActionDuringCycle } from '../units/special-action.service';
 import type { Unit } from '../units/unit.model';
 import { contactId, type Contact } from './contact.types';
 import { generateWatchZone } from './watch-zone.service';
@@ -27,8 +28,13 @@ function watchRangeOf(
 }
 
 /**
- * Probabilité de détection de veille d'une cible : celle du détecteur, relevée contre un sous-marin
- * situé en mer côtière au moment du tirage, plafonnée à 100 % (AB-22).
+ * Probabilité de détection de veille d'une cible : la probabilité de base du détecteur (50 %),
+ * plus 20 points si la cible est un sous-marin en mer côtière au moment du tirage (AB-22), plus
+ * 20 points si la cible a fait un balayage pendant ce cycle (AB-33), plafonnée à 100 %. Les bonus
+ * se cumulent.
+ *
+ * Exemples : frégate hostile qui a balayé : 50 + 20 = 70 % ; sous-marin hostile côtier qui a
+ * balayé : 50 + 20 + 20 = 90 %.
  */
 function watchProbability(
   spec: DetectorSpec,
@@ -39,8 +45,11 @@ function watchProbability(
   const coastalSubmarine =
     config.ships[target.shipClass].category === 'submarine' &&
     terrainAt(mission.map, target.position) === 'coastal_sea';
-  const bonus = coastalSubmarine ? config.detection.coastalSubmarineWatchBonus : 0;
-  return Math.min(1, spec.watchProbability + bonus);
+  const coastalBonus = coastalSubmarine ? config.detection.coastalSubmarineWatchBonus : 0;
+  const noiseBonus = usedActionDuringCycle(target, 'sweep', mission.cycle)
+    ? config.detection.sweepNoiseWatchBonus
+    : 0;
+  return Math.min(1, spec.watchProbability + coastalBonus + noiseBonus);
 }
 
 /**

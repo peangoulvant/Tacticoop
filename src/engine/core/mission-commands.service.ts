@@ -33,6 +33,7 @@ import {
   planMove,
   checkMovedUnitPath,
 } from '../units/unit-movement.service';
+import { recordSpecialAction } from '../units/special-action.service';
 import type { Unit } from '../units/unit.model';
 import { accept, reject } from './results.service';
 import type {
@@ -72,7 +73,7 @@ function blockerRejection(blocker: MoveBlocker): CommandResult {
 
 /** Refus correspondant à un motif d'impossibilité d'action spéciale (ordre ou propre à l'action). */
 function specialActionRejection(blocker: SpecialActionBlocker): CommandResult {
-  return blocker === 'SPECIAL_ACTION_USED' || blocker === 'NO_SENSORS'
+  return blocker === 'SPECIAL_ACTION_USED' || blocker === 'ON_COOLDOWN' || blocker === 'NO_SENSORS'
     ? reject(blocker, SPECIAL_ACTION_BLOCKER_MESSAGES[blocker])
     : blockerRejection(blocker);
 }
@@ -146,18 +147,20 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
 };
 
 /**
- * Balayage (G-07.7, AB-25, AB-30) : résolue sur-le-champ, elle consomme l'action spéciale
- * de l'unité même sans résultat, et l'engage dans son activation. Elle ne touche ni au déplacement
- * ni à la discrétion de l'unité (AB-29) ; un refus ne consomme rien.
+ * Balayage (G-07.7, AB-25, AB-30) : résolu sur-le-champ, il consomme l'action spéciale de l'unité
+ * même sans résultat, l'engage dans son activation et enregistre le cycle de l'usage : ce numéro
+ * déclenche le délai de récupération (AB-34) et le bruit de l'émission (AB-33). Un refus ne
+ * consomme rien.
  */
 const sweep: Handler<'SWEEP'> = (mission, { unitId }, config) => {
   const found = findOrderableUnit(mission, unitId);
   if ('rejection' in found) return found.rejection;
   const { unit } = found;
-  const blocker = specialActionBlocker(mission.units, unit, config);
+  const blocker = specialActionBlocker(mission.units, unit, 'sweep', mission.cycle, config);
   if (blocker) return specialActionRejection(blocker);
   const swept = resolveSweep(mission, unit, config);
   const engaged = updateUnitInMission(swept.state, unitId, {
+    ...recordSpecialAction(unit, 'sweep', mission.cycle),
     activation: 'in_progress',
     specialActionUsed: true,
   });

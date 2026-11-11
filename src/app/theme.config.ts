@@ -12,7 +12,7 @@ export const palette = {
   enemy: '#b01218',
   /** Quatre teintes proches de l'ambre pour les contacts, attribuées selon leur numéro (AB-26). */
   contactTints: ['#d99a0b', '#f0b429', '#c27a0a', '#c8b323'],
-  /** Cases à portée d'une balayage en préparation. */
+  /** Cases à portée d'un balayage en préparation. */
   sweepRange: '#5fd3ff',
   good: '#4caf50',
   warn: '#d9b84a',

@@ -25,12 +25,33 @@ export interface ShipSpec {
   detection: DetectorSpec | null;
 }
 
-/** Portées en hexagones et probabilités de détection d'un type de bâtiment (G-08.4, SF-04 §2-§3). */
+/**
+ * Portées en hexagones et probabilités de détection d'un type de bâtiment (G-08.4, SF-04 §2-§3).
+ * La *veille* est la détection continue de fin de cycle ; le *balayage* est l'action du joueur.
+ */
 export interface DetectorSpec {
   watchRange: number;
+  /** Probabilité de base de la veille, avant les bonus de `DetectionConfig` (AB-33). */
   watchProbability: number;
   sweepRange: number;
   sweepProbability: number;
+}
+
+/**
+ * Actions spéciales d'une unité (G-07). Seul le balayage existe ; torpille, hélicoptère,
+ * réparation, tir et leurre viendront s'ajouter ici, chacune avec son délai de récupération.
+ */
+export const SPECIAL_ACTION_KINDS = ['sweep'] as const;
+export type SpecialActionKind = (typeof SPECIAL_ACTION_KINDS)[number];
+
+/** Paramètres d'une action spéciale. */
+export interface SpecialActionSpec {
+  /**
+   * Nombre de cycles pendant lesquels l'action reste indisponible après son usage (AB-34).
+   * Exemple : avec 1, une action faite au cycle 3 est impossible au cycle 4, de nouveau possible
+   * au cycle 5. Avec 0, elle est possible à chaque cycle.
+   */
+  cooldownCycles: number;
 }
 
 /** Classes de frégate que l'ennemi peut aligner (AB-11). */
@@ -84,7 +105,7 @@ export interface WeaponRangesConfig {
   torpedo: number;
 }
 
-/** Paramètres communs de la veille (AB-20, AB-22). */
+/** Paramètres communs de la veille (AB-20, AB-22, AB-33). */
 export interface DetectionConfig {
   /** Nombre d'hexagones d'une zone de contact, cible comprise (G-08.2.2). */
   zoneSize: number;
@@ -92,6 +113,11 @@ export interface DetectionConfig {
   zoneMaxAttempts: number;
   /** Points de probabilité de détection de veille gagnés contre un sous-marin en mer côtière (AB-22). */
   coastalSubmarineWatchBonus: number;
+  /**
+   * Points de probabilité de veille gagnés contre une unité qui a fait un balayage pendant le
+   * cycle : l'émission active fait du bruit (AB-33). Se cumule avec le bonus côtier.
+   */
+  sweepNoiseWatchBonus: number;
 }
 
 export interface GameConfig {
@@ -99,6 +125,7 @@ export interface GameConfig {
   missions: MissionsConfig;
   weaponRanges: WeaponRangesConfig;
   detection: DetectionConfig;
+  specialActions: Record<SpecialActionKind, SpecialActionSpec>;
   budget: { normal: number; limitedMeans: number };
   constraints: {
     /** Nombre maximal de contraintes initiales (0 à ce maximum, SF-01 §4). */
@@ -134,7 +161,7 @@ const HOSTILE_FORCE: HostileForceSpec = {
 /** Portées et probabilités initiales de la frégate et du sous-marin, identiques (G-08.4). */
 const DETECTOR: DetectorSpec = {
   watchRange: 2,
-  watchProbability: 0.6,
+  watchProbability: 0.5,
   sweepRange: 4,
   sweepProbability: 0.9,
 };
@@ -158,7 +185,13 @@ export const defaultConfig: GameConfig = {
     },
   },
   weaponRanges: { missile: 8, torpedo: 5 },
-  detection: { zoneSize: 7, zoneMaxAttempts: 200, coastalSubmarineWatchBonus: 0.2 },
+  detection: {
+    zoneSize: 7,
+    zoneMaxAttempts: 200,
+    coastalSubmarineWatchBonus: 0.2,
+    sweepNoiseWatchBonus: 0.2,
+  },
+  specialActions: { sweep: { cooldownCycles: 1 } },
   budget: { normal: 100, limitedMeans: 70 },
   constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2, sensorsFactor: 0.8 },
   ships: {

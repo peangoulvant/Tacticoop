@@ -26,7 +26,7 @@ export function startMoveDraft(unitId: string): void {
   useMoveDraftStore.getState().startDraft(unitId);
 }
 
-/** Prépare une balayage ; un seul brouillon à la fois, les autres sont abandonnés. */
+/** Prépare un balayage ; un seul brouillon à la fois, les autres sont abandonnés. */
 export function startSweepDraft(unitId: string): void {
   useCarrierOrderDraftStore.getState().cancelDraft();
   useMoveDraftStore.getState().cancelDraft();
@@ -34,7 +34,7 @@ export function startSweepDraft(unitId: string): void {
 }
 
 /**
- * Confirme la balayage : le moteur la résout sur-le-champ. Si elle est acceptée, le retour
+ * Confirme le balayage : le moteur le résout sur-le-champ. S'il est accepté, le retour
  * explicite est affiché, que des navires soient identifiés ou non (SF-04 §3, AB-30).
  */
 export function confirmSweep(unitId: string): void {

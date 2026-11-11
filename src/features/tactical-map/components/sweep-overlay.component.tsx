@@ -2,7 +2,7 @@ import { palette } from '../../../app/theme.config';
 import type { SweepDraft } from '../../commands';
 import { HEX_POINTS, hexCenter } from '../services/hex-geometry.service';
 
-/** Surcouche de carte pendant la préparation d'une balayage : cases à portée surlignées (AB-30). */
+/** Surcouche de carte pendant la préparation d'un balayage : cases à portée surlignées (AB-30). */
 export function SweepOverlay({ sweep }: { sweep: SweepDraft | null }) {
   if (!sweep) return null;
   return (

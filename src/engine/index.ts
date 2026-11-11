@@ -11,8 +11,15 @@ export type {
   MissionState,
   PreparationState,
 } from './core/game.types';
-export { defaultConfig, PURCHASABLE_CLASSES } from './config/game.config';
-export type { GameConfig, PurchasableShipClass, ShipClass, ShipSpec } from './config/game.config';
+export { defaultConfig, PURCHASABLE_CLASSES, SPECIAL_ACTION_KINDS } from './config/game.config';
+export type {
+  GameConfig,
+  PurchasableShipClass,
+  ShipClass,
+  ShipSpec,
+  SpecialActionKind,
+} from './config/game.config';
+export { availableFromCycle } from './units/special-action.service';
 export {
   CONSTRAINTS,
   DIFFICULTIES,

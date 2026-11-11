@@ -69,10 +69,10 @@ function detectionRate(build: (seed: number) => MissionState, runs = 3000): numb
 }
 
 describe('veille : éligibilité et probabilité (G-08.2, G-08.4)', () => {
-  it('détecte à environ 60 % une cible à portée (distance 2)', () => {
+  it('détecte à environ 50 % une cible à portée (distance 2)', () => {
     const rate = detectionRate((seed) => mission([friend(), hostile()], { seed }));
-    expect(rate).toBeGreaterThan(0.55);
-    expect(rate).toBeLessThan(0.65);
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
   });
 
   it('ne détecte jamais une cible hors de portée (distance 3)', () => {
@@ -82,8 +82,8 @@ describe('veille : éligibilité et probabilité (G-08.2, G-08.4)', () => {
 
   it('un sous-marin allié détecte comme une frégate', () => {
     const rate = detectionRate((seed) => mission([friend('submarine'), hostile()], { seed }));
-    expect(rate).toBeGreaterThan(0.55);
-    expect(rate).toBeLessThan(0.65);
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
   });
 
   it('le porte-avions ne détecte pas (aucune ligne dans G-08.4, D-04)', () => {
@@ -105,26 +105,60 @@ describe('veille : éligibilité et probabilité (G-08.2, G-08.4)', () => {
 });
 
 describe('veille : mer côtière (AB-22)', () => {
-  it('relève à 80 % la détection d’un sous-marin hostile en mer côtière', () => {
+  it('relève à 70 % la détection d’un sous-marin hostile en mer côtière', () => {
     const submarine = hostile('submarine');
     const rate = detectionRate((seed) =>
       mission([friend(), submarine], { seed, terrain: 'coastal_sea' }),
     );
-    expect(rate).toBeGreaterThan(0.75);
-    expect(rate).toBeLessThan(0.85);
+    expect(rate).toBeGreaterThan(0.65);
+    expect(rate).toBeLessThan(0.75);
   });
 
   it('ne relève pas la détection d’une frégate en mer côtière', () => {
     const rate = detectionRate((seed) =>
       mission([friend(), hostile()], { seed, terrain: 'coastal_sea' }),
     );
-    expect(rate).toBeGreaterThan(0.55);
-    expect(rate).toBeLessThan(0.65);
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
   });
 
   it('ne relève pas la détection d’un sous-marin en haute mer', () => {
     const rate = detectionRate((seed) => mission([friend(), hostile('submarine')], { seed }));
-    expect(rate).toBeLessThan(0.65);
+    expect(rate).toBeLessThan(0.55);
+  });
+});
+
+describe('veille : bruit du balayage (AB-33)', () => {
+  /** Navire hostile qui a fait un balayage au cycle donné. */
+  function sweeper(shipClass: ShipClass, sweptAt: number): Unit {
+    return { ...hostile(shipClass), lastSpecialActionCycle: { sweep: sweptAt } };
+  }
+
+  it('relève de 50 à 70 % la détection d’une frégate qui a balayé pendant le cycle', () => {
+    const rate = detectionRate((seed) => mission([friend(), sweeper('frigate_asm', 1)], { seed }));
+    expect(rate).toBeGreaterThan(0.65);
+    expect(rate).toBeLessThan(0.75);
+  });
+
+  it('ne relève pas la détection d’un balayage fait un cycle plus tôt', () => {
+    const rate = detectionRate((seed) =>
+      mission([friend(), sweeper('frigate_asm', 1)], { seed, cycle: 2 }),
+    );
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
+  });
+
+  it('se cumule avec le bonus côtier du sous-marin : 50 + 20 + 20 = 90 %', () => {
+    const rate = detectionRate((seed) =>
+      mission([friend(), sweeper('submarine', 1)], { seed, terrain: 'coastal_sea' }),
+    );
+    expect(rate).toBeGreaterThan(0.85);
+    expect(rate).toBeLessThan(0.95);
+  });
+
+  it('ne change rien pour un sous-marin en haute mer qui n’a pas balayé', () => {
+    const rate = detectionRate((seed) => mission([friend(), hostile('submarine')], { seed }));
+    expect(rate).toBeLessThan(0.55);
   });
 });
 
@@ -135,13 +169,13 @@ describe('veille : capteurs dégradés (SF-01 §4)', () => {
     expect(detectionRate(build, 500)).toBe(0);
   });
 
-  it('garde une cible adjacente détectable à 60 %', () => {
+  it('garde une cible adjacente détectable à 50 %', () => {
     const adjacent = hostile('frigate_asm', { col: 8, row: 7 });
     const rate = detectionRate((seed) =>
       mission([friend(), adjacent], { seed, constraints: ['degraded_sensors'] }),
     );
-    expect(rate).toBeGreaterThan(0.55);
-    expect(rate).toBeLessThan(0.65);
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
   });
 });
 

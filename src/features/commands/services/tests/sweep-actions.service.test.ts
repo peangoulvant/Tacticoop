@@ -35,7 +35,7 @@ function searcherId(): string {
   return state.units.find((u) => u.side === 'friend')!.id;
 }
 
-describe('actions de la balayage (AB-30)', () => {
+describe('actions du balayage (AB-30)', () => {
   it('confirmer résout la recherche, ferme le brouillon et affiche le retour explicite', () => {
     const unitId = searcherId();
     startSweepDraft(unitId);

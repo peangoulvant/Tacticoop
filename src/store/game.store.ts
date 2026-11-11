@@ -7,7 +7,7 @@ interface GameStore {
   /** Événements produits par le moteur, du plus ancien au plus récent (alimente le journal). */
   events: engine.GameEvent[];
   lastError: engine.GameError | null;
-  /** Transmet la commande au moteur puis publie le résultat ; renvoie true si elle est acceptée. */
+  /** Transmet la commande au moteur puis publie le résultat ; renvoie true s'il est accepté. */
   dispatch: (command: engine.GameCommand) => boolean;
   clearError: () => void;
   reset: () => void;

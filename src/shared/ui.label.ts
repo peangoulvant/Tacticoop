@@ -152,7 +152,7 @@ export function contactEventLabel(
   return `Veille : contact suspect ${event.contactId}, zone approximative ${coordinatesLabel(event.zone)}`;
 }
 
-/** Type de navire révélé par une balayage : frégate ou sous-marin, jamais la classe (AB-25). */
+/** Type de navire révélé par un balayage : frégate ou sous-marin, jamais la classe (AB-25). */
 export const contactTargetLabel: Record<engine.ContactTargetType, string> = {
   frigate: 'frégate',
   submarine: 'sous-marin',
@@ -185,7 +185,7 @@ function identificationsLabel(identified: readonly engine.Identification[]): str
 }
 
 /**
- * Texte du journal pour une balayage (AB-28) : toujours une entrée, réussie ou non. Les
+ * Texte du journal pour un balayage (AB-28) : toujours une entrée, réussie ou non. Les
  * mots sont les mêmes pour une première identification et une actualisation ; ni cible réelle ni
  * zone retirée.
  */
@@ -211,15 +211,21 @@ export const sweepText = {
   title: 'Cherche les navires hostiles à portée',
   confirm: 'Confirmer',
   cancel: 'Annuler',
+  unavailable: 'Balayage indisponible',
   noNewContact: 'Aucun nouveau contact',
   identified: 'Contact identifié',
   identifiedSeveral: 'Contacts identifiés',
 };
 
-/** Consigne de la barre de confirmation d'une balayage en préparation. */
+/** Consigne de la barre de confirmation d'un balayage en préparation. */
 export function sweepDraftLabel(unitLabel: string, range: number, cells: number): string {
   const plural = range > 1 ? 's' : '';
-  return `${unitLabel} : balayage, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour la lancer.`;
+  return `${unitLabel} : balayage, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour le lancer.`;
+}
+
+/** Motif affiché pendant la récupération du balayage : le cycle où il redevient possible (AB-34). */
+export function sweepCooldownLabel(availableFrom: number): string {
+  return `${sweepText.unavailable} : en récupération, de nouveau possible au cycle ${availableFrom}.`;
 }
 
 /** Retour explicite d'un balayage, affiché 4 secondes : identification ou absence de résultat. */

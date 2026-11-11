@@ -72,7 +72,7 @@ describe('defaultConfig', () => {
     (shipClass) => {
       expect(defaultConfig.ships[shipClass].detection).toEqual({
         watchRange: 2,
-        watchProbability: 0.6,
+        watchProbability: 0.5,
         sweepRange: 4,
         sweepProbability: 0.9,
       });
@@ -83,11 +83,16 @@ describe('defaultConfig', () => {
     expect(defaultConfig.ships.carrier.detection).toBeNull();
   });
 
+  it('définit un délai de récupération du balayage d’un cycle (AB-34)', () => {
+    expect(defaultConfig.specialActions).toEqual({ sweep: { cooldownCycles: 1 } });
+  });
+
   it('définit la veille arbitrée (AB-20, AB-22, SF-01 §4)', () => {
     expect(defaultConfig.detection).toEqual({
       zoneSize: 7,
       zoneMaxAttempts: 200,
       coastalSubmarineWatchBonus: 0.2,
+      sweepNoiseWatchBonus: 0.2,
     });
     expect(defaultConfig.constraints.sensorsFactor).toBe(0.8);
   });

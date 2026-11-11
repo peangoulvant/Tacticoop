@@ -2,11 +2,11 @@ import { Alert, Snackbar } from '@mui/material';
 import * as labels from '../../../shared/ui.label';
 import { useSweepResultStore } from '../../../store/sweep-result.store';
 
-/** Durée d'affichage du retour de la balayage (AB-30). */
+/** Durée d'affichage du retour du balayage (AB-30). */
 const RESULT_DURATION_MS = 4000;
 
 /**
- * Retour explicite de la balayage, pendant 4 secondes : « Contact identifié » ou « Aucun
+ * Retour explicite du balayage, pendant 4 secondes : « Contact identifié » ou « Aucun
  * nouveau contact ». Le détail (identifiant, type, position) est dans le journal (AB-28).
  */
 export function SweepResultToast() {

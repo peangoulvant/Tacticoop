@@ -26,7 +26,7 @@ describe('textes des contacts (AB-21, AB-23)', () => {
   });
 });
 
-describe('textes de la balayage (AB-28, AB-30)', () => {
+describe('textes du balayage (AB-28, AB-30)', () => {
   const performed = (identified: Parameters<typeof sweepEventLabel>[0]['identified']) =>
     sweepEventLabel({
       type: 'SWEEP_PERFORMED',

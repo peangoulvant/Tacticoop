@@ -1,5 +1,6 @@
 import * as labelEngine from '../../shared/engine.label';
-import type { GameConfig } from '../config/game.config';
+import type { GameConfig, SpecialActionKind } from '../config/game.config';
+import { isOnCooldown } from '../units/special-action.service';
 import type { Unit } from '../units/unit.model';
 
 /** Pourquoi une unité ne peut pas recevoir d'ordre maintenant (SF-03.1, SF-03.8). */
@@ -32,10 +33,11 @@ export function moveBlocker(units: readonly Unit[], unit: Unit): MoveBlocker | n
   return orderBlocker(units, unit) ?? (unit.hasMoved ? 'ALREADY_MOVED' : null);
 }
 
-/** Pourquoi une unité ne peut pas utiliser son action spéciale maintenant (G-07.7, AB-30). */
-export type SpecialActionBlocker = OrderBlocker | 'SPECIAL_ACTION_USED' | 'NO_SENSORS';
+/** Pourquoi une unité ne peut pas utiliser une action spéciale maintenant (G-07.7, AB-30, AB-34). */
+export type SpecialActionBlocker =
+  OrderBlocker | 'SPECIAL_ACTION_USED' | 'ON_COOLDOWN' | 'NO_SENSORS';
 
-/** Messages des motifs propres à l'action spéciale, en plus de ceux des ordres. */
+/** Messages des motifs propres aux actions spéciales, en plus de ceux des ordres. */
 export const SPECIAL_ACTION_BLOCKER_MESSAGES =
   labelEngine.specialActionBlockerMessages satisfies Record<
     Exclude<SpecialActionBlocker, OrderBlocker>,
@@ -43,18 +45,24 @@ export const SPECIAL_ACTION_BLOCKER_MESSAGES =
   >;
 
 /**
- * Motif pour lequel l'unité ne peut pas lancer une balayage, ou `null` si elle le peut :
- * elle doit pouvoir recevoir un ordre, ne pas avoir utilisé son action spéciale et porter des
- * capteurs (G-07.7). La mission en cours est vérifiée par la commande. L'ordre des motifs est
- * celui du joueur : l'unité d'abord, puis l'action, puis le matériel.
+ * Motif pour lequel l'unité ne peut pas utiliser l'action `kind` maintenant, ou `null` si elle le
+ * peut. L'ordre des motifs est celui que le joueur peut corriger le plus vite : l'unité (peut-elle
+ * recevoir un ordre ?), puis l'activation (action déjà faite ?), puis le délai de récupération,
+ * puis le matériel (capteurs). La mission en cours est vérifiée par la commande.
+ *
+ * Exemple : une frégate qui a fait son balayage au cycle 3 reçoit `SPECIAL_ACTION_USED` au cycle 3
+ * (action déjà faite pendant l'activation) et `ON_COOLDOWN` au cycle 4.
  */
 export function specialActionBlocker(
   units: readonly Unit[],
   unit: Unit,
+  kind: SpecialActionKind,
+  cycle: number,
   config: GameConfig,
 ): SpecialActionBlocker | null {
   const orderReason = orderBlocker(units, unit);
   if (orderReason) return orderReason;
   if (unit.specialActionUsed) return 'SPECIAL_ACTION_USED';
+  if (isOnCooldown(unit, kind, cycle, config)) return 'ON_COOLDOWN';
   return config.ships[unit.shipClass].detection === null ? 'NO_SENSORS' : null;
 }

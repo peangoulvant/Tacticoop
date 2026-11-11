@@ -28,22 +28,39 @@ function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): 
   return `${prefix} : ${engine.BLOCKER_MESSAGES[blocker]}`;
 }
 
+/** Motif empêchant le balayage maintenant, ou `null` s'il est possible (G-07.7, AB-34). */
+function sweepBlocker(
+  mission: engine.MissionState,
+  unit: engine.Unit,
+): engine.SpecialActionBlocker | null {
+  const observation = engine.observeFriend(mission);
+  return engine.specialActionBlocker(
+    observation.units,
+    unit,
+    'sweep',
+    observation.cycle,
+    engine.defaultConfig,
+  );
+}
+
 /**
- * Motif propre à la balayage (action déjà utilisée, absence de capteurs), ou `null`. Les
- * motifs d'ordre sont déjà affichés par `unavailabilityReason`.
+ * Motif propre au balayage (action déjà utilisée, récupération, absence de capteurs), ou `null`.
+ * Les motifs d'ordre sont déjà affichés par `unavailabilityReason`. Pendant la récupération, le
+ * message dit à quel cycle le balayage redevient possible.
  */
 function sweepOwnReason(mission: engine.MissionState, unit: engine.Unit): string | null {
-  const friends = engine.observeFriend(mission).units;
-  const blocker = engine.specialActionBlocker(friends, unit, engine.defaultConfig);
+  const blocker = sweepBlocker(mission, unit);
+  if (blocker === 'ON_COOLDOWN') {
+    const from = engine.availableFromCycle(unit, 'sweep', engine.defaultConfig);
+    return labels.sweepCooldownLabel(from);
+  }
   if (blocker !== 'SPECIAL_ACTION_USED' && blocker !== 'NO_SENSORS') return null;
-  return `Balayage indisponible : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
+  return `${labels.sweepText.unavailable} : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
 }
 
 /** Bouton « Balayage » : ouvre le brouillon ; désactivé avec son motif sinon (AB-30). */
 function SweepButton({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
-  const friends = engine.observeFriend(mission).units;
-  const blocker = engine.specialActionBlocker(friends, unit, engine.defaultConfig);
-  const disabled = mission.outcome !== null || blocker !== null;
+  const disabled = mission.outcome !== null || sweepBlocker(mission, unit) !== null;
   const reason = sweepOwnReason(mission, unit) ?? unavailabilityReason(mission, unit);
   return (
     <Button

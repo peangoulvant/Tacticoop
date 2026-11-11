@@ -83,6 +83,17 @@ function checkUnitIdentity(unit: Json): Problem {
 
 const UNIT_COUNTERS = ['hp', 'movement', 'missiles', 'torpedoes', 'helicopters'] as const;
 
+/** Cycle du dernier usage de chaque action spéciale : une action connue, un cycle positif (AB-34). */
+function checkSpecialActionCycles(unit: Json): Problem {
+  const cycles = unit.lastSpecialActionCycle;
+  if (!isRecord(cycles))
+    return `usages d’actions spéciales illisibles pour l’unité ${String(unit.id)}`;
+  const valid = Object.entries(cycles).every(
+    ([kind, cycle]) => isOneOf(engine.SPECIAL_ACTION_KINDS, kind) && isPositive(cycle),
+  );
+  return valid ? null : `usages d’actions spéciales invalides pour l’unité ${String(unit.id)}`;
+}
+
 function checkUnitState(unit: Json, map: engine.GameMap): Problem {
   if (!isHexOn(map, unit.position)) return `unité ${String(unit.id)} hors de la carte`;
   if (!UNIT_COUNTERS.every((key) => isCount(unit[key]))) {
@@ -90,7 +101,8 @@ function checkUnitState(unit: Json, map: engine.GameMap): Problem {
   }
   if (!isOneOf(engine.ACTIVATION_STATUSES, unit.activation)) return 'état d’activation inconnu';
   if (typeof unit.hasMoved !== 'boolean') return 'état de déplacement illisible';
-  return typeof unit.specialActionUsed === 'boolean' ? null : 'état de l’action spéciale illisible';
+  if (typeof unit.specialActionUsed !== 'boolean') return 'état de l’action spéciale illisible';
+  return checkSpecialActionCycles(unit);
 }
 
 function checkUnit(unit: unknown, map: engine.GameMap): Problem {

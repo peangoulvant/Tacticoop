@@ -17,7 +17,7 @@ import { effectiveRange } from './sensor-range.service';
 /** Contact identifié tel que le moteur le conserve, avec sa cible interne. */
 type StoredIdentified = Extract<Contact, { kind: 'identified' }>;
 
-/** Portée effective de la balayage d'une unité, capteurs dégradés compris (AB-25). */
+/** Portée effective du balayage d'une unité, capteurs dégradés compris (AB-25). */
 export function effectiveSweepRange(
   unit: Unit,
   constraints: readonly Constraint[],
@@ -28,7 +28,7 @@ export function effectiveSweepRange(
 }
 
 /**
- * Cases à portée de la balayage d'une unité, sa propre case exclue : la zone que
+ * Cases à portée du balayage d'une unité, sa propre case exclue : la zone que
  * l'interface surligne pendant le brouillon. Calculée depuis la projection amie (SF-04 §1).
  */
 export function sweepArea(observation: FriendObservation, unit: Unit, config: GameConfig): Hex[] {

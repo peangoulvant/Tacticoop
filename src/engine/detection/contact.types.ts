@@ -1,6 +1,6 @@
 import type { Hex } from '../map/hex.service';
 
-/** Type de navire révélé par une balayage : frégate ou sous-marin, jamais la classe (AB-25). */
+/** Type de navire révélé par un balayage : frégate ou sous-marin, jamais la classe (AB-25). */
 export const CONTACT_TARGET_TYPES = ['frigate', 'submarine'] as const;
 export type ContactTargetType = (typeof CONTACT_TARGET_TYPES)[number];
 
@@ -24,7 +24,7 @@ export interface SuspectContact extends ContactBase {
 }
 
 /**
- * Contact identifié par une balayage (AB-25) : le type du navire et sa position exacte à
+ * Contact identifié par un balayage (AB-25) : le type du navire et sa position exacte à
  * l'instant du balayage. La position n'est jamais actualisée automatiquement (AB-27).
  */
 export interface IdentifiedContact extends ContactBase {
