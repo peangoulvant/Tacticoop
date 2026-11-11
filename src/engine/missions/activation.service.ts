@@ -21,9 +21,11 @@ export const BLOCKER_MESSAGES = labelEngine.moveBlockerMessages satisfies Record
  * ce cycle, et toute unité tant qu'une autre est en cours d'activation (seule celle-ci reçoit des
  * ordres).
  *
- * Exemples : le porte-avions reçoit `NOT_ACTIVABLE` ; une frégate déjà activée `ALREADY_ACTIVATED` ;
- * si la FREMM est « en cours », la frégate DA reçoit `OTHER_ACTIVATION_IN_PROGRESS` alors que la
- * FREMM elle-même peut encore recevoir des ordres (`null`).
+ * Exemples :
+ * - le porte-avions : `NOT_ACTIVABLE` ;
+ * - une frégate déjà activée ce cycle : `ALREADY_ACTIVATED` ;
+ * - la FREMM est « en cours » : la frégate DA reçoit `OTHER_ACTIVATION_IN_PROGRESS`, mais la FREMM
+ *   reçoit `null` (elle peut continuer à recevoir des ordres).
  */
 export function orderBlocker(units: readonly Unit[], unit: Unit): OrderBlocker | null {
   if (unit.activation === 'not_activable') return 'NOT_ACTIVABLE';
