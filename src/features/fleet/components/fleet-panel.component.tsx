@@ -3,11 +3,24 @@ import * as engine from '../../../engine';
 import { palette } from '../../../app/theme.config';
 import { useSelectionStore } from '../../../store/selection.store';
 import * as assets from '../../../shared/assets.config';
+import * as labels from '../../../shared/ui.label';
 import { ActivationBadge } from './activation-badge.component';
 import { HpBar, StockLine } from './unit-stats.component';
 
 /** Largeur minimale d'une carte : assez large pour que le nom et l'état tiennent sur une ligne. */
 const CARD_WIDTH = 270;
+
+/**
+ * Nom accessible d'une carte d'unité : sa classe et son état d'activation, pour qu'un lecteur
+ * d'écran annonce aussi si l'unité peut agir. Exemple : « Frégate DA, Disponible ». Le porte-avions
+ * n'a pas d'état d'activation : « Porte-avions ».
+ */
+function cardLabel(unit: engine.Unit): string {
+  const name = engine.defaultConfig.ships[unit.shipClass].label;
+  return unit.activation === 'not_activable'
+    ? name
+    : `${name}, ${labels.activationLabel[unit.activation]}`;
+}
 
 /**
  * Forces alliées : cartes cliquables, l'état affiché vient du GameState. Les cartes restent sur
@@ -49,7 +62,7 @@ export function FleetPanel({ units }: { units: engine.Unit[] }) {
               key={unit.id}
               component="button"
               aria-pressed={selected}
-              aria-label={engine.defaultConfig.ships[unit.shipClass].label}
+              aria-label={cardLabel(unit)}
               onClick={() => {
                 selectUnit(unit.id);
                 selectHex(unit.position);
