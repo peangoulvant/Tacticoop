@@ -3,7 +3,7 @@ import { defaultConfig } from '../game.config';
 /** Valeurs provisoires arbitrées (docs/functional-specs/DECISIONS.md, D-03 ; SF-01 ; SF-02). */
 describe('defaultConfig', () => {
   it('définit la carte par défaut en 35 × 35 hexagones', () => {
-    expect(defaultConfig.map).toEqual({ width: 35, height: 35 });
+    expect(defaultConfig.map).toMatchObject({ width: 35, height: 35 });
   });
 
   it('définit les budgets et les paramètres de contraintes', () => {
@@ -61,6 +61,14 @@ describe('defaultConfig', () => {
     expect(hostile.compositions.every((c) => c.frigates + c.submarines === 3)).toBe(true);
     expect(new Set(hostile.compositions.map((c) => c.weight))).toEqual(new Set([1]));
     expect(Object.values(hostile.frigateClassWeights)).toEqual([1, 1, 1]);
+  });
+
+  it('génération de la carte : les parts de terrain totalisent 100 % (SF-02 §3)', () => {
+    const { terrainShares, smoothingPasses, bypassRowRatios } = defaultConfig.map.generation;
+    const total = Object.values(terrainShares).reduce((sum, share) => sum + share, 0);
+    expect(total).toBeCloseTo(1, 10);
+    expect(smoothingPasses).toBeGreaterThan(0);
+    expect(bypassRowRatios.every((ratio) => ratio > 0 && ratio < 1)).toBe(true);
   });
 
   it("reprend les portées d'armes (D-05)", () => {

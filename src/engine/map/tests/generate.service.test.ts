@@ -8,13 +8,13 @@ const ESCORT = defaultConfig.missions.escort;
 
 describe('génération de carte', () => {
   it('est déterministe pour une même graine', () => {
-    const a = generateTerrain(20, 20, createRng(42));
-    const b = generateTerrain(20, 20, createRng(42));
+    const a = generateTerrain(20, 20, createRng(42), defaultConfig.map.generation);
+    const b = generateTerrain(20, 20, createRng(42), defaultConfig.map.generation);
     expect(a.terrain).toEqual(b.terrain);
   });
 
   it('produit les six terrains', () => {
-    const { terrain } = generateTerrain(35, 35, createRng(1));
+    const { terrain } = generateTerrain(35, 35, createRng(1), defaultConfig.map.generation);
     expect(terrain).toHaveLength(1225);
     for (const t of TERRAINS) expect(terrain).toContain(t);
   });
@@ -27,6 +27,7 @@ describe('génération de carte', () => {
         createRng(seed),
         ESCORT.startColumnRatio,
         ESCORT.goalColumnRatio,
+        defaultConfig.map.generation,
       );
       expect(shortestPath(map, start, goal, 'carrier')).not.toBeNull();
     }
@@ -44,6 +45,7 @@ describe('itinéraires alternatifs en escorte (SF-02 §3)', () => {
         createRng(seed),
         ESCORT.startColumnRatio,
         ESCORT.goalColumnRatio,
+        defaultConfig.map.generation,
       );
       const b = generateEscortMap(
         35,
@@ -51,6 +53,7 @@ describe('itinéraires alternatifs en escorte (SF-02 §3)', () => {
         createRng(seed),
         ESCORT.startColumnRatio,
         ESCORT.goalColumnRatio,
+        defaultConfig.map.generation,
       );
       expect(a).toEqual(b);
     }
@@ -64,6 +67,7 @@ describe('itinéraires alternatifs en escorte (SF-02 §3)', () => {
         createRng(seed),
         ESCORT.startColumnRatio,
         ESCORT.goalColumnRatio,
+        defaultConfig.map.generation,
       );
       expect(shortestPath(map, start, goal, 'carrier')).not.toBeNull();
     }
@@ -77,6 +81,7 @@ describe('itinéraires alternatifs en escorte (SF-02 §3)', () => {
         createRng(seed),
         ESCORT.startColumnRatio,
         ESCORT.goalColumnRatio,
+        defaultConfig.map.generation,
       );
       return hasAlternativeRoute(map, start, goal);
     });
@@ -88,13 +93,14 @@ describe('itinéraires alternatifs en escorte (SF-02 §3)', () => {
   it('ne modifie pas une carte qui offre déjà un contournement, et touche peu au relief sinon', () => {
     let untouched = 0;
     for (const seed of SEEDS) {
-      const raw = generateTerrain(35, 35, createRng(seed));
+      const raw = generateTerrain(35, 35, createRng(seed), defaultConfig.map.generation);
       const { map } = generateEscortMap(
         35,
         35,
         createRng(seed),
         ESCORT.startColumnRatio,
         ESCORT.goalColumnRatio,
+        defaultConfig.map.generation,
       );
       const changed = map.terrain.filter((terrain, i) => terrain !== raw.terrain[i]).length;
       // Au plus 10 % de la carte : les ensembles de terrains restent cohérents.

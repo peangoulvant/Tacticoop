@@ -7,6 +7,7 @@ import {
   shortestPath,
 } from './game-map.service';
 import { type Hex, hexLine, hexNeighbors } from './hex.service';
+import type { MapGenerationConfig } from '../config/game.config';
 import { isNavigable, TERRAINS, type Terrain } from './terrain.model';
 
 /*****************************
@@ -14,21 +15,6 @@ import { isNavigable, TERRAINS, type Terrain } from './terrain.model';
  * PARTIE TERRAIN : génération procédurale du relief
  *
  *****************************/
-
-/**
- * Part de la carte attribuée à chaque terrain, de la mer profonde à la montagne.
- * Paramètres de génération provisoires (GD-06 non arbitré).
- */
-const TERRAIN_SHARES: Record<Terrain, number> = {
-  deep_sea: 0.3,
-  sea: 0.25,
-  coastal_sea: 0.12,
-  beach: 0.05,
-  plain: 0.18,
-  mountain: 0.1,
-};
-
-const SMOOTHING_PASSES = 9;
 
 /** Remplace chaque valeur par la moyenne de la case et de ses voisines : crée des ensembles cohérents. */
 function smooth(field: readonly number[], width: number, height: number): number[] {
@@ -40,10 +26,13 @@ function smooth(field: readonly number[], width: number, height: number): number
 }
 
 /** Découpe le champ lissé par quantiles : la case de rang r reçoit le terrain de sa tranche. */
-function assignTerrains(field: readonly number[]): Terrain[] {
+function assignTerrains(
+  field: readonly number[],
+  shares: MapGenerationConfig['terrainShares'],
+): Terrain[] {
   const size = field.length;
   let cumulative = 0;
-  const ends = TERRAINS.map((kind) => Math.round((cumulative += TERRAIN_SHARES[kind]) * size));
+  const ends = TERRAINS.map((kind) => Math.round((cumulative += shares[kind]) * size));
   const ranked = field.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v || a.i - b.i);
   const terrain = new Array<Terrain>(size);
   ranked.forEach(({ i }, rank) => {
@@ -57,10 +46,16 @@ function assignTerrains(field: readonly number[]): Terrain[] {
  * produit des ensembles cohérents (mer profonde → côtes → plage → plaine → montagne)
  * plutôt qu'une dispersion indépendante des hexagones (SF-02 §1).
  */
-export function generateTerrain(width: number, height: number, rng: Rng): GameMap {
+export function generateTerrain(
+  width: number,
+  height: number,
+  rng: Rng,
+  generation: MapGenerationConfig,
+): GameMap {
   let field = Array.from({ length: width * height }, () => rng());
-  for (let pass = 0; pass < SMOOTHING_PASSES; pass++) field = smooth(field, width, height);
-  return { width, height, terrain: assignTerrains(field) };
+  for (let pass = 0; pass < generation.smoothingPasses; pass++)
+    field = smooth(field, width, height);
+  return { width, height, terrain: assignTerrains(field, generation.terrainShares) };
 }
 
 /*****************************
@@ -79,12 +74,6 @@ function carveCorridor(map: GameMap, from: Hex, to: Hex): GameMap {
   }
   return { ...map, terrain };
 }
-
-/**
- * Lignes (en part de la hauteur) par lesquelles passe un itinéraire de contournement : une au
- * nord et une au sud de la ligne droite A→B. Paramètres de génération provisoires.
- */
-const BYPASS_ROW_RATIOS = [0.2, 0.8];
 
 /** Copie de la carte où les cases données sont infranchissables (calcul d'un trajet qui les évite). */
 function withBlockedHexes(map: GameMap, hexes: readonly Hex[]): GameMap {
@@ -121,11 +110,16 @@ function changedCells(before: GameMap, after: GameMap): number {
  * égalité). Une carte qui offre déjà un contournement n'est pas modifiée. Sans aléa : une même
  * carte donne toujours le même résultat.
  */
-function withAlternativeRoute(map: GameMap, start: Hex, goal: Hex): GameMap {
+function withAlternativeRoute(
+  map: GameMap,
+  start: Hex,
+  goal: Hex,
+  bypassRowRatios: readonly number[],
+): GameMap {
   if (hasAlternativeRoute(map, start, goal)) return map;
-  const candidates = BYPASS_ROW_RATIOS.map((ratio) =>
-    carveBypass(map, start, goal, Math.round((map.height - 1) * ratio)),
-  ).filter((candidate) => hasAlternativeRoute(candidate, start, goal));
+  const candidates = bypassRowRatios
+    .map((ratio) => carveBypass(map, start, goal, Math.round((map.height - 1) * ratio)))
+    .filter((candidate) => hasAlternativeRoute(candidate, start, goal));
   return candidates.sort((a, b) => changedCells(map, a) - changedCells(map, b))[0] ?? map;
 }
 
@@ -166,8 +160,9 @@ export function generateNavalCombatMap(
   height: number,
   rng: Rng,
   startColumnRatio: number,
+  generation: MapGenerationConfig,
 ): ScenarioMap {
-  const map = generateTerrain(width, height, rng);
+  const map = generateTerrain(width, height, rng, generation);
   const target = { col: columnAtRatio(width, startColumnRatio), row: Math.floor(height / 2) };
   return { map, start: nearestNavigableHex(map, target, 'submarine'), goal: null };
 }
@@ -185,8 +180,9 @@ export function generateEscortMap(
   rng: Rng,
   startColumnRatio: number,
   goalColumnRatio: number,
+  generation: MapGenerationConfig,
 ): EscortMap {
-  const generated = generateTerrain(width, height, rng);
+  const generated = generateTerrain(width, height, rng, generation);
   const middle = Math.floor(height / 2);
   const startTarget = { col: columnAtRatio(width, startColumnRatio), row: middle };
   const goalTarget = { col: columnAtRatio(width, goalColumnRatio), row: middle };
@@ -194,5 +190,9 @@ export function generateEscortMap(
   const goal = nearestNavigableHex(generated, goalTarget, 'carrier');
   const connected = shortestPath(generated, start, goal, 'carrier') !== null;
   const reachable = connected ? generated : carveCorridor(generated, start, goal);
-  return { map: withAlternativeRoute(reachable, start, goal), start, goal };
+  return {
+    map: withAlternativeRoute(reachable, start, goal, generation.bypassRowRatios),
+    start,
+    goal,
+  };
 }

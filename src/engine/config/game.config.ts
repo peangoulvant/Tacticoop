@@ -1,4 +1,4 @@
-import type { NavalCategory } from '../map/terrain.model';
+import type { NavalCategory, Terrain } from '../map/terrain.model';
 
 /**
  * Valeurs provisoires et configurables (arbitrages D-03 et SF-01, octobre 2026).
@@ -120,8 +120,27 @@ export interface DetectionConfig {
   sweepNoiseWatchBonus: number;
 }
 
+/**
+ * Génération procédurale de la carte (SF-02 §1, §3). Valeurs provisoires, GD-06 non arbitré :
+ * modifier ces valeurs change l'aspect des cartes, jamais les règles du jeu.
+ */
+export interface MapGenerationConfig {
+  /**
+   * Part de la carte attribuée à chaque terrain ; la somme vaut 1. Exemple : 0,3 de mer profonde
+   * sur une carte de 35 × 35 = 1225 cases donne environ 368 cases de mer profonde.
+   */
+  terrainShares: Record<Terrain, number>;
+  /** Nombre de lissages du bruit : plus il est grand, plus les ensembles de terrain sont vastes. */
+  smoothingPasses: number;
+  /**
+   * Lignes (en part de la hauteur) par lesquelles passe un itinéraire de contournement du
+   * porte-avions : 0,2 est au nord, 0,8 au sud de la ligne droite A→B.
+   */
+  bypassRowRatios: readonly number[];
+}
+
 export interface GameConfig {
-  map: { width: number; height: number };
+  map: { width: number; height: number; generation: MapGenerationConfig };
   missions: MissionsConfig;
   weaponRanges: WeaponRangesConfig;
   detection: DetectionConfig;
@@ -167,7 +186,22 @@ const DETECTOR: DetectorSpec = {
 };
 
 export const defaultConfig: GameConfig = {
-  map: { width: 35, height: 35 },
+  map: {
+    width: 35,
+    height: 35,
+    generation: {
+      terrainShares: {
+        deep_sea: 0.3,
+        sea: 0.25,
+        coastal_sea: 0.12,
+        beach: 0.05,
+        plain: 0.18,
+        mountain: 0.1,
+      },
+      smoothingPasses: 9,
+      bypassRowRatios: [0.2, 0.8],
+    },
+  },
   missions: {
     navalCombat: {
       alliedStartColumnRatio: 0.06,

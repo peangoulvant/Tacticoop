@@ -52,7 +52,7 @@ describe('zone de contact de veille (AB-20)', () => {
   it('compte 7 hexagones contigus, dans la carte, sans terre, cible comprise, sur 200 cartes', () => {
     for (let seed = 1; seed <= 200; seed++) {
       const rng = createRng(seed);
-      const map = generateTerrain(35, 35, rng);
+      const map = generateTerrain(35, 35, rng, defaultConfig.map.generation);
       for (const target of sampleTargets(map).slice(0, 12)) {
         const zone = generateWatchZone(map, target, rng, DETECTION);
         expect(zone.length).toBeLessThanOrEqual(DETECTION.zoneSize);
@@ -69,7 +69,7 @@ describe('zone de contact de veille (AB-20)', () => {
     let shortened = 0;
     for (let seed = 1; seed <= 50; seed++) {
       const rng = createRng(seed);
-      const map = generateTerrain(35, 35, rng);
+      const map = generateTerrain(35, 35, rng, defaultConfig.map.generation);
       for (const target of sampleTargets(map)) {
         total++;
         if (generateWatchZone(map, target, rng, DETECTION).length < DETECTION.zoneSize) shortened++;
