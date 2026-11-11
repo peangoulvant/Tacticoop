@@ -29,6 +29,7 @@ export const shipIcon: Record<engine.ShipClass, string> = {
 export const contactTargetIcon: Record<engine.ContactTargetType, string> = {
   frigate,
   submarine,
+  carrier,
 };
 
 export const weaponIcon = { missile, torpedo, helicopter };

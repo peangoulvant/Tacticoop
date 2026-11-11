@@ -123,10 +123,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 5;
+      save.schemaVersion = 6;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 5/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 6/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -523,7 +523,7 @@ describe('balayage (version 3) et délai de récupération (version 4)', () => {
   it("aller-retour d'une mission où un balayage a eu lieu", () => {
     const { state, events } = searchedMission();
     const result = parseSave(serializeSave(state, events, SAVED_AT));
-    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 4 } });
+    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 5 } });
     expect(result.ok && result.save.state).toEqual(state);
     expect(events.some((e) => e.type === 'SWEEP_PERFORMED')).toBe(true);
     expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);
@@ -648,5 +648,102 @@ describe('balayage (version 3) et délai de récupération (version 4)', () => {
       parseTampered('naval_combat', (s) => s.events.push(event)),
       /du journal invalide/,
     );
+  });
+});
+
+/** Identifiant d'une unité alliée de la sauvegarde, cible interne des contacts de l'IA. */
+function friendId(save: TamperedSave): string {
+  return save.state.units.find((u: { side: string }) => u.side === 'friend').id;
+}
+
+describe('contacts du camp hostile (version 5)', () => {
+  const aiContact = (s: TamperedSave, patch: object = {}) => ({
+    kind: 'suspect',
+    id: 'C-1',
+    cycle: 1,
+    zone: [{ col: 3, row: 3 }],
+    source: friendId(s),
+    ...patch,
+  });
+
+  it('relit une mission où l’IA a des contacts, séparés de ceux du joueur', () => {
+    let expected: unknown;
+    const result = parseTampered('naval_combat', (s) => {
+      expected = aiContact(s);
+      s.state.hostileContacts = [expected];
+      s.state.nextHostileContactNumber = 2;
+      // Le même identifiant peut exister dans les deux camps : la numérotation est propre à chacun.
+      s.state.friendContacts = [validContact(s)];
+      s.state.nextContactNumber = 2;
+    });
+    expect(result.ok && result.save.state.hostileContacts).toEqual([expected]);
+  });
+
+  it.each([
+    [
+      'une cible hostile pour un contact de l’IA',
+      (s: TamperedSave) => (s.state.hostileContacts = [aiContact(s, { source: hostileId(s) })]),
+      /cible de contact/,
+    ],
+    [
+      'une cible alliée pour un contact du joueur',
+      (s: TamperedSave) => (s.state.friendContacts = [validContact(s, { source: friendId(s) })]),
+      /cible de contact/,
+    ],
+    [
+      'une cible inconnue pour un contact de l’IA',
+      (s: TamperedSave) => (s.state.hostileContacts = [aiContact(s, { source: 'fantome' })]),
+      /cible de contact/,
+    ],
+    [
+      'des contacts de l’IA absents',
+      (s: TamperedSave) => delete s.state.hostileContacts,
+      /contacts illisibles/,
+    ],
+    [
+      'des identifiants en double chez l’IA',
+      (s: TamperedSave) => (s.state.hostileContacts = [aiContact(s), aiContact(s)]),
+      /en double/,
+    ],
+    [
+      'un compteur de contacts de l’IA invalide',
+      (s: TamperedSave) => (s.state.nextHostileContactNumber = 0),
+      /compteur de contacts/,
+    ],
+    [
+      'un type de navire inconnu',
+      (s: TamperedSave) =>
+        (s.state.hostileContacts = [
+          {
+            kind: 'identified',
+            id: 'C-1',
+            cycle: 1,
+            targetType: 'croiseur',
+            position: { col: 1, row: 1 },
+            source: friendId(s),
+          },
+        ]),
+      /identification invalide/,
+    ],
+  ])('refuse %s', (_name, mutate, detail) => {
+    expectInvalidData(parseTampered('naval_combat', mutate), detail);
+  });
+
+  it('accepte le porte-avions comme type identifié par l’IA', () => {
+    const result = parseTampered('escort', (s) => {
+      const carrier = s.state.units.find((u: { shipClass: string }) => u.shipClass === 'carrier');
+      s.state.hostileContacts = [
+        {
+          kind: 'identified',
+          id: 'C-1',
+          cycle: 1,
+          targetType: 'carrier',
+          position: carrier.position,
+          source: carrier.id,
+        },
+      ];
+      s.state.nextHostileContactNumber = 2;
+    });
+    expect(result.ok).toBe(true);
   });
 });

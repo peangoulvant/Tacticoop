@@ -80,7 +80,7 @@ export {
 export type {
   Contact,
   ContactTargetType,
-  FriendContact,
+  ObservedContact,
   IdentifiedContact,
   Identification,
   SuspectContact,

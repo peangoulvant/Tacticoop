@@ -1,7 +1,10 @@
 import type { Hex } from '../map/hex.service';
 
-/** Type de navire révélé par un balayage : frégate ou sous-marin, jamais la classe (AB-25). */
-export const CONTACT_TARGET_TYPES = ['frigate', 'submarine'] as const;
+/**
+ * Type de navire révélé par un balayage : frégate ou sous-marin, jamais la classe (AB-25) ; le
+ * porte-avions s'y ajoute pour le balayage de l'IA (AB-35).
+ */
+export const CONTACT_TARGET_TYPES = ['frigate', 'submarine', 'carrier'] as const;
 export type ContactTargetType = (typeof CONTACT_TARGET_TYPES)[number];
 
 /** Champs communs aux deux formes de contact du camp ami. */
@@ -48,10 +51,11 @@ export interface Identification {
 export type Contact = (SuspectContact | IdentifiedContact) & { source: string };
 
 /**
- * Contact tel que le joueur le voit (`observeFriend()`), sans `source`. Un contact identifié
- * détecté avant le cycle courant est « ancien » (AB-27) ; une zone de veille ne l'est jamais.
+ * Contact tel que son camp le voit (`observeFriend()` pour le joueur, `observeHostile()` pour
+ * l'IA), sans `source`. Un contact identifié détecté avant le cycle courant est « ancien »
+ * (AB-27) ; une zone de veille ne l'est jamais.
  */
-export type FriendContact = SuspectContact | (IdentifiedContact & { stale: boolean });
+export type ObservedContact = SuspectContact | (IdentifiedContact & { stale: boolean });
 
 /** Forme d'un identifiant de contact. */
 export const CONTACT_ID_PATTERN = /^C-[1-9]\d*$/;

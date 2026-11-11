@@ -34,6 +34,8 @@ function escort(): MissionState {
     outcome: null,
     friendContacts: [],
     nextContactNumber: 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: 1,
     units: [
       make('carrier', 'carrier', { col: 0, row: 4 }),

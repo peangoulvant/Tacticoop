@@ -56,8 +56,15 @@ export interface MissionState {
   outcome: MissionOutcome | null;
   /** Contacts du camp ami : zones de la veille et navires identifiés (SF-04, AB-18, AB-25). */
   friendContacts: Contact[];
-  /** Numéro du prochain contact : les identifiants ne sont jamais réutilisés (AB-21). */
+  /** Numéro du prochain contact du camp ami : les identifiants ne sont jamais réutilisés (AB-21). */
   nextContactNumber: number;
+  /**
+   * Contacts du camp hostile (l'IA), construits comme ceux du camp ami (AB-35). Jamais exposés au
+   * joueur : ni projection, ni événement, ni journal (SF-06 §2).
+   */
+  hostileContacts: Contact[];
+  /** Numéro du prochain contact du camp hostile (numérotation propre à chaque camp). */
+  nextHostileContactNumber: number;
   /** État du générateur de hasard, conservé pour que la reprise poursuive la même suite (AB-24). */
   rngState: number;
 }

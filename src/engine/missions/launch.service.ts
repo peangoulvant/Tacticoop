@@ -23,6 +23,8 @@ export interface LaunchedMission extends ScenarioMap {
   carrierNavigation: CarrierNavigation | null;
   friendContacts: Contact[];
   nextContactNumber: number;
+  hostileContacts: Contact[];
+  nextHostileContactNumber: number;
   /** État du générateur après les tirages du lancement (AB-24). */
   rngState: number;
 }
@@ -101,13 +103,17 @@ export function launchMission(
   const classes = drawHostileClasses(hostileForceSpecOf(setup.mission, config), rng);
   const zone = hostileZoneOf(setup.mission, scenario, config);
   const taken = new Set(allies.map((unit) => indexOf(scenario.map, unit.position)));
-  const hostiles = createHostileUnits(classes, scenario.map, zone, taken, config, rng);
+  // Météo défavorable : seule contrainte qui plafonne aussi le déplacement de l'ennemi (AB-36).
+  const { movementCap } = modifiersOf(setup, config);
+  const hostiles = createHostileUnits(classes, scenario.map, zone, taken, config, rng, movementCap);
   return {
     ...scenario,
     units: [...allies, ...hostiles],
     carrierNavigation: initialCarrierNavigation(setup.mission),
     friendContacts: [],
     nextContactNumber: 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: rng.state(),
   };
 }

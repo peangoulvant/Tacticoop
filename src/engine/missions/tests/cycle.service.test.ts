@@ -28,6 +28,8 @@ function escort(carrierAt: Hex): MissionState {
     outcome: null,
     friendContacts: [],
     nextContactNumber: 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: 1,
     units: [make('carrier', 'carrier', carrierAt), make('a', 'fremm', { col: 2, row: 2 })],
   };

@@ -60,7 +60,7 @@ const STALE_OPACITY = 0.55;
 function IdentifiedContactToken({
   contact,
 }: {
-  contact: Extract<engine.FriendContact, { kind: 'identified' }>;
+  contact: Extract<engine.ObservedContact, { kind: 'identified' }>;
 }) {
   const { x, y } = hexCenter(contact.position);
   return (
@@ -106,7 +106,7 @@ function IdentifiedContactToken({
  * Contacts du camp ami, sous les unités : zones suspectes et navires identifiés. Aucune unité
  * hostile n'y figure, et aucune cible réelle n'est désignée (SF-04 §5).
  */
-export function ContactOverlay({ contacts }: { contacts: readonly engine.FriendContact[] }) {
+export function ContactOverlay({ contacts }: { contacts: readonly engine.ObservedContact[] }) {
   return (
     <>
       {contacts.map((contact) =>

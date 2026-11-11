@@ -10,11 +10,17 @@ import { indexOf, terrainAt, type GameMap } from '../map/game-map.service';
 import type { ScenarioMap } from '../map/generate.service';
 import { hexDistance, type Hex } from '../map/hex.service';
 import { isNavigable, type NavalCategory } from '../map/terrain.model';
-import { createUnit, type Unit } from './unit.model';
+import { createUnit, type Unit, type UnitModifiers } from './unit.model';
 import type { MissionKind } from '../missions/setup.service';
 
-/** Les contraintes initiales ne s'appliquent qu'aux alliés (SF-01 §4) : l'ennemi garde sa fiche. */
-const NO_MODIFIERS = { ammoFactor: 1, movementCap: null } as const;
+/**
+ * Modificateurs des unités ennemies (AB-36) : parmi les contraintes initiales, seule la météo
+ * défavorable les concerne (déplacement plafonné). Munitions limitées et capteurs dégradés sont
+ * propres au joueur : l'ennemi garde ses dotations et ses portées.
+ */
+function hostileModifiers(movementCap: number | null): UnitModifiers {
+  return { ammoFactor: 1, movementCap };
+}
 
 /** Distance minimale à respecter vis-à-vis d'un point de la carte. */
 interface MinDistance {
@@ -127,6 +133,7 @@ function candidateHexes(
  * Crée les unités ennemies et les place au hasard dans la zone, une par hexagone (SF-02 §2),
  * indépendamment les unes des autres. Les cases déjà occupées (`taken`, indices) sont exclues.
  * Si aucun hexagone ne convient, le lancement échoue plutôt que d'élargir la zone (AB-12).
+ * `movementCap` est le plafond de déplacement de la météo défavorable (AB-36), ou `null`.
  */
 export function createHostileUnits(
   classes: readonly ShipClass[],
@@ -135,6 +142,7 @@ export function createHostileUnits(
   taken: ReadonlySet<number>,
   config: GameConfig,
   rng: Rng,
+  movementCap: number | null = null,
 ): Unit[] {
   const occupied = new Set(taken);
   const counters = new Map<ShipClass, number>();
@@ -147,6 +155,13 @@ export function createHostileUnits(
     occupied.add(indexOf(map, position));
     const n = (counters.get(cls) ?? 0) + 1;
     counters.set(cls, n);
-    return createUnit(`hostile-${cls}-${n}`, 'hostile', cls, position, config, NO_MODIFIERS);
+    return createUnit(
+      `hostile-${cls}-${n}`,
+      'hostile',
+      cls,
+      position,
+      config,
+      hostileModifiers(movementCap),
+    );
   });
 }

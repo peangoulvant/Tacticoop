@@ -139,16 +139,18 @@ export function contactEventLabel(
 export const contactTargetLabel: Record<engine.ContactTargetType, string> = {
   frigate: 'frégate',
   submarine: 'sous-marin',
+  carrier: 'porte-avions',
 };
 
 /** Badge d'un contact identifié : « F » ou « SM », jamais une silhouette de classe (AB-30). */
 export const contactBadgeLabel: Record<engine.ContactTargetType, string> = {
   frigate: 'F',
   submarine: 'SM',
+  carrier: 'PA',
 };
 
 /** Légende d'une case appartenant à un contact : zone suspecte (AB-23) ou navire identifié (AB-30). */
-export function contactCaption(contact: engine.FriendContact): string {
+export function contactCaption(contact: engine.ObservedContact): string {
   if (contact.kind === 'suspect') {
     return `Contact suspect ${contact.id} (zone approximative de ${contact.zone.length} hexagones, détecté au cycle ${contact.cycle})`;
   }
