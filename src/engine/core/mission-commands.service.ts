@@ -22,6 +22,7 @@ import {
 import {
   closeCycle,
   closeCycleIfDone,
+  endActivationsInProgress,
   hasActivationInProgress,
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
@@ -183,12 +184,14 @@ const endActivation: Handler<'END_ACTIVATION'> = (mission, { unitId }, config) =
  *
  *****************************/
 
-/** Fin anticipée : possible entre deux séquences complètes, jamais pendant une activation (SF-03.5). */
+/**
+ * Fin anticipée du cycle (SF-03.5, AB-31) : l'activation en cours, s'il y en a une, est d'abord
+ * terminée comme par « Terminer l'activation », puis le cycle se clôt ; les unités non activées
+ * perdent leur activation. Le joueur n'a donc plus à terminer l'activation avant le cycle.
+ */
 const endCycleEarly: Handler<'END_CYCLE_EARLY'> = (mission, _command, config) => {
-  if (hasActivationInProgress(mission.units)) {
-    return blockerRejection('OTHER_ACTIVATION_IN_PROGRESS');
-  }
-  const { state, events } = closeCycle(mission, config);
+  const settled = { ...mission, units: endActivationsInProgress(mission.units) };
+  const { state, events } = closeCycle(settled, config);
   return accept(state, events);
 };
 

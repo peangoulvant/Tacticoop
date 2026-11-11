@@ -18,6 +18,20 @@ export function hasActivationInProgress(units: readonly Unit[]): boolean {
   return units.some((unit) => unit.activation === 'in_progress');
 }
 
+/**
+ * Termine l'activation de chaque unité « en cours » (fin anticipée du cycle). Les unités encore
+ * « disponibles » ne sont pas touchées : elles perdent leur activation à l'ouverture du cycle
+ * suivant (G-06.4.3).
+ *
+ * Exemple : la FREMM s'est déplacée (« en cours »), la frégate DA n'a rien fait (« disponible ») ;
+ * après l'appel, la FREMM est « activée » et la frégate DA reste « disponible ».
+ */
+export function endActivationsInProgress(units: readonly Unit[]): Unit[] {
+  return units.map((unit) =>
+    unit.activation === 'in_progress' ? { ...unit, activation: 'activated' } : unit,
+  );
+}
+
 /** Début d'un cycle : les unités activables redeviennent disponibles, leur déplacement et leur action spéciale sont renouvelés. */
 function reopen(unit: Unit): Unit {
   return unit.activation === 'not_activable'
