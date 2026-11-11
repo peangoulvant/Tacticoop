@@ -38,7 +38,7 @@ export interface MissionState {
   carrierNavigation: CarrierNavigation | null;
   /** Résultat de la mission une fois terminée ; les commandes sont alors refusées. */
   outcome: MissionOutcome | null;
-  /** Contacts du camp ami : zones de la veille passive et navires identifiés (SF-04, AB-18, AB-25). */
+  /** Contacts du camp ami : zones de la veille et navires identifiés (SF-04, AB-18, AB-25). */
   friendContacts: Contact[];
   /** Numéro du prochain contact : les identifiants ne sont jamais réutilisés (AB-21). */
   nextContactNumber: number;
@@ -64,7 +64,7 @@ export type MissionCommand =
   | { type: 'END_ACTIVATION'; unitId: string }
   | { type: 'END_CYCLE_EARLY' }
   | { type: 'ORDER_CARRIER'; order: CarrierOrder }
-  | { type: 'ACTIVE_SEARCH'; unitId: string }
+  | { type: 'SWEEP'; unitId: string }
   | { type: 'CLOSE_CYCLE' };
 
 export type GameCommand = PreparationCommand | MissionCommand;
@@ -84,14 +84,14 @@ export type GameEvent =
   | { type: 'CYCLE_STARTED'; cycle: number }
   | { type: 'CARRIER_ORDERED'; order: CarrierOrder; cycle: number }
   | { type: 'CARRIER_MOVED'; from: Hex; to: Hex; cycle: number }
-  /** Contact suspect issu de la veille passive : sans cible, classe ni détecteur (AB-21). */
+  /** Contact suspect issu de la veille : sans cible, classe ni détecteur (AB-21). */
   | { type: 'CONTACT_DETECTED'; contactId: string; cycle: number; zone: Hex[] }
   /**
-   * Recherche active du camp ami, toujours journalisée (AB-28) : l'unité émettrice et les navires
+   * Balayage du camp ami, toujours journalisée (AB-28) : l'unité émettrice et les navires
    * identifiés. Ni cible réelle, ni zone retirée, ni tirage.
    */
   | {
-      type: 'ACTIVE_SEARCH_PERFORMED';
+      type: 'SWEEP_PERFORMED';
       cycle: number;
       unitId: string;
       shipClass: ShipClass;

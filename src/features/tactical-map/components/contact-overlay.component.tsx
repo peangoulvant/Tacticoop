@@ -52,7 +52,7 @@ function ContactZone({ contact }: { contact: engine.SuspectContact }) {
 const STALE_OPACITY = 0.55;
 
 /**
- * Un navire identifié par recherche active (AB-30) : case rouge (couleur hostile) à la position
+ * Un navire identifié par balayage (AB-30) : case rouge (couleur hostile) à la position
  * exacte, silhouette de son type seulement (jamais de sa classe), retournée pour que l'avant
  * fasse face aux alliés, et au-dessus « F C-3 » ou « SM C-3 » (type et identifiant). Un contact
  * « ancien » a un contour en pointillés et une opacité réduite (AB-27).

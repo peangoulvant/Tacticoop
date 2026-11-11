@@ -55,7 +55,7 @@ export type {
 export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle.service';
 export { plannedRoute } from './units/carrier-movement.service';
 export { observeFriend, observeHostile } from './detection/observation.service';
-export { activeSearchArea, activeSearchRange } from './detection/active-search.service';
+export { sweepArea, effectiveSweepRange } from './detection/sweep.service';
 export {
   CONTACT_ID_PATTERN,
   CONTACT_TARGET_TYPES,

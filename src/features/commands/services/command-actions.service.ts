@@ -3,8 +3,8 @@ import { useCarrierOrderDraftStore } from '../../../store/carrier-order-draft.st
 import { dispatchAndCloseDrafts } from '../../../store/dispatch-and-close-drafts.service';
 import { useGameStore } from '../../../store/game.store';
 import { useMoveDraftStore } from '../../../store/move-draft.store';
-import { useSearchDraftStore } from '../../../store/search-draft.store';
-import { useSearchResultStore } from '../../../store/search-result.store';
+import { useSweepDraftStore } from '../../../store/sweep-draft.store';
+import { useSweepResultStore } from '../../../store/sweep-result.store';
 import { useSelectionStore } from '../../../store/selection.store';
 
 export function confirmMove(unitId: string, destination: engine.Hex): void {
@@ -22,29 +22,29 @@ export function endCycleEarly(): void {
 /** Prépare un déplacement ; un seul brouillon à la fois, les autres sont abandonnés. */
 export function startMoveDraft(unitId: string): void {
   useCarrierOrderDraftStore.getState().cancelDraft();
-  useSearchDraftStore.getState().cancelDraft();
+  useSweepDraftStore.getState().cancelDraft();
   useMoveDraftStore.getState().startDraft(unitId);
 }
 
-/** Prépare une recherche active ; un seul brouillon à la fois, les autres sont abandonnés. */
-export function startSearchDraft(unitId: string): void {
+/** Prépare une balayage ; un seul brouillon à la fois, les autres sont abandonnés. */
+export function startSweepDraft(unitId: string): void {
   useCarrierOrderDraftStore.getState().cancelDraft();
   useMoveDraftStore.getState().cancelDraft();
-  useSearchDraftStore.getState().startDraft(unitId);
+  useSweepDraftStore.getState().startDraft(unitId);
 }
 
 /**
- * Confirme la recherche active : le moteur la résout sur-le-champ. Si elle est acceptée, le retour
+ * Confirme la balayage : le moteur la résout sur-le-champ. Si elle est acceptée, le retour
  * explicite est affiché, que des navires soient identifiés ou non (SF-04 §3, AB-30).
  */
-export function confirmSearch(unitId: string): void {
+export function confirmSweep(unitId: string): void {
   const before = useGameStore.getState().events.length;
-  dispatchAndCloseDrafts({ type: 'ACTIVE_SEARCH', unitId });
+  dispatchAndCloseDrafts({ type: 'SWEEP', unitId });
   const performed = useGameStore
     .getState()
     .events.slice(before)
-    .find((event) => event.type === 'ACTIVE_SEARCH_PERFORMED');
-  if (performed) useSearchResultStore.getState().show(performed.identified.length);
+    .find((event) => event.type === 'SWEEP_PERFORMED');
+  if (performed) useSweepResultStore.getState().show(performed.identified.length);
 }
 
 /**
@@ -55,8 +55,8 @@ export function closeMission(): void {
   useGameStore.getState().reset();
   useMoveDraftStore.getState().cancelDraft();
   useCarrierOrderDraftStore.getState().cancelDraft();
-  useSearchDraftStore.getState().cancelDraft();
-  useSearchResultStore.getState().clear();
+  useSweepDraftStore.getState().cancelDraft();
+  useSweepResultStore.getState().clear();
   useSelectionStore.getState().selectUnit(null);
   useSelectionStore.getState().selectHex(null);
 }

@@ -26,7 +26,7 @@ import {
   hasActivationInProgress,
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
-import { resolveActiveSearch } from '../detection/active-search.service';
+import { resolveSweep } from '../detection/sweep.service';
 import { observeFriend } from '../detection/observation.service';
 import {
   MOVE_REFUSAL_MESSAGES,
@@ -146,22 +146,22 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
 };
 
 /**
- * Recherche active (G-07.7, AB-25, AB-30) : résolue sur-le-champ, elle consomme l'action spéciale
+ * Balayage (G-07.7, AB-25, AB-30) : résolue sur-le-champ, elle consomme l'action spéciale
  * de l'unité même sans résultat, et l'engage dans son activation. Elle ne touche ni au déplacement
  * ni à la discrétion de l'unité (AB-29) ; un refus ne consomme rien.
  */
-const activeSearch: Handler<'ACTIVE_SEARCH'> = (mission, { unitId }, config) => {
+const sweep: Handler<'SWEEP'> = (mission, { unitId }, config) => {
   const found = findOrderableUnit(mission, unitId);
   if ('rejection' in found) return found.rejection;
   const { unit } = found;
   const blocker = specialActionBlocker(mission.units, unit, config);
   if (blocker) return specialActionRejection(blocker);
-  const searched = resolveActiveSearch(mission, unit, config);
-  const engaged = updateUnitInMission(searched.state, unitId, {
+  const swept = resolveSweep(mission, unit, config);
+  const engaged = updateUnitInMission(swept.state, unitId, {
     activation: 'in_progress',
     specialActionUsed: true,
   });
-  return accept(engaged, searched.events);
+  return accept(engaged, swept.events);
 };
 
 /**
@@ -276,7 +276,7 @@ const closeCycleWithoutOrder: Handler<'CLOSE_CYCLE'> = (mission, _command, confi
 const handlers: { [T in MissionCommand['type']]: Handler<T> } = {
   MOVE_UNIT: moveUnit,
   END_ACTIVATION: endActivation,
-  ACTIVE_SEARCH: activeSearch,
+  SWEEP: sweep,
   END_CYCLE_EARLY: endCycleEarly,
   ORDER_CARRIER: orderCarrier,
   CLOSE_CYCLE: closeCycleWithoutOrder,

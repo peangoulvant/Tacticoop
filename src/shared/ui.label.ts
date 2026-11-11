@@ -143,16 +143,16 @@ function coordinatesLabel(hexes: readonly engine.Hex[]): string {
 }
 
 /**
- * Texte du journal pour un contact de veille passive (AB-21) : « contact suspect » et « zone
+ * Texte du journal pour un contact de veille (AB-21) : « contact suspect » et « zone
  * approximative », toutes les cases citées, sans jamais désigner la cible.
  */
 export function contactEventLabel(
   event: Extract<engine.GameEvent, { type: 'CONTACT_DETECTED' }>,
 ): string {
-  return `Veille passive : contact suspect ${event.contactId}, zone approximative ${coordinatesLabel(event.zone)}`;
+  return `Veille : contact suspect ${event.contactId}, zone approximative ${coordinatesLabel(event.zone)}`;
 }
 
-/** Type de navire révélé par une recherche active : frégate ou sous-marin, jamais la classe (AB-25). */
+/** Type de navire révélé par une balayage : frégate ou sous-marin, jamais la classe (AB-25). */
 export const contactTargetLabel: Record<engine.ContactTargetType, string> = {
   frigate: 'frégate',
   submarine: 'sous-marin',
@@ -174,7 +174,7 @@ export function contactCaption(contact: engine.FriendContact): string {
   return `Contact identifié ${contact.id} : ${contactTargetLabel[contact.targetType]}, position exacte (${col}, ${row}), détecté au cycle ${contact.cycle}${old}`;
 }
 
-/** Navires identifiés par une recherche, au format du journal : « C-5, sous-marin en (14, 22) ». */
+/** Navires identifiés par un balayage, au format du journal : « C-5, sous-marin en (14, 22) ». */
 function identificationsLabel(identified: readonly engine.Identification[]): string {
   return identified
     .map(
@@ -185,29 +185,29 @@ function identificationsLabel(identified: readonly engine.Identification[]): str
 }
 
 /**
- * Texte du journal pour une recherche active (AB-28) : toujours une entrée, réussie ou non. Les
+ * Texte du journal pour une balayage (AB-28) : toujours une entrée, réussie ou non. Les
  * mots sont les mêmes pour une première identification et une actualisation ; ni cible réelle ni
  * zone retirée.
  */
-export function activeSearchEventLabel(
-  event: Extract<engine.GameEvent, { type: 'ACTIVE_SEARCH_PERFORMED' }>,
+export function sweepEventLabel(
+  event: Extract<engine.GameEvent, { type: 'SWEEP_PERFORMED' }>,
 ): string {
   const unit = engine.defaultConfig.ships[event.shipClass].label;
   const { identified } = event;
-  if (identified.length === 0) return `Recherche active (${unit}) : aucun nouveau contact`;
+  if (identified.length === 0) return `Balayage (${unit}) : aucun nouveau contact`;
   const noun = identified.length > 1 ? 'contacts identifiés' : 'contact identifié';
-  return `Recherche active (${unit}) : ${noun} ${identificationsLabel(identified)}`;
+  return `Balayage (${unit}) : ${noun} ${identificationsLabel(identified)}`;
 }
 
 /*****************************
  *
- * PARTIE RECHERCHE ACTIVE
+ * PARTIE BALAYAGE
  *
  *****************************/
 
-/** Textes de l'action « Recherche active » (AB-30). */
-export const searchText = {
-  button: 'Recherche active',
+/** Textes de l'action « Balayage » (AB-30). */
+export const sweepText = {
+  button: 'Balayage',
   title: 'Cherche les navires hostiles à portée',
   confirm: 'Confirmer',
   cancel: 'Annuler',
@@ -216,16 +216,16 @@ export const searchText = {
   identifiedSeveral: 'Contacts identifiés',
 };
 
-/** Consigne de la barre de confirmation d'une recherche active en préparation. */
-export function searchDraftLabel(unitLabel: string, range: number, cells: number): string {
+/** Consigne de la barre de confirmation d'une balayage en préparation. */
+export function sweepDraftLabel(unitLabel: string, range: number, cells: number): string {
   const plural = range > 1 ? 's' : '';
-  return `${unitLabel} : recherche active, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour la lancer.`;
+  return `${unitLabel} : balayage, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour la lancer.`;
 }
 
-/** Retour explicite d'une recherche, affiché 4 secondes : identification ou absence de résultat. */
-export function searchResultLabel(identified: number): string {
-  if (identified === 0) return searchText.noNewContact;
-  return identified > 1 ? searchText.identifiedSeveral : searchText.identified;
+/** Retour explicite d'un balayage, affiché 4 secondes : identification ou absence de résultat. */
+export function sweepResultLabel(identified: number): string {
+  if (identified === 0) return sweepText.noNewContact;
+  return identified > 1 ? sweepText.identifiedSeveral : sweepText.identified;
 }
 
 /*****************************

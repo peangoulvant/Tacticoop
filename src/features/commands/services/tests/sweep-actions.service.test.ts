@@ -1,9 +1,9 @@
 import * as engine from '../../../../engine';
 import { useGameStore } from '../../../../store/game.store';
 import { useMoveDraftStore } from '../../../../store/move-draft.store';
-import { useSearchDraftStore } from '../../../../store/search-draft.store';
-import { useSearchResultStore } from '../../../../store/search-result.store';
-import { confirmSearch, startMoveDraft, startSearchDraft } from '../command-actions.service';
+import { useSweepDraftStore } from '../../../../store/sweep-draft.store';
+import { useSweepResultStore } from '../../../../store/sweep-result.store';
+import { confirmSweep, startMoveDraft, startSweepDraft } from '../command-actions.service';
 
 /** Mission lancée par le moteur, comme l'application, puis restaurée dans le store. */
 function launchedMission(): engine.MissionState {
@@ -24,9 +24,9 @@ function launchedMission(): engine.MissionState {
 
 beforeEach(() => {
   useGameStore.getState().restore(launchedMission(), []);
-  useSearchDraftStore.getState().cancelDraft();
+  useSweepDraftStore.getState().cancelDraft();
   useMoveDraftStore.getState().cancelDraft();
-  useSearchResultStore.getState().clear();
+  useSweepResultStore.getState().clear();
 });
 
 function searcherId(): string {
@@ -35,40 +35,40 @@ function searcherId(): string {
   return state.units.find((u) => u.side === 'friend')!.id;
 }
 
-describe('actions de la recherche active (AB-30)', () => {
+describe('actions de la balayage (AB-30)', () => {
   it('confirmer résout la recherche, ferme le brouillon et affiche le retour explicite', () => {
     const unitId = searcherId();
-    startSearchDraft(unitId);
-    expect(useSearchDraftStore.getState().unitId).toBe(unitId);
-    confirmSearch(unitId);
-    expect(useSearchDraftStore.getState().unitId).toBeNull();
-    expect(useSearchResultStore.getState().result).toMatchObject({
+    startSweepDraft(unitId);
+    expect(useSweepDraftStore.getState().unitId).toBe(unitId);
+    confirmSweep(unitId);
+    expect(useSweepDraftStore.getState().unitId).toBeNull();
+    expect(useSweepResultStore.getState().result).toMatchObject({
       identified: expect.any(Number),
     });
     const events = useGameStore.getState().events;
-    expect(events.map((e) => e.type)).toEqual(['ACTIVE_SEARCH_PERFORMED']);
+    expect(events.map((e) => e.type)).toEqual(['SWEEP_PERFORMED']);
   });
 
   it('un seul brouillon à la fois : une recherche remplace le déplacement, et inversement', () => {
     const unitId = searcherId();
     startMoveDraft(unitId);
-    startSearchDraft(unitId);
+    startSweepDraft(unitId);
     expect(useMoveDraftStore.getState().unitId).toBeNull();
-    expect(useSearchDraftStore.getState().unitId).toBe(unitId);
+    expect(useSweepDraftStore.getState().unitId).toBe(unitId);
     startMoveDraft(unitId);
-    expect(useSearchDraftStore.getState().unitId).toBeNull();
+    expect(useSweepDraftStore.getState().unitId).toBeNull();
     expect(useMoveDraftStore.getState().unitId).toBe(unitId);
   });
 
   it('une recherche refusée garde le brouillon et n’affiche aucun retour', () => {
     const unitId = searcherId();
-    confirmSearch(unitId);
-    useSearchResultStore.getState().clear();
-    startSearchDraft(unitId);
-    confirmSearch(unitId);
+    confirmSweep(unitId);
+    useSweepResultStore.getState().clear();
+    startSweepDraft(unitId);
+    confirmSweep(unitId);
     expect(useGameStore.getState().lastError).toMatchObject({ code: 'SPECIAL_ACTION_USED' });
-    expect(useSearchDraftStore.getState().unitId).toBe(unitId);
-    expect(useSearchResultStore.getState().result).toBeNull();
+    expect(useSweepDraftStore.getState().unitId).toBe(unitId);
+    expect(useSweepResultStore.getState().result).toBeNull();
     expect(useGameStore.getState().events).toHaveLength(1);
   });
 });

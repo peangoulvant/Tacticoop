@@ -271,8 +271,8 @@ function isIdentification(item: unknown): boolean {
   );
 }
 
-/** Recherche active : unité émettrice et navires identifiés, éventuellement aucun (AB-28). */
-function isActiveSearch(event: Json): boolean {
+/** Balayage : unité émettrice et navires identifiés, éventuellement aucun (AB-28). */
+function isSweep(event: Json): boolean {
   return (
     typeof event.unitId === 'string' &&
     isShipClass(event.shipClass) &&
@@ -293,7 +293,7 @@ const EVENT_CHECKS: Record<engine.GameEvent['type'], (event: Json) => boolean> =
     engine.CONTACT_ID_PATTERN.test(e.contactId) &&
     isPositive(e.cycle) &&
     isZone(e.zone),
-  ACTIVE_SEARCH_PERFORMED: isActiveSearch,
+  SWEEP_PERFORMED: isSweep,
   MISSION_WON: (e) => isPositive(e.cycle),
 };
 

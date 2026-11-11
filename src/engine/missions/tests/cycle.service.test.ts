@@ -97,7 +97,7 @@ describe('clôture du cycle : navigation, puis résultat, puis suite', () => {
   });
 });
 
-describe('veille passive en fin de cycle (G-08, chronologie)', () => {
+describe('veille en fin de cycle (G-08, chronologie)', () => {
   /** Lutte navale : un détecteur allié, un sous-marin hostile adjacent en mer côtière, cycle 3. */
   function withHostileInRange(seed: number): MissionState {
     return {

@@ -21,7 +21,7 @@ const SURE: GameConfig = {
     ...defaultConfig.ships,
     fremm: {
       ...defaultConfig.ships.fremm,
-      detection: { ...defaultConfig.ships.fremm.detection!, activeProbability: 1 },
+      detection: { ...defaultConfig.ships.fremm.detection!, sweepProbability: 1 },
     },
   },
 };
@@ -50,7 +50,7 @@ function mission(): MissionState {
 }
 
 function search(unitId = 'a'): GameCommand {
-  return { type: 'ACTIVE_SEARCH', unitId };
+  return { type: 'SWEEP', unitId };
 }
 
 function run(state: MissionState, command: GameCommand, config = SURE): CommandResult {
@@ -73,7 +73,7 @@ function unitOf(state: MissionState, id: string): Unit {
   return state.units.find((u) => u.id === id)!;
 }
 
-describe('commande ACTIVE_SEARCH (G-07.7, AB-30)', () => {
+describe('commande SWEEP (G-07.7, AB-30)', () => {
   it('résout sur-le-champ, engage l’activation et consomme l’action spéciale', () => {
     const { state, events } = accepted(mission(), search());
     expect(unitOf(state, 'a')).toMatchObject({
@@ -84,7 +84,7 @@ describe('commande ACTIVE_SEARCH (G-07.7, AB-30)', () => {
     expect(state.friendContacts).toHaveLength(1);
     expect(events).toMatchObject([
       {
-        type: 'ACTIVE_SEARCH_PERFORMED',
+        type: 'SWEEP_PERFORMED',
         cycle: 1,
         unitId: 'a',
         shipClass: 'fremm',
@@ -100,7 +100,7 @@ describe('commande ACTIVE_SEARCH (G-07.7, AB-30)', () => {
         ...SURE.ships,
         fremm: {
           ...SURE.ships.fremm,
-          detection: { ...SURE.ships.fremm.detection!, activeProbability: 0 },
+          detection: { ...SURE.ships.fremm.detection!, sweepProbability: 0 },
         },
       },
     };
@@ -110,7 +110,7 @@ describe('commande ACTIVE_SEARCH (G-07.7, AB-30)', () => {
       specialActionUsed: true,
     });
     expect(state.friendContacts).toEqual([]);
-    expect(events).toMatchObject([{ type: 'ACTIVE_SEARCH_PERFORMED', identified: [] }]);
+    expect(events).toMatchObject([{ type: 'SWEEP_PERFORMED', identified: [] }]);
   });
 
   it('refuse une seconde recherche pendant la même activation, sans rien consommer', () => {

@@ -1,22 +1,22 @@
 import { palette } from '../../../app/theme.config';
-import type { SearchDraft } from '../../commands';
+import type { SweepDraft } from '../../commands';
 import { HEX_POINTS, hexCenter } from '../services/hex-geometry.service';
 
-/** Surcouche de carte pendant la préparation d'une recherche active : cases à portée surlignées (AB-30). */
-export function SearchOverlay({ search }: { search: SearchDraft | null }) {
-  if (!search) return null;
+/** Surcouche de carte pendant la préparation d'une balayage : cases à portée surlignées (AB-30). */
+export function SweepOverlay({ sweep }: { sweep: SweepDraft | null }) {
+  if (!sweep) return null;
   return (
-    <g pointerEvents="none" data-testid="search-range">
-      {search.area.map((hex) => {
+    <g pointerEvents="none" data-testid="sweep-range">
+      {sweep.area.map((hex) => {
         const { x, y } = hexCenter(hex);
         return (
           <polygon
             key={`${hex.col},${hex.row}`}
             points={HEX_POINTS}
             transform={`translate(${x.toFixed(2)} ${y.toFixed(2)})`}
-            fill={palette.searchRange}
+            fill={palette.sweepRange}
             fillOpacity={0.16}
-            stroke={palette.searchRange}
+            stroke={palette.sweepRange}
             strokeOpacity={0.55}
             strokeWidth="0.5"
           />

@@ -16,8 +16,8 @@ function describe(event: engine.GameEvent): string {
       return `Cycle ${event.cycle} ouvert`;
     case 'CONTACT_DETECTED':
       return labels.contactEventLabel(event);
-    case 'ACTIVE_SEARCH_PERFORMED':
-      return labels.activeSearchEventLabel(event);
+    case 'SWEEP_PERFORMED':
+      return labels.sweepEventLabel(event);
     default:
       return labels.carrierEventLabel(event);
   }

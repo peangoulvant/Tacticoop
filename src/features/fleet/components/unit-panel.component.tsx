@@ -5,7 +5,7 @@ import * as assets from '../../../shared/assets.config';
 import * as labelEngine from '../../../shared/engine.label';
 import * as labels from '../../../shared/ui.label';
 import { useSelectionStore } from '../../../store/selection.store';
-import { endActivation, startMoveDraft, startSearchDraft } from '../../commands';
+import { endActivation, startMoveDraft, startSweepDraft } from '../../commands';
 import { ActivationBadge } from './activation-badge.component';
 import { CarrierPanel } from './carrier-panel.component';
 import { HpBar, StockLine } from './unit-stats.component';
@@ -29,37 +29,37 @@ function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): 
 }
 
 /**
- * Motif propre à la recherche active (action déjà utilisée, absence de capteurs), ou `null`. Les
+ * Motif propre à la balayage (action déjà utilisée, absence de capteurs), ou `null`. Les
  * motifs d'ordre sont déjà affichés par `unavailabilityReason`.
  */
-function searchOwnReason(mission: engine.MissionState, unit: engine.Unit): string | null {
+function sweepOwnReason(mission: engine.MissionState, unit: engine.Unit): string | null {
   const friends = engine.observeFriend(mission).units;
   const blocker = engine.specialActionBlocker(friends, unit, engine.defaultConfig);
   if (blocker !== 'SPECIAL_ACTION_USED' && blocker !== 'NO_SENSORS') return null;
-  return `Recherche active indisponible : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
+  return `Balayage indisponible : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
 }
 
-/** Bouton « Recherche active » : ouvre le brouillon ; désactivé avec son motif sinon (AB-30). */
-function SearchButton({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
+/** Bouton « Balayage » : ouvre le brouillon ; désactivé avec son motif sinon (AB-30). */
+function SweepButton({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
   const friends = engine.observeFriend(mission).units;
   const blocker = engine.specialActionBlocker(friends, unit, engine.defaultConfig);
   const disabled = mission.outcome !== null || blocker !== null;
-  const reason = searchOwnReason(mission, unit) ?? unavailabilityReason(mission, unit);
+  const reason = sweepOwnReason(mission, unit) ?? unavailabilityReason(mission, unit);
   return (
     <Button
       variant="outlined"
       disabled={disabled}
-      title={disabled && reason ? reason : labels.searchText.title}
-      onClick={() => startSearchDraft(unit.id)}
+      title={disabled && reason ? reason : labels.sweepText.title}
+      onClick={() => startSweepDraft(unit.id)}
     >
-      {labels.searchText.button}
+      {labels.sweepText.button}
     </Button>
   );
 }
 
 function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
   const reason = unavailabilityReason(mission, unit);
-  const searchReason = searchOwnReason(mission, unit);
+  const sweepReason = sweepOwnReason(mission, unit);
   const ended = mission.outcome !== null;
   return (
     <>
@@ -71,7 +71,7 @@ function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit:
         >
           Déplacement
         </Button>
-        <SearchButton mission={mission} unit={unit} />
+        <SweepButton mission={mission} unit={unit} />
         {UNAVAILABLE_COMMANDS.map((label) => (
           <Button key={label} variant="outlined" disabled title="Non disponible dans cette version">
             {label}
@@ -85,7 +85,7 @@ function CommandButtons({ mission, unit }: { mission: engine.MissionState; unit:
           Terminer l’activation
         </Button>
       </Box>
-      {[reason, searchReason].map(
+      {[reason, sweepReason].map(
         (text) =>
           text && (
             <Typography key={text} variant="caption" color="warning.main">

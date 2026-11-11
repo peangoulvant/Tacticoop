@@ -43,7 +43,7 @@ export const SPECIAL_ACTION_BLOCKER_MESSAGES =
   >;
 
 /**
- * Motif pour lequel l'unité ne peut pas lancer une recherche active, ou `null` si elle le peut :
+ * Motif pour lequel l'unité ne peut pas lancer une balayage, ou `null` si elle le peut :
  * elle doit pouvoir recevoir un ordre, ne pas avoir utilisé son action spéciale et porter des
  * capteurs (G-07.7). La mission en cours est vérifiée par la commande. L'ordre des motifs est
  * celui du joueur : l'unité d'abord, puis l'action, puis le matériel.

@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import * as engine from '../../../engine';
-import { useSearchDraftStore } from '../../../store/search-draft.store';
+import { useSweepDraftStore } from '../../../store/sweep-draft.store';
 
 /**
- * Brouillon de recherche active : l'action en préparation, pas encore exécutée. Sans paramètre à
+ * Brouillon de balayage : l'action en préparation, pas encore exécutée. Sans paramètre à
  * choisir, il ne porte que l'unité et ce que le moteur en déduit : la portée effective et les
  * cases à portée, que la carte surligne (AB-30).
  */
-export interface SearchDraft {
+export interface SweepDraft {
   unit: engine.Unit;
   /** Portée effective en hexagones, capteurs dégradés compris. */
   range: number;
@@ -15,9 +15,9 @@ export interface SearchDraft {
   area: engine.Hex[];
 }
 
-/** Recherche en cours de préparation, ou `null` s'il n'y en a pas ou si elle n'est plus possible. */
-export function useSearchDraft(mission: engine.MissionState): SearchDraft | null {
-  const unitId = useSearchDraftStore((s) => s.unitId);
+/** Balayage en cours de préparation, ou `null` s'il n'y en a pas ou si elle n'est plus possible. */
+export function useSweepDraft(mission: engine.MissionState): SweepDraft | null {
+  const unitId = useSweepDraftStore((s) => s.unitId);
   // Portée et cases ne reposent que sur ce que le joueur connaît (SF-04 §1).
   const observation = useMemo(() => engine.observeFriend(mission), [mission]);
   const unit = observation.units.find((u) => u.id === unitId);
@@ -30,8 +30,8 @@ export function useSearchDraft(mission: engine.MissionState): SearchDraft | null
     if (!unit || !possible) return null;
     return {
       unit,
-      range: engine.activeSearchRange(unit, observation.constraints, engine.defaultConfig),
-      area: engine.activeSearchArea(observation, unit, engine.defaultConfig),
+      range: engine.effectiveSweepRange(unit, observation.constraints, engine.defaultConfig),
+      area: engine.sweepArea(observation, unit, engine.defaultConfig),
     };
   }, [observation, unit, possible]);
 }

@@ -2,7 +2,7 @@ import * as engine from '../../../engine';
 import { dispatchAndCloseDrafts } from '../../../store/dispatch-and-close-drafts.service';
 import { useCarrierOrderDraftStore } from '../../../store/carrier-order-draft.store';
 import { useMoveDraftStore } from '../../../store/move-draft.store';
-import { useSearchDraftStore } from '../../../store/search-draft.store';
+import { useSweepDraftStore } from '../../../store/sweep-draft.store';
 
 export function confirmCarrierOrder(order: engine.CarrierOrder): void {
   dispatchAndCloseDrafts({ type: 'ORDER_CARRIER', order });
@@ -16,6 +16,6 @@ export function closeCycle(): void {
 /** Prépare un ordre de navigation ; les autres brouillons éventuels sont abandonnés. */
 export function startCarrierOrderDraft(kind: engine.CarrierOrderKind): void {
   useMoveDraftStore.getState().cancelDraft();
-  useSearchDraftStore.getState().cancelDraft();
+  useSweepDraftStore.getState().cancelDraft();
   useCarrierOrderDraftStore.getState().startDraft(kind);
 }

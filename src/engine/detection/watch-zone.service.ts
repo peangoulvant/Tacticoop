@@ -43,11 +43,11 @@ function waterOnlyZone(map: GameMap, target: Hex, size: number, rng: Rng): Hex[]
 }
 
 /**
- * Zone approximative d'un contact passif (G-08.5, AB-20) : au plus `zoneSize` hexagones contigus,
+ * Zone approximative d'un contact de veille (G-08.5, AB-20) : au plus `zoneSize` hexagones contigus,
  * contenant la cible, sans terre. On refait la zone jusqu'à `zoneMaxAttempts` fois, puis on se
  * replie sur une croissance limitée à l'eau. Les cases sont triées pour ne pas révéler la cible.
  */
-export function generatePassiveZone(
+export function generateWatchZone(
   map: GameMap,
   target: Hex,
   rng: Rng,

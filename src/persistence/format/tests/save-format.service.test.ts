@@ -475,7 +475,7 @@ describe('contacts et état du hasard (version 2)', () => {
 });
 
 /**
- * Mission jouée jusqu'à une recherche active menée près d'un navire hostile, puis l'activation
+ * Mission jouée jusqu'à une balayage menée près d'un navire hostile, puis l'activation
  * terminée : une sauvegarde ne se fait qu'entre deux séquences complètes.
  */
 function searchedMission(): { state: engine.MissionState; events: engine.GameEvent[] } {
@@ -485,7 +485,7 @@ function searchedMission(): { state: engine.MissionState; events: engine.GameEve
   const position = { col: target.position.col - 1, row: target.position.row };
   const placed = state.units.map((u) => (u.id === searcher.id ? { ...u, position } : u));
   // Recherche sûre : le test porte sur la sauvegarde, pas sur le tirage.
-  const detection = { ...engine.defaultConfig.ships.fremm.detection!, activeProbability: 1 };
+  const detection = { ...engine.defaultConfig.ships.fremm.detection!, sweepProbability: 1 };
   const config: engine.GameConfig = {
     ...engine.defaultConfig,
     ships: {
@@ -497,7 +497,7 @@ function searchedMission(): { state: engine.MissionState; events: engine.GameEve
   let current: engine.GameState = { ...state, units: placed };
   const produced: engine.GameEvent[] = [];
   for (const command of [
-    { type: 'ACTIVE_SEARCH', unitId: searcher.id },
+    { type: 'SWEEP', unitId: searcher.id },
     { type: 'END_ACTIVATION', unitId: searcher.id },
   ] satisfies engine.GameCommand[]) {
     const result = engine.executeCommand(current, command, config);
@@ -509,7 +509,7 @@ function searchedMission(): { state: engine.MissionState; events: engine.GameEve
   return { state: current, events: [...events, ...produced] };
 }
 
-describe('recherche active (version 3)', () => {
+describe('balayage (version 3)', () => {
   const identified = (s: TamperedSave, patch: object = {}) => ({
     kind: 'identified',
     id: 'C-1',
@@ -520,12 +520,12 @@ describe('recherche active (version 3)', () => {
     ...patch,
   });
 
-  it("aller-retour d'une mission où une recherche active a eu lieu", () => {
+  it("aller-retour d'une mission où une balayage a eu lieu", () => {
     const { state, events } = searchedMission();
     const result = parseSave(serializeSave(state, events, SAVED_AT));
     expect(result).toMatchObject({ ok: true, save: { schemaVersion: 3 } });
     expect(result.ok && result.save.state).toEqual(state);
-    expect(events.some((e) => e.type === 'ACTIVE_SEARCH_PERFORMED')).toBe(true);
+    expect(events.some((e) => e.type === 'SWEEP_PERFORMED')).toBe(true);
     expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);
   });
 
@@ -545,14 +545,14 @@ describe('recherche active (version 3)', () => {
       s.state.nextContactNumber = 2;
       s.events.push(
         {
-          type: 'ACTIVE_SEARCH_PERFORMED',
+          type: 'SWEEP_PERFORMED',
           cycle: 1,
           unitId: 'x',
           shipClass: 'fremm',
           identified: [],
         },
         {
-          type: 'ACTIVE_SEARCH_PERFORMED',
+          type: 'SWEEP_PERFORMED',
           cycle: 1,
           unitId: 'x',
           shipClass: 'fremm',
@@ -635,9 +635,9 @@ describe('recherche active (version 3)', () => {
       'avec un identifiant mal formé',
       { identified: [{ contactId: 'X', targetType: 'frigate', position: { col: 1, row: 1 } }] },
     ],
-  ])('refuse un événement de recherche active %s', (_name, patch) => {
+  ])('refuse un événement de balayage %s', (_name, patch) => {
     const event = {
-      type: 'ACTIVE_SEARCH_PERFORMED',
+      type: 'SWEEP_PERFORMED',
       cycle: 1,
       unitId: 'x',
       shipClass: 'fremm',

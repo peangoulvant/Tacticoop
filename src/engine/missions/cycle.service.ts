@@ -1,6 +1,6 @@
 import type { GameConfig } from '../config/game.config';
 import type { MissionState, Progress } from '../core/game.types';
-import { resolvePassiveSensors } from '../detection/passive-sensor.service';
+import { resolveWatch } from '../detection/watch-sensor.service';
 import type { Unit } from '../units/unit.model';
 import { hasCarrierArrived, moveCarrier } from '../units/carrier-movement.service';
 import type { MissionOutcome } from '../units/carrier-orders.service';
@@ -71,13 +71,13 @@ export function isAwaitingFinalOrder(mission: MissionState): boolean {
 
 /**
  * Phases de fin de cycle, dans l'ordre de SF-03 §4 : navigation automatique du porte-avions, puis
- * veille passive avec actualisation et expiration des contacts (G-08, chronologie), puis (à venir)
+ * veille avec actualisation et expiration des contacts (G-08, chronologie), puis (à venir)
  * progression des projectiles restants et bilan. Les phases à venir s'ajouteront ici, **avant** la
  * détermination du résultat. Cette étape ne déclare jamais la fin de la mission.
  */
 export function resolveCycleEnd(mission: MissionState, config: GameConfig): Progress {
   const moved = moveCarrier(mission, config);
-  const sensed = resolvePassiveSensors(moved.state, config);
+  const sensed = resolveWatch(moved.state, config);
   return { state: sensed.state, events: [...moved.events, ...sensed.events] };
 }
 

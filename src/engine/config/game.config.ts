@@ -27,10 +27,10 @@ export interface ShipSpec {
 
 /** Portées en hexagones et probabilités de détection d'un type de bâtiment (G-08.4, SF-04 §2-§3). */
 export interface DetectorSpec {
-  passiveRange: number;
-  passiveProbability: number;
-  activeRange: number;
-  activeProbability: number;
+  watchRange: number;
+  watchProbability: number;
+  sweepRange: number;
+  sweepProbability: number;
 }
 
 /** Classes de frégate que l'ennemi peut aligner (AB-11). */
@@ -84,14 +84,14 @@ export interface WeaponRangesConfig {
   torpedo: number;
 }
 
-/** Paramètres communs de la détection passive (AB-20, AB-22). */
+/** Paramètres communs de la veille (AB-20, AB-22). */
 export interface DetectionConfig {
   /** Nombre d'hexagones d'une zone de contact, cible comprise (G-08.2.2). */
   zoneSize: number;
   /** Tentatives pour obtenir une zone sans terre avant le repli (AB-20). */
   zoneMaxAttempts: number;
-  /** Points de probabilité de détection passive gagnés contre un sous-marin en mer côtière (AB-22). */
-  coastalSubmarinePassiveBonus: number;
+  /** Points de probabilité de détection de veille gagnés contre un sous-marin en mer côtière (AB-22). */
+  coastalSubmarineWatchBonus: number;
 }
 
 export interface GameConfig {
@@ -133,10 +133,10 @@ const HOSTILE_FORCE: HostileForceSpec = {
 
 /** Portées et probabilités initiales de la frégate et du sous-marin, identiques (G-08.4). */
 const DETECTOR: DetectorSpec = {
-  passiveRange: 2,
-  passiveProbability: 0.6,
-  activeRange: 4,
-  activeProbability: 0.9,
+  watchRange: 2,
+  watchProbability: 0.6,
+  sweepRange: 4,
+  sweepProbability: 0.9,
 };
 
 export const defaultConfig: GameConfig = {
@@ -158,7 +158,7 @@ export const defaultConfig: GameConfig = {
     },
   },
   weaponRanges: { missile: 8, torpedo: 5 },
-  detection: { zoneSize: 7, zoneMaxAttempts: 200, coastalSubmarinePassiveBonus: 0.2 },
+  detection: { zoneSize: 7, zoneMaxAttempts: 200, coastalSubmarineWatchBonus: 0.2 },
   budget: { normal: 100, limitedMeans: 70 },
   constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2, sensorsFactor: 0.8 },
   ships: {
