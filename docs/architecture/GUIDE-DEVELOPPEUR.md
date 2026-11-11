@@ -84,4 +84,5 @@ La déclarer dans l'interface de `GameConfig`, lui donner sa valeur dans `defaul
 - Priorité aux tests du moteur : ils se placent dans un sous-dossier `tests/` du dossier testé et suivent le nom du fichier (`sweep.service.test.ts`).
 - Un tirage se teste de deux façons : avec une probabilité forcée à 0 ou 1 dans une configuration d'essai (comportement), ou sur des centaines de graines avec des bornes larges (statistique).
 - Une fonction qui touche à la sauvegarde se teste aussi par un aller-retour `serializeSave` → `parseSave`.
-- Les tests d'interface viendront avec Cypress (entre les jalons 5 et 6) ; d'ici là, l'interface se vérifie dans le navigateur.
+- Les tests d'interface (React Testing Library et jsdom) sont dans `src/app/tests/`, avec `// @vitest-environment jsdom` en première ligne ; les autres tests tournent sous Node. Ils passent par les vrais composants, le store et le moteur, s'interrogent par rôle et nom accessible (`screen.getByRole`) et se pilotent avec `userEvent`. Les stores Zustand sont des singletons : les réinitialiser dans `beforeEach`.
+- Ce que jsdom ne sait pas faire (clic sur la carte, zoom, glisser, rendu SVG) se vérifie dans un vrai navigateur ; Playwright pourra le couvrir plus tard.

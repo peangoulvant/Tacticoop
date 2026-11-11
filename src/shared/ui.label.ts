@@ -206,7 +206,7 @@ export function sweepDraftLabel(unitLabel: string, range: number, cells: number)
   return `${unitLabel} : balayage, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour le lancer.`;
 }
 
-/** Motif affiché pendant la récupération du balayage : le cycle où il redevient possible (AB-34). */
+/** Info-bulle du bouton pendant la récupération du balayage : le cycle où il redevient possible (AB-34). */
 export function sweepCooldownLabel(availableFrom: number): string {
   return `${sweepText.unavailable} : en récupération, de nouveau possible au cycle ${availableFrom}.`;
 }

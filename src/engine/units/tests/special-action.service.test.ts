@@ -1,6 +1,7 @@
 import { defaultConfig, type GameConfig } from '../../config/game.config';
 import {
   availableFromCycle,
+  cooldownRemaining,
   isOnCooldown,
   recordSpecialAction,
   usedActionDuringCycle,
@@ -40,6 +41,14 @@ describe('délai de récupération des actions spéciales (AB-34)', () => {
     const used = recordSpecialAction(frigate(), 'sweep', 3);
     expect(availableFromCycle(used, 'sweep', withCooldown(0))).toBe(4);
     expect(availableFromCycle(used, 'sweep', withCooldown(2))).toBe(6);
+  });
+
+  it('compte les cycles de récupération restants', () => {
+    const used = recordSpecialAction(frigate(), 'sweep', 3);
+    expect(
+      [3, 4, 5, 6].map((cycle) => cooldownRemaining(used, 'sweep', cycle, defaultConfig)),
+    ).toEqual([2, 1, 0, 0]);
+    expect(cooldownRemaining(frigate(), 'sweep', 1, defaultConfig)).toBe(0);
   });
 
   it('enregistre l’usage sans modifier l’unité d’origine', () => {

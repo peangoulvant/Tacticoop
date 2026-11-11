@@ -1,19 +1,18 @@
 # HANDOFF — Contexte de travail Tacticoop
 
-Document de passation entre fils de discussion avec Claude Code. Il garde le **contexte de travail** (décisions, préférences, pièges, état d'avancement) que le code et les spécifications ne portent pas. Il ne duplique ni les règles de jeu, ni l'architecture, ni la matrice de traçabilité.
-
-> **À compléter et à relire par le propriétaire du dépôt.** Elle décrit l'état après la PR #22 fusionnée (module de persistance, jalon 4 PR C1), avec la PR C2 (sauvegarde automatique et reprise) en cours de revue.
+Document de passation entre sessions de développement avec Claude Code. Il garde le **contexte de travail** (état, décisions, préférences, pièges) que le code et les spécifications ne portent pas. Il ne duplique ni les règles de jeu, ni l'architecture, ni la matrice de traçabilité, et n'est pas un historique : l'historique est dans `git log` et dans les PR.
 
 ## Lecture au démarrage d'un nouveau fil
 
 1. [CLAUDE.md](CLAUDE.md) et [AGENTS.md](AGENTS.md) : consignes du dépôt.
 2. Ce document.
-3. [docs/TRACEABILITY.md](docs/TRACEABILITY.md) : ce qui est implémenté, partiel ou absent, avec les fichiers et tests.
-4. [Architecture](docs/architecture/README.md), [décisions fonctionnelles ouvertes](docs/functional-specs/DECISIONS.md) et [décisions de Game Design](docs/game-design/DECISIONS.md) avant tout changement métier.
+3. [docs/architecture/GUIDE-DEVELOPPEUR.md](docs/architecture/GUIDE-DEVELOPPEUR.md) : carte du code, chemin d'une action, recettes d'ajout, glossaire.
+4. [docs/TRACEABILITY.md](docs/TRACEABILITY.md) : ce qui est implémenté, partiel ou absent, avec les fichiers et tests.
+5. [Architecture](docs/architecture/README.md), [décisions fonctionnelles ouvertes](docs/functional-specs/DECISIONS.md) et [décisions de Game Design](docs/game-design/DECISIONS.md) avant tout changement métier.
 
 ## Projet en bref
 
-Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Zustand ; IndexedDB : sauvegarde automatique et reprise faites ; export/import manuel JSON retiré de la V1). Démarche **Spec-Driven Development** : le GDD et les SF font autorité sur le gameplay, l'architecture sur les choix techniques. Aucune règle ne s'invente : un point ouvert se signale et s'arbitre avec le propriétaire.
+Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Zustand ; sauvegarde automatique et reprise dans IndexedDB ; export et import manuels hors V1). Démarche **Spec-Driven Development** : le GDD et les SF font autorité sur le gameplay, l'architecture sur les choix techniques. Aucune règle ne s'invente : un point ouvert se signale et s'arbitre avec le propriétaire. Le code actuel fait foi sur l'état du projet ; en cas de doute, vérifier dans le code et dans les tests.
 
 ## Façon de travailler avec le propriétaire
 
@@ -39,7 +38,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 ## Conventions de code (rappel des exigences exprimées en revue)
 
 - Complexité cyclomatique par fonction : **5 conseillé, 10 maximum**, partout, composants React compris (ESLint `complexity` à 10, vérifié à 5 à la main).
-- **Pas de test d'interface écrit à la main pour l'instant** (`App.test.tsx` supprimé). Tester le comportement de l'interface en code pur (Testing Library) a peu d'intérêt face à un outil dédié comme Cypress : **les tests d'interface seront mis en place avec Cypress, entre les jalons 5 et 6** de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md). D'ici là, tester le moteur et la logique pure, et vérifier l'interface visuellement dans le navigateur. Ne pas en conclure que l'interface n'a pas à être testée.
+- **Tests d'interface** (jalon de fiabilisation) : Vitest + React Testing Library + jsdom, dans `src/app/tests/*.test.tsx`, avec `// @vitest-environment jsdom` en première ligne (les autres tests tournent sous Node). Ils exercent les vrais composants, le store et le moteur ; requêtes par rôle et nom accessible, `userEvent`, aucun snapshot ni temporisation. Réinitialiser les stores Zustand (singletons) dans `beforeEach`. Ne pas tester dans jsdom ce qu'il ne sait pas faire (clic sur la carte, zoom, glisser, rendu SVG) : le consigner dans la matrice de traçabilité. Playwright pourra les couvrir plus tard ; aucun framework E2E n'est installé.
 - Pas de doublon de données : `Unit` ne porte que l'état courant, les caractéristiques de classe restent dans `ShipSpec` (`GameConfig`).
 - Une feature n'importe une autre feature que par son `index.ts` (règle ESLint). Chaque feature : `components/`, `services/` (hooks et logique pure), `index.ts`.
 - Le moteur ne dépend ni de React, ni de Zustand, ni de MUI, ni d'IndexedDB (règle ESLint). L'UI n'importe que depuis `engine/index.ts`.
@@ -73,12 +72,12 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Coordonnées | Offset « pointy-top », lignes impaires décalées, axial en interne ; consignées dans `docs/architecture/STRUCTURE.md` (PR #11) |
 | Journal | Colonne de droite, sous le panneau d'unité (SF-07 et G-12.1 alignés, PR #11) |
 | « Nouvelle partie » | Demande confirmation avant d'abandonner la mission (PR #11) |
-| Tests d'interface | Cypress, à démarrer entre les jalons 5 et 6 ; pas d'autre test d'interface d'ici là |
-| Dépendances de test | `@testing-library/*` et `jsdom`, sans usage, sont retirées **dans la PR qui introduit Cypress**. `fake-indexeddb` (développement) sert aux tests du stockage IndexedDB |
+| Tests d'interface | **Vitest + React Testing Library + jsdom** (décision de novembre 2026, remplace Cypress) ; pas de framework E2E installé, Playwright envisagé plus tard pour ce que jsdom ne peut pas faire (carte, SVG) |
+| Dépendances de test | `@testing-library/*` et `jsdom` servent aux tests d'interface (jsdom seulement dans les fichiers `.test.tsx`, Node ailleurs) ; `fake-indexeddb` sert aux tests du stockage IndexedDB |
 | Porte-avions | Non activable : il n'a pas d'état d'activation, il se pilote par ordres de navigation (à venir) |
 | Cases occupées | Infranchissables en déplacement, pas seulement interdites comme destination |
-| Journal | Minimal et provisoire : déplacement et ouverture d'un cycle (D-11 ouvert) |
-| Brouillard de guerre | `engine/detection/` : `observeFriend()` / `observeHostile()` ne gardent que les unités connues (aucune hostile n'est connue faute de contacts). L'interface (carte, aperçu et refus de déplacement) passe par la projection ami, jamais par l'état réel. Un obstacle caché interrompt le déplacement sur l'état réel (SF-02.15) : `UNIT_MOVED.interrupted`, message neutre au journal. **Ne jamais calculer un aperçu ni un message à partir de `mission.units`** |
+| Journal | Provisoire (D-11 ouvert) : huit événements (`GameEvent`), un texte chacun (`labels.eventLabel`), pas de synthèse de cycle |
+| Brouillard de guerre | `engine/detection/` : `observeFriend()` ne garde que les unités amies ; un navire hostile n'existe pour le joueur que sous forme de contact (zone suspecte ou navire identifié, jamais une unité). L'interface (carte, aperçu et refus de déplacement, panneaux) passe par la projection ami, jamais par l'état réel. Un obstacle caché interrompt le déplacement sur l'état réel (SF-02.15) : `UNIT_MOVED.interrupted`, message neutre au journal. **Ne jamais calculer un aperçu ni un message à partir de `mission.units`** |
 | Imports | Sous un nom, pour toutes les couches quand l'origine est peu explicite (moteur, libellés, ressources) ; règle ESLint pour ces trois |
 | Textes du moteur | `shared/engine.label.ts` (et non `label-core`, qui prêtait à confusion avec `engine/core/`). Le moteur peut dépendre de `shared/` ; les libellés de catalogue (`ShipSpec.label`, `description`) restent dans `GameConfig` |
 | Règles ESLint | Imports profonds entre features : interdits (PR 2/4). Style des fonctions (premier niveau des modules) : imposé en PR 4/4 (#18) |
@@ -96,103 +95,53 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Sous-marin en mer côtière (AB-15, AB-22) | Autorisé ; +20 points de probabilité de détection de veille (plafond 100 %), deux camps, portée inchangée ; balayage à définir ; la table `NAVIGABLE` change avec la veille |
 | Balayage (AB-25 à AB-30) | Résolue à l'action : un tirage à 90 % par navire hostile à portée (3 avec capteurs dégradés), type (frégate ou sous-marin, pas la classe) et position exacte ; en plus de la veille de fin de cycle ; une zone désigne une cible (interne), identifiée sa zone disparaît ; contact identifié actualisé, un par navire, « ancien » s'il date d'un cycle précédent, position figée ; teintes par numéro ; événement `SWEEP_PERFORMED` toujours journalisé ; bonus côtier passif seulement (actif : 90 % partout) ; aucun effet de discrétion en V1 ; bouton « Balayage » avec brouillon, confirmation et retour explicite ; contacts sans effet sur la planification des déplacements ; `schemaVersion` 3. **Implémentée (PR C)** : une identification retire toutes les zones qui désignent la cible, y compris celles d'un cycle antérieur (lecture d'AB-26) ; le retour de 4 secondes dit « Contact identifié » ou « Contacts identifiés » (pluriel ajouté) ; la cible interne `source` n'existe que dans l'état réel (et sa sauvegarde), jamais dans la projection (liste blanche), les événements ni le journal |
 | Revue du propriétaire après la PR C (AB-31 à AB-34) | **Une seule unité « en cours »** : demande de la lever examinée et **refusée** (tour par tour conservé, SF-03.8). « Terminer le cycle » termine d'abord l'activation en cours (AB-31). **Vocabulaire** : « veille » (détection continue) et « balayage » (action) remplacent passif / recherche active partout (AB-32). **Veille à 50 %** de base, +20 points si la cible a balayé pendant le cycle, +20 points sous-marin côtier, cumulés, plafond 100 % (AB-33). **Délai de récupération** d'un cycle après un balayage, mécanisme générique (`special-action.service.ts`, `GameConfig.specialActions`), `schemaVersion` 4 (AB-34) |
-| Détection passive (AB-18 à AB-24) | Un contact distinct par observation, une zone par cible et par cycle ; zone de 7 hexagones sans terre, forme tirée puis alignée sur une case uniforme, 200 tentatives, repli eau ; cases triées (jamais l'ordre de génération, qui commence par la cible) ; événement `CONTACT_DETECTED` sans cible ni détecteur ; affichage ambre avec légende de case ; porte-avions non détecteur (`PROPOSÉ`) ; état du générateur dans `MissionState`, `schemaVersion` 2, anciennes sauvegardes absentes |
-| Paramétrage (AB-16) | `GameConfig.missions` ; portées non mises à l'échelle, test de cohérence de configuration ; littéraux d'escorte à externaliser |
+| Veille (AB-18 à AB-24, ex-« détection passive ») | Un contact distinct par observation, une zone par cible et par cycle ; zone de 7 hexagones sans terre, forme tirée puis alignée sur une case uniforme, 200 tentatives, repli eau ; cases triées (jamais l'ordre de génération, qui commence par la cible) ; événement `CONTACT_DETECTED` sans cible ni détecteur ; affichage ambre avec légende de case ; porte-avions non détecteur (`PROPOSÉ`) ; état du générateur dans `MissionState` |
+| Paramétrage (AB-16) | `GameConfig.missions` ; portées non mises à l'échelle, test de cohérence de configuration  |
 | Nommage de l'IA (AB-17) | `nom.ai.service.ts` pour les fichiers de `engine/ai/` qui ont un homologue côté unités |
 
-## État d'avancement
+## État du projet
 
-Voir la matrice [TRACEABILITY.md](docs/TRACEABILITY.md). En résumé : préparation de mission (SF-01), génération de carte, déplacement des unités alliées, activations et cycles, avec l'interface correspondante. Navigation du porte-avions et victoire à l'arrivée en B, moteur et interface. Sauvegarde automatique et reprise de la partie en cours. Force ennemie créée au lancement (composition et placement, AB-11 à AB-16), inerte et cachée. Veille du camp ami (contacts, zones, journal, affichage, AB-18 à AB-24). Balayage du camp ami (première action spéciale : commande, résolution, contacts identifiés, brouillon, retour, journal, AB-25 à AB-30). **Rien** côté détection hostile, combat, IA, autres actions spéciales, écran de fin de mission.
+**Branche `main`** : après la PR #37, plus le jalon de fiabilisation des interfaces (tests React et synchronisation documentaire), tant que sa PR n'est pas fusionnée.
+
+**Implémenté et vérifié par des tests** (détail et statuts exigence par exigence : [TRACEABILITY.md](docs/TRACEABILITY.md))
+- Préparation de mission (SF-01), génération de carte par graine, force ennemie créée au lancement (cachée, inerte).
+- Déplacement des unités alliées, activations, cycles ; « Terminer le cycle » termine d'abord l'activation en cours (AB-31) ; une seule unité « en cours » à la fois (tour par tour, SF-03.8).
+- Navigation du porte-avions et victoire à l'arrivée en B.
+- Détection du camp ami : **veille** automatique de fin de cycle (50 % de base, contacts suspects) et **balayage** (action du joueur : 90 %, contacts identifiés), bruit du balayage (+20 points de veille contre l'unité qui a balayé, AB-33), délai de récupération d'un cycle (AB-34, mécanisme commun aux futures actions spéciales).
+- Journal de bord, sauvegarde automatique (`schemaVersion` 4) et reprise.
+- Interface correspondante, avec des tests React sur les parcours principaux.
+
+**Absent** : IA hostile et détection hostile, combat et dégâts, défaite, bilan et débriefing, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), synthèse de cycle, panneau de fiche de contact, planification des déplacements face aux contacts.
+
+**Organisation des tests** (`npm test`, un seul lancement)
+- Tests métier (moteur, store, persistance) : environnement Node, dans un sous-dossier `tests/` du dossier testé. Les tirages se testent avec une probabilité forcée à 0 ou à 1 dans une configuration d'essai, ou sur des centaines de graines avec des bornes larges.
+- Tests d'interface : `src/app/tests/` (`mission-setup-flow`, `tactical-flow`, `resume-flow`), jsdom déclaré fichier par fichier.
+- Pas de seuil de couverture. La CI rejoue lint, format, tests et build.
+
+**Limites techniques connues**
+- jsdom ne permet pas de tester le clic sur la carte, le zoom, le glisser ni le rendu SVG (cases surlignées, tracés, couleurs, pointillés des contacts anciens) : vérification dans un vrai navigateur, ou tests Playwright à envisager plus tard. Le choix de destination d'un déplacement est posé dans le store du brouillon en test.
+- Deux onglets sur la même partie s'écrasent (le dernier écrit gagne). Une sauvegarde n'est faite qu'entre deux séquences complètes.
+- Les validateurs de sauvegarde sont écrits à la main : un champ ajouté à l'état n'est pas contrôlé tant qu'on ne les met pas à jour (recette dans le guide du développeur).
+- L'effet du bruit du balayage sur les unités alliées n'existe qu'avec la détection hostile (D-13) ; il est testé sur des navires hostiles fictifs.
+
+**Derniers changements significatifs** : PR #36 (balayage), PR #37 (revue du propriétaire : fin de cycle, vocabulaire veille / balayage, veille à 50 % avec bruit, délai de récupération, revue du code), jalon de fiabilisation (tests d'interface, documents synchronisés, nom accessible des cartes d'unité).
+
+**PR récentes**
 
 | PR | Contenu | État |
 |---|---|---|
-| #8 | Mise en place du dépôt pour Claude Code (`CLAUDE.md`, `AGENTS.md`) | Fusionnée |
-| #9 | Socle, moteur minimal, préparation, carte, interface tactique | Fusionnée |
-| #10 | `TRACEABILITY.md` | Fusionnée |
-| #11 | Revue des ambiguïtés de la matrice | Fusionnée |
-| #12 | `HANDOFF.md` | Fusionnée |
-| #13 | Moteur : déplacement, activations, cycles | Fusionnée |
-| #14 | Interface du déplacement et des activations | Fusionnée |
-| #15 | Refonte 1/4 : convention de nommage, imports sous un nom, `QUALITE-ET-IMPLEMENTATION.md` | Fusionnée |
-| #16 | Refonte 2/4 : réagencement des features (`components/`, `services/`, `index.ts`), règle ESLint contre les imports profonds | Fusionnée |
-| #17 | Refonte 3/4 : textes du moteur dans `shared/engine.label.ts` | Fusionnée |
-| #18 | Refonte 4/4 : style Google TypeScript (`function` au premier niveau), règle ESLint | Fusionnée |
-| #19 | Arbitrages de la navigation du porte-avions (documents seuls) | Fusionnée |
-| #20 | Jalon 4, PR A : moteur de navigation du porte-avions (ordres, quota, déplacement automatique, victoire à l'arrivée) | Fusionnée |
-| #21 | Jalon 4, PR B : interface de navigation du porte-avions (ordres, point de passage sur la carte, dernière occasion, bandeau de victoire) | Fusionnée |
-| #22 | Jalon 4, PR C1 : module de persistance (format versionné, validation, stockage IndexedDB), sans interface ni store | Fusionnée |
-| #23 | Jalon 4, PR C2 : sauvegarde automatique et reprise (store, bandeau de reprise, état dans la barre du haut) | Fusionnée |
-| #24 | CI GitHub Actions sur les PR vers `main` | Fusionnée |
-| #25 | Retrait de l'export/import manuel JSON de la V1 (AB-10) | Fusionnée |
-| #26 | Noms de fichiers en kebab-case avec suffixes, tests dans `tests/`, `UnitPanel` dans `fleet`, blocs de séparation | Ouverte |
-| #31 | Arbitrage de la force ennemie et des zones de départ (AB-11 à AB-17), documents seuls | Fusionnée |
-| #32 | Jalon 5, PR A : force ennemie au lancement (composition, zones de départ, interception) | Fusionnée |
-| #33 | Arbitrage de la détection de veille, du journal des contacts et de la mer côtière (AB-18 à AB-24), documents seuls | Fusionnée |
-| #34 | Jalon 5, PR B : veille du camp ami (contacts, zones, journal, affichage) | Fusionnée |
+| #32 | Jalon 5, PR A : force ennemie au lancement | Fusionnée |
+| #34 | Jalon 5, PR B : veille du camp ami | Fusionnée |
 | #35 | Arbitrage du balayage (AB-25 à AB-30), documents seuls | Fusionnée |
-| #36 | Jalon 5, PR C : balayage du camp ami (moteur, persistance `schemaVersion` 3, interface) | Ouverte |
+| #36 | Jalon 5, PR C : balayage (moteur, persistance, interface) | Fusionnée |
+| #37 | Revue du propriétaire (AB-31 à AB-34) et revue du code | Fusionnée |
+| #38 | Fiabilisation des interfaces : tests React et synchronisation des documents | Ouverte |
 
-## Pistes pour la suite (à arbitrer avec le propriétaire)
+## Prochain travail
 
-Les jalons de [QUALITE-ET-IMPLEMENTATION.md](docs/architecture/QUALITE-ET-IMPLEMENTATION.md) donnent l'ordre. Sans dépendre de règles ouvertes :
+**IA hostile et combat**, après validation du jalon de fiabilisation. Avant d'écrire du code : arbitrer avec le propriétaire D-13 (détection hostile, discrétion, comportement de l'IA) puis le combat et ses préconditions (D-04, D-05 compléments), la différence Classique / Expert (D-08), le catalogue du journal et le bilan de cycle (D-11, D-12), le chiffrage de l'équilibrage (G-03.1.5). Les arbitrages ouverts sont dans les registres `DECISIONS.md`.
 
-- **Persistance IndexedDB** (AT-02) : PR C1 (module, fusionnée) et C2 (sauvegarde automatique et reprise, fusionnée). La PR C3 (export et import JSON) est **abandonnée** (AB-10).
-- **Refonte du code en quatre PR, l'une après l'autre, chacune depuis `main` à jour** (demandée en revue de la PR #14) :
-  1. convention de nommage et d'import (PR #15, fusionnée) ;
-  2. réagencement des features (PR #16, fusionnée) : chaque feature a `components/`, `services/` (hooks et logique pure) et un `index.ts` des exports publics ; déplacements avec `git mv` ; règle ESLint interdisant les imports profonds entre features ;
-  3. textes du moteur dans `shared/engine.label.ts` (PR #17, fusionnée ; sans import du moteur : objets simples, clés vérifiées côté moteur avec `satisfies`) ;
-  4. (PR #18, fusionnée) style Google TypeScript : `function` au premier niveau, flèches pour les rappels ; règle ESLint, les gestionnaires typés `Handler<'X'>` restant des constantes annotées.
-- **Tests d'interface avec Cypress**, entre les jalons 5 et 6 ; les dépendances `@testing-library/*` et `jsdom` sont retirées dans cette PR.
-
-**Navigation du porte-avions** : faite (PR A moteur, PR B interface). **Persistance (jalon 4, PR C)** : en deux PR. C1 : module `persistence/` (fait, sans interface ; revu pour séparer format, contrat de stockage et IndexedDB). C2 : store, sauvegarde automatique, reprise au démarrage, interface (faite). Le comportement est arbitré (AB-08, voir `PERSISTANCE.md`). Restent ouverts, sans bloquer : vitesse réduite par dégâts et immobilisation définitive (G-03.2.11, avec le combat), forces d'interception (G-03.2.12), bilan de fin (D-12).
-
-**Prochaine étape : combat et IA** (le balayage du jalon 5, PR C, est faite, voir ci-dessous). Restent aussi bloquants (voir les registres `DECISIONS.md`) : chiffrage de la détection du sous-marin côtier (AB-15), génération des zones de veille (D-07), différence Classique / Expert (D-08), préconditions des actions et armes (D-04, D-05 compléments), catalogue du journal et bilan de cycle (D-11, D-12).
-
-## Force ennemie au lancement (jalon 5, première PR) : faite
-
-Plan exécuté, avec ces écarts : pas de clé `hostileCount` (l'effectif découle des configurations, pas de doublon) ; ajout de `GameConfig.ranges` (portées D-05 et G-08.4) pour le test de cohérence d'AB-16 ; `FleetPanel` passe désormais par `observeFriend()`. Détail du plan d'origine :
-
-1. **`GameConfig.missions`** (`engine/config/game.config.ts`) : valeurs d'AB-16 (effectifs, configurations et poids, poids des classes de frégate, ratios de zones et de distances, colonnes de départ). Externaliser `col: 2` et `width - 3` de `generate.service.ts`. Mettre à jour `game.config.test.ts` avec le test de cohérence (distance minimale > portée d'arme maximale + portée de balayage de détection).
-2. **Composition** : `engine/units/hostile-force.service.ts` → tirage de la configuration puis des classes de frégate, via `createRng`, ordre des tirages : carte, composition, classes, positions.
-3. **Placement** : fonction de zone par scénario (bande est ; partie centrale avec distances à A et B), sur hexagones libres navigables pour le type, échec explicite si impossible. Alliés : point de départ allié de lutte navale lu dans la configuration.
-4. **Intégration** : `launch.service.ts` → `launchMission()` ajoute les unités `hostile` (identifiants `hostile-<classe>-<n>`) ; vérifier que `observeFriend()` les masque, que le validateur de sauvegarde (`persistence/format/save.validator.ts`) accepte des unités hostiles, et que `schemaVersion` reste inchangé (aucun tirage en cours de partie). Mettre à jour le commentaire de `launchMission()`.
-5. **Tests** (dans des sous-dossiers `tests/`) : déterminisme par graine ; sur 200 graines, trois ennemis, positions dans la zone, navigables pour leur type, distances minimales respectées, aucune case occupée deux fois, quatre configurations toutes obtenues ; l'interface ne reçoit aucun ennemi (fog-of-war) ; pas de changement de la navigabilité du sous-marin (AB-15 attend le chiffrage de la détection).
-6. **Hors périmètre** : IA (D-13, fichiers `engine/ai/*.ai.service.ts` plus tard), détection, combat, bonus du sous-marin côtier, équilibrage (G-03.1.5).
-7. **Conventions à rappeler** : nommage `nom.categorie.ts`, complexité ≤ 10, commentaire sur chaque fonction non triviale, aucune valeur de jeu en dur, mise à jour de `TRACEABILITY.md` et de `HANDOFF.md`.
-
-## Veille (jalon 5, PR A) : faite
-
-Plan exécuté, avec ces écarts : `ShipSpec.detection` (capteurs par classe, `null` pour le porte-avions) remplace un tableau séparé, `GameConfig.weaponRanges` ne garde que les armes, `constraints.sensorsFactor` porte les capteurs dégradés ; les contacts du camp ami sont dans `MissionState.friendContacts` (ceux de l'IA viendront à part) ; `createRng` renvoie un `StatefulRng` (`state()`, `restoreRng()`).
-
-- **Moteur** : `engine/detection/` (`contact.types.ts`, `watch-zone.service.ts`, `watch-sensor.service.ts`), branché dans `resolveCycleEnd()` après la navigation du porte-avions.
-- **Hasard et sauvegarde** : `rngState` dans la mission, `schemaVersion` 2, validation des contacts ; une sauvegarde de version 1 est traitée comme absente (AB-24).
-- **Interface** : `ContactOverlay` (zone ambre, contour, étiquette), légende de case, journal. Vérifié dans le navigateur avec une sauvegarde fabriquée ; aucun test d'interface (Cypress plus tard).
-- **Navigabilité** : le sous-marin entre en mer côtière (AB-15, AB-22) ; les ennemis peuvent donc y partir.
-- **Reste** : balayage (PR B, avec l'action spéciale), détection hostile (avec l'IA), état « ancien », synthèse de cycle, panneau de fiche, porte-avions non détecteur (`PROPOSÉ`).
-
-## Balayage (jalon 5, PR C) : faite
-
-Plan exécuté, avec ces écarts et précisions :
-
-- **Contacts** : `Contact` est une union discriminée par `kind` (`suspect` avec `zone`, `identified` avec `targetType` et `position`), avec la cible interne `source` dans l'état réel. La projection amie (`FriendContact`, dans `engine/detection/contact.types.ts`) est construite en **liste blanche** champ par champ (`toFriendContact()`), donc un champ interne ajouté plus tard ne fuit pas ; elle calcule `stale` (« ancien ») pour les identifiés, l'interface ne compare jamais de cycles.
-- **Moteur** : `engine/detection/sweep.service.ts` (`resolveSweep()`, `effectiveSweepRange()`, `sweepArea()` pour les cases surlignées), `sensor-range.service.ts` (portée effective, capteurs dégradés, partagée avec la veille). `FriendObservation.constraints` donne à l'interface la portée sans lire l'état réel. Préconditions dans `missions/activation.service.ts` (`specialActionBlocker()`, motifs `SPECIAL_ACTION_USED` et `NO_SENSORS`, après les motifs d'ordre : porte-avions et hostiles reçoivent `NOT_ACTIVABLE`). L'événement `SWEEP_PERFORMED` porte `unitId`, `shipClass` et `identified` (identifiant, type, position).
-- **Persistance** : `schemaVersion` 3, validateurs de contacts (forme, cible hostile existante, un identifié par navire), de `specialActionUsed` et de l'événement. Une sauvegarde n'est faite qu'entre deux séquences : une recherche laisse l'activation « en cours », elle ne se sauvegarde donc qu'une fois l'activation terminée.
-- **Interface** : `store/sweep-draft.store.ts`, `store/sweep-result.store.ts` (retour de 4 secondes, `SweepResultToast`), `use-sweep-draft.ts`, `SweepBar`, `SweepOverlay`, `SweepButton` dans `UnitPanel` ; un seul brouillon à la fois (déplacement, ordre de navigation et recherche s'annulent mutuellement) ; teintes dans `palette.contactTints`, `contact-tint.service.ts`. Contact identifié : case rouge, silhouette du type (`assets.contactTargetIcon`) retournée horizontalement, « F C-n » / « SM C-n » au-dessus (demande du propriétaire en revue, remplace le badge seul d'AB-30). Vérifié dans le navigateur avec une sauvegarde fabriquée (contacts anciens, identifiés, zones, teintes, brouillon conservé en consultant une autre unité, retour, journal, bouton désactivé après usage) ; aucun test d'interface (Cypress plus tard).
-- **Tests** : moteur (`sweep.service.test.ts`, `sweep-command.test.ts`, projection, veille), persistance, libellés, teintes, actions du store. Les statistiques utilisent 500 à 3000 tirages et des bornes larges.
-- **Reste** : détection et IA hostiles, discrétion de l'émetteur, planification des déplacements face aux contacts (AB-30), panneau de fiche, synthèse de cycle, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), porte-avions non détecteur (`PROPOSÉ`). Le retour de 4 secondes s'affiche en haut au centre : placement à confirmer à l'usage.
-
-## Revue du code après la PR C : faite
-
-À la demande du propriétaire (lisibilité pour des développeurs juniors, SOLID, commentaires avec exemples) :
-
-- **Guide** : [docs/architecture/GUIDE-DEVELOPPEUR.md](docs/architecture/GUIDE-DEVELOPPEUR.md) (carte du code, chemin d'une action, recettes d'ajout, glossaire). À lire en premier par un nouveau développeur.
-- **Responsabilité unique** : `save.validator.ts` découpé (état, unités, contacts, journal) ; `UnitPanel` (fiche) séparé de `UnitCommands` (boutons) ; `TacticalMap` séparé de `map-layers` et `map-controls` ; la liste des brouillons n'existe plus qu'à un endroit (`store/cancel-drafts.service.ts`).
-- **Ouvert / fermé** : `labels.eventLabel` (un texte par type d'événement, le type `Record` impose de tous les décrire) remplace le `switch` du journal ; le mécanisme de délai de récupération est commun à toutes les actions spéciales.
-- **Pas de doublon** : `occupiedByOthers()` (déplacement), `Problem` et `firstProblem` (validateurs).
-- **Aucune valeur de jeu en dur** : paramètres de génération de la carte déplacés dans `GameConfig.map.generation`.
-- **Commentaires** : exemples chiffrés sur la géométrie, la carte, le budget, les unités, les blocages, le déplacement et le porte-avions ; en-têtes de module (`game.types.ts`, `cycle.service.ts`, `engine/index.ts`, `game.store.ts`).
-- **Mesure** : aucune fonction au-dessus de la complexité conseillée (5) hors tests (5 l'étaient avant la revue, jusqu'à 8) ; aucune au-dessus de 10.
-- **Non fait volontairement** : `growShape` / `placeShape` restent dans `hex.service.ts` (formes aléatoires sur grille, utilisées par la veille) ; les gestionnaires `Handler` de la préparation et de la mission ne sont pas fusionnés (états différents) ; les assistants de test (`make`, `mission`) restent dupliqués par fichier de test, pour garder chaque test lisible seul.
+**Avant de modifier le code** : lire le guide du développeur, respecter les conventions ci-dessous (nommage des fichiers, complexité, commentaires, aucune valeur de jeu en dur, hasard injecté), ajouter les tests (métier, et d'interface si un parcours change), puis mettre à jour `TRACEABILITY.md` et ce document.
 
 ## Pièges techniques rencontrés
 
@@ -205,6 +154,7 @@ Plan exécuté, avec ces écarts et précisions :
 - **Contacts et `source`** : `source` est interne. Ne jamais sérialiser `mission.friendContacts` vers l'interface, un événement ou un message : passer par `observeFriend()`. Un test dédié (`sweep-command.test.ts`, `save-format.service.test.ts`) vérifie la projection, les événements et le journal sauvegardé.
 - **Ne jamais citer un identifiant de commit avant le push** : dans une réponse de revue, utiliser le hash réel renvoyé par le push (une erreur a obligé à poster des corrections).
 - Fichiers temporaires et captures dans le dossier scratchpad de la session, jamais dans le dépôt.
+- **Tests d'interface (jsdom)** : MUI ferme ses dialogues avec une animation, et tant qu'elle dure le reste de la page est masqué aux requêtes par rôle : attendre la disparition (`waitFor`) avant de lire la page. Le nom accessible d'une carte d'unité contient son état (« Frégate DA, Disponible »). `document.elementFromPoint` n'existe pas dans jsdom : la carte n'est pas cliquable en test.
 
 ## Commandes
 
