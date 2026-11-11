@@ -31,15 +31,24 @@ export const MOVE_REFUSAL_MESSAGES = labelEngine.moveRefusalMessages satisfies R
 export type MovePlan = { ok: true; path: Hex[] } | { ok: false; reason: MoveRefusal };
 
 /**
+ * Indices (voir `indexOf`) des cases occupées par une autre unité que `unit`. Partagé par le calcul
+ * des cases accessibles et par le parcours réel d'un déplacement : une même définition de
+ * « occupée » pour les deux.
+ */
+function occupiedByOthers(field: Battlefield, unit: Unit): Set<number> {
+  return new Set(
+    field.units.filter((u) => u.id !== unit.id).map((u) => indexOf(field.map, u.position)),
+  );
+}
+
+/**
  * Cases où l'unité peut entrer : terrain navigable pour sa catégorie et libre de toute autre
  * unité. Une case occupée est infranchissable, pas seulement interdite comme destination
  * (SF-02 §2 : une seule unité navale par hexagone, y compris pendant les déplacements).
  */
 function enterable(field: Battlefield, unit: Unit, config: GameConfig): (hex: Hex) => boolean {
   const category = config.ships[unit.shipClass].category;
-  const occupied = new Set(
-    field.units.filter((u) => u.id !== unit.id).map((u) => indexOf(field.map, u.position)),
-  );
+  const occupied = occupiedByOthers(field, unit);
   return (hex) =>
     isNavigable(terrainAt(field.map, hex), category) && !occupied.has(indexOf(field.map, hex));
 }
@@ -87,9 +96,7 @@ export function checkMovedUnitPath(
   unit: Unit,
   path: readonly Hex[],
 ): { stop: Hex; interrupted: boolean } {
-  const occupied = new Set(
-    field.units.filter((u) => u.id !== unit.id).map((u) => indexOf(field.map, u.position)),
-  );
+  const occupied = occupiedByOthers(field, unit);
   const blockedAt = path.findIndex((hex, i) => i > 0 && occupied.has(indexOf(field.map, hex)));
   if (blockedAt === -1) return { stop: path[path.length - 1] as Hex, interrupted: false };
   return { stop: path[blockedAt - 1] as Hex, interrupted: true };

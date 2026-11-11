@@ -1,8 +1,6 @@
-import { useCarrierOrderDraftStore } from './carrier-order-draft.store';
+import { cancelAllDrafts } from './cancel-drafts.service';
 import { useGameStore } from './game.store';
-import { useMoveDraftStore } from './move-draft.store';
 import { useSaveStore } from './save.store';
-import { useSweepDraftStore } from './sweep-draft.store';
 import { useSweepResultStore } from './sweep-result.store';
 import { useSelectionStore } from './selection.store';
 
@@ -15,9 +13,7 @@ export function resumeSavedGame(): void {
   if (!found) return;
   useGameStore.getState().restore(found.state, found.events);
   useSaveStore.getState().dismissFound();
-  useMoveDraftStore.getState().cancelDraft();
-  useCarrierOrderDraftStore.getState().cancelDraft();
-  useSweepDraftStore.getState().cancelDraft();
+  cancelAllDrafts();
   useSweepResultStore.getState().clear();
   useSelectionStore.getState().selectUnit(null);
   useSelectionStore.getState().selectHex(null);

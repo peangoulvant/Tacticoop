@@ -1,5 +1,5 @@
 import * as engine from '../../../engine';
-import { useCarrierOrderDraftStore } from '../../../store/carrier-order-draft.store';
+import { cancelAllDrafts } from '../../../store/cancel-drafts.service';
 import { dispatchAndCloseDrafts } from '../../../store/dispatch-and-close-drafts.service';
 import { useGameStore } from '../../../store/game.store';
 import { useMoveDraftStore } from '../../../store/move-draft.store';
@@ -21,15 +21,13 @@ export function endCycleEarly(): void {
 
 /** Prépare un déplacement ; un seul brouillon à la fois, les autres sont abandonnés. */
 export function startMoveDraft(unitId: string): void {
-  useCarrierOrderDraftStore.getState().cancelDraft();
-  useSweepDraftStore.getState().cancelDraft();
+  cancelAllDrafts();
   useMoveDraftStore.getState().startDraft(unitId);
 }
 
 /** Prépare un balayage ; un seul brouillon à la fois, les autres sont abandonnés. */
 export function startSweepDraft(unitId: string): void {
-  useCarrierOrderDraftStore.getState().cancelDraft();
-  useMoveDraftStore.getState().cancelDraft();
+  cancelAllDrafts();
   useSweepDraftStore.getState().startDraft(unitId);
 }
 
@@ -53,9 +51,7 @@ export function confirmSweep(unitId: string): void {
  */
 export function closeMission(): void {
   useGameStore.getState().reset();
-  useMoveDraftStore.getState().cancelDraft();
-  useCarrierOrderDraftStore.getState().cancelDraft();
-  useSweepDraftStore.getState().cancelDraft();
+  cancelAllDrafts();
   useSweepResultStore.getState().clear();
   useSelectionStore.getState().selectUnit(null);
   useSelectionStore.getState().selectHex(null);
