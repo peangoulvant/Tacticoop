@@ -96,7 +96,9 @@ Le workflow `.github/workflows/ci.yml` s'exécute à chaque Pull Request vers `m
 
 Priorité aux tests unitaires du moteur : commandes et erreurs, calculs de déplacement, contacts et observations filtrées, combat, transitions et conditions terminales selon les règles fonctionnelles.
 
-Compléter par des tests de persistance (validation, reprise) et quelques tests d'intégration des parcours critiques. Les tirages aléatoires doivent être contrôlables dans les tests. Ne pas tester des règles non encore arbitrées.
+Compléter par des tests de persistance (validation, reprise) et des tests d'interface des parcours critiques.
+
+**Tests d'interface :** Vitest, React Testing Library, `@testing-library/user-event` et jsdom, dans `src/app/tests/*.test.tsx` ; jsdom est déclaré fichier par fichier (`// @vitest-environment jsdom`), l'environnement par défaut étant Node. Ils vérifient ce que l'utilisateur observe (rôles et noms accessibles, conséquences d'une interaction), sans snapshot ni temporisation, et ne dupliquent pas les tests du moteur. Ce que jsdom ne peut pas reproduire (carte, SVG, zoom, glisser) relève d'un vrai navigateur ; aucun framework E2E n'est installé en V1, Playwright pourra être ajouté ensuite pour ces cas. Les tirages aléatoires doivent être contrôlables dans les tests. Ne pas tester des règles non encore arbitrées.
 
 ## Progression de développement
 
