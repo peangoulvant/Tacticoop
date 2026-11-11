@@ -9,14 +9,20 @@ export interface GameMap {
   terrain: readonly Terrain[];
 }
 
+/**
+ * Position d'un hexagone dans le tableau `terrain`, rangé ligne par ligne.
+ * Exemple : sur une carte de largeur 35, l'hexagone (col 4, ligne 2) est à l'indice 2 × 35 + 4 = 74.
+ */
 export function indexOf(map: Pick<GameMap, 'width'>, hex: Hex): number {
   return hex.row * map.width + hex.col;
 }
 
+/** L'hexagone est dans la carte (colonne et ligne entre 0 et la dimension moins 1). */
 export function inBounds(map: Pick<GameMap, 'width' | 'height'>, hex: Hex): boolean {
   return hex.col >= 0 && hex.col < map.width && hex.row >= 0 && hex.row < map.height;
 }
 
+/** Terrain d'un hexagone. L'hexagone doit être dans la carte (voir `inBounds`). */
 export function terrainAt(map: GameMap, hex: Hex): Terrain {
   return map.terrain[indexOf(map, hex)] as Terrain;
 }

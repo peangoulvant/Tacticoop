@@ -60,6 +60,7 @@ export function initialCarrierNavigation(mission: MissionKind): CarrierNavigatio
     : null;
 }
 
+/** Le porte-avions de la mission, ou `undefined` en lutte navale (il n'y en a pas). */
 export function carrierOf(units: readonly Unit[]): Unit | undefined {
   return units.find((unit) => unit.shipClass === 'carrier');
 }
@@ -82,7 +83,13 @@ export function waypointRefusal(
   return shortestPath(map, carrier.position, waypoint, category) ? null : 'NO_PATH';
 }
 
-/** Nouvel état de navigation après un ordre accepté : le quota du cycle est consommé. */
+/**
+ * Nouvel état de navigation après un ordre accepté : le quota du cycle est consommé.
+ *
+ * Exemples : « Stopper » met le mode à `stop` (le porte-avions reste en place jusqu'à un nouvel
+ * ordre) ; « Modifier l'itinéraire » vers (12, 8) fixe ce point de passage et remet le mode à
+ * `continue` : il s'y rendra, puis repartira vers B.
+ */
 export function applyOrder(
   carrierNavigation: CarrierNavigation,
   order: CarrierOrder,

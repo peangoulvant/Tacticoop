@@ -181,6 +181,19 @@ Plan exécuté, avec ces écarts et précisions :
 - **Tests** : moteur (`sweep.service.test.ts`, `sweep-command.test.ts`, projection, veille), persistance, libellés, teintes, actions du store. Les statistiques utilisent 500 à 3000 tirages et des bornes larges.
 - **Reste** : détection et IA hostiles, discrétion de l'émetteur, planification des déplacements face aux contacts (AB-30), panneau de fiche, synthèse de cycle, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), porte-avions non détecteur (`PROPOSÉ`). Le retour de 4 secondes s'affiche en haut au centre : placement à confirmer à l'usage.
 
+## Revue du code après la PR C : faite
+
+À la demande du propriétaire (lisibilité pour des développeurs juniors, SOLID, commentaires avec exemples) :
+
+- **Guide** : [docs/architecture/GUIDE-DEVELOPPEUR.md](docs/architecture/GUIDE-DEVELOPPEUR.md) (carte du code, chemin d'une action, recettes d'ajout, glossaire). À lire en premier par un nouveau développeur.
+- **Responsabilité unique** : `save.validator.ts` découpé (état, unités, contacts, journal) ; `UnitPanel` (fiche) séparé de `UnitCommands` (boutons) ; `TacticalMap` séparé de `map-layers` et `map-controls` ; la liste des brouillons n'existe plus qu'à un endroit (`store/cancel-drafts.service.ts`).
+- **Ouvert / fermé** : `labels.eventLabel` (un texte par type d'événement, le type `Record` impose de tous les décrire) remplace le `switch` du journal ; le mécanisme de délai de récupération est commun à toutes les actions spéciales.
+- **Pas de doublon** : `occupiedByOthers()` (déplacement), `Problem` et `firstProblem` (validateurs).
+- **Aucune valeur de jeu en dur** : paramètres de génération de la carte déplacés dans `GameConfig.map.generation`.
+- **Commentaires** : exemples chiffrés sur la géométrie, la carte, le budget, les unités, les blocages, le déplacement et le porte-avions ; en-têtes de module (`game.types.ts`, `cycle.service.ts`, `engine/index.ts`, `game.store.ts`).
+- **Mesure** : 3 fonctions au-dessus de la complexité conseillée (5) restent à 6 ou 7 ; aucune au-dessus de 10.
+- **Non fait volontairement** : `growShape` / `placeShape` restent dans `hex.service.ts` (formes aléatoires sur grille, utilisées par la veille) ; les gestionnaires `Handler` de la préparation et de la mission ne sont pas fusionnés (états différents) ; les assistants de test (`make`, `mission`) restent dupliqués par fichier de test, pour garder chaque test lisible seul.
+
 ## Pièges techniques rencontrés
 
 - **MUI 9** : les props système (`fontWeight`, `justifyContent`, `alignItems`…) ne sont plus acceptées, utiliser `sx`. Un `Typography` contenant un `Chip` doit être rendu en `div`. Les `StepButton` du stepper ont le rôle `tab`.

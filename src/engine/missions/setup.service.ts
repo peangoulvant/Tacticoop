@@ -6,6 +6,7 @@ import {
 } from '../config/game.config';
 import { type Rng, shuffle } from '../core/rng.service';
 
+/** Types de mission jouables : lutte navale (éliminer l'ennemi) et escorte du porte-avions. */
 export type MissionKind = 'naval_combat' | 'escort';
 export type Difficulty = 'classic' | 'expert';
 export type Constraint = 'limited_means' | 'limited_ammo' | 'degraded_sensors' | 'bad_weather';
@@ -27,6 +28,7 @@ export interface MissionSetup {
   force: Record<PurchasableShipClass, number>;
 }
 
+/** Force navale vide : zéro bâtiment de chaque classe achetable. */
 export function emptyForce(): Record<PurchasableShipClass, number> {
   return {
     fremm: 0,
@@ -36,6 +38,7 @@ export function emptyForce(): Record<PurchasableShipClass, number> {
   };
 }
 
+/** Choix par défaut à l'ouverture de l'écran de préparation (SF-01). */
 export function initialSetup(): MissionSetup {
   return {
     mission: 'escort',
@@ -54,6 +57,12 @@ export interface Budget {
   overrun: number;
 }
 
+/**
+ * Budget de la préparation : total (réduit par « Moyens limités »), points engagés, restants et
+ * dépassement. Exemple : avec 100 points, une FREMM (35) et une frégate DA (25) engagent 60 points ;
+ * il reste 40. Si « Moyens limités » ramène le total à 70 alors que 90 sont engagés, le dépassement
+ * est de 20 et le lancement est bloqué.
+ */
 export function computeBudget(setup: MissionSetup, config: GameConfig): Budget {
   const total = setup.constraints.includes('limited_means')
     ? config.budget.limitedMeans
@@ -70,6 +79,7 @@ export function computeBudget(setup: MissionSetup, config: GameConfig): Budget {
   };
 }
 
+/** Nombre total de bâtiments achetés, toutes classes confondues. */
 export function shipCount(setup: MissionSetup): number {
   return PURCHASABLE_CLASSES.reduce((sum, cls) => sum + setup.force[cls], 0);
 }

@@ -8,6 +8,7 @@ Commencer par [ARCHITECTURE-V1.md](ARCHITECTURE-V1.md), qui résume les choix va
 | [STRUCTURE.md](STRUCTURE.md) | Modules, arborescence et dépendances |
 | [MOTEUR-ET-ETAT.md](MOTEUR-ET-ETAT.md) | `GameState`, Zustand, `executeCommand`, observations |
 | [PERSISTANCE.md](PERSISTANCE.md) | IndexedDB : sauvegarde automatique et reprise |
+| [GUIDE-DEVELOPPEUR.md](GUIDE-DEVELOPPEUR.md) | Carte du code, chemin d'une action, recettes d'ajout, glossaire (point d'entrée des nouveaux développeurs) |
 | [QUALITE-ET-IMPLEMENTATION.md](QUALITE-ET-IMPLEMENTATION.md) | SOLID, conventions, tests et jalons |
 
 **Périmètre :** décisions d'architecture uniquement. Le [Game Design](../game-design/README.md), les [spécifications fonctionnelles](../functional-specs/README.md) et leur [registre de décisions](../functional-specs/DECISIONS.md) font autorité sur le gameplay.

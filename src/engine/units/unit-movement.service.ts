@@ -53,7 +53,12 @@ function enterable(field: Battlefield, unit: Unit, config: GameConfig): (hex: He
     isNavigable(terrainAt(field.map, hex), category) && !occupied.has(indexOf(field.map, hex));
 }
 
-/** Destinations accessibles à l'unité dans sa capacité de mouvement, en ordre déterministe. */
+/**
+ * Destinations accessibles à l'unité dans sa capacité de mouvement, en ordre déterministe : les
+ * cases navigables et libres atteignables en au plus `unit.movement` pas, sans traverser une
+ * autre unité. Exemple : une frégate de mouvement 3 en mer ouverte atteint les 36 cases à
+ * distance 1, 2 ou 3 ; un obstacle en réduit le nombre.
+ */
 export function reachableHexes(field: Battlefield, unit: Unit, config: GameConfig): Hex[] {
   const reached = exploreFrom(
     field.map,
@@ -67,6 +72,10 @@ export function reachableHexes(field: Battlefield, unit: Unit, config: GameConfi
     .map((key) => hexFromIndex(field.map, key));
 }
 
+/**
+ * Motif de refus de la destination elle-même (même case, terrain interdit, case occupée), ou
+ * `null`. Les motifs de trajet (« hors de portée », « aucun chemin ») sont décidés par `planMove`.
+ */
 function destinationRefusal(
   field: Battlefield,
   unit: Unit,

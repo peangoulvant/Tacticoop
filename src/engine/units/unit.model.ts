@@ -58,6 +58,14 @@ export function initialActivation(side: Side, category: NavalCategory): Activati
   return side === 'friend' && category !== 'carrier' ? 'available' : 'not_activable';
 }
 
+/**
+ * Crée une unité à sa dotation de départ, d'après la fiche de sa classe dans `GameConfig` et les
+ * contraintes de la mission.
+ *
+ * Exemple : une frégate DA (6 missiles) avec « Stocks de munitions limités » (facteur 0,7) reçoit
+ * 4 missiles (6 × 0,7 = 4,2 arrondi à l'inférieur) ; avec « Météo défavorable » son déplacement de
+ * 3 est plafonné à 2. Le porte-avions n'est jamais plafonné.
+ */
 export function createUnit(
   id: string,
   side: Side,

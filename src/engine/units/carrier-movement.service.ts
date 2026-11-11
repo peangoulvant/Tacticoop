@@ -50,7 +50,11 @@ export function plannedRoute(
   return routeThrough(mission.map, category, carrier.position, checkpoints);
 }
 
-/** Hexagones que le porte-avions franchit : au plus `movement`, arrêt avant une case occupée. */
+/**
+ * Hexagones que le porte-avions franchit : au plus `movement`, arrêt avant une case occupée.
+ * Exemple : avec un mouvement de 2 et une route A, c1, c2, c3, il franchit c1 et c2 ; si c2 est
+ * occupée par un navire, il n'avance que de c1 (l'ordre reste en vigueur).
+ */
 function freeSteps(mission: MissionState, route: readonly Hex[], movement: number): Hex[] {
   const occupied = new Set(mission.units.map((unit) => indexOf(mission.map, unit.position)));
   const steps: Hex[] = [];

@@ -1,3 +1,19 @@
+/*
+ * Types centraux du moteur : l'état de la partie, les commandes que le joueur peut envoyer, les
+ * événements que le moteur produit et les erreurs qu'il renvoie.
+ *
+ * Le moteur est une fonction pure : `executeCommand(état, commande, config)` renvoie soit
+ * `{ ok: true, state, events }` (nouvel état et événements du journal), soit
+ * `{ ok: false, error }` (refus, sans nouvel état). L'état reçu n'est jamais modifié.
+ *
+ *   commande ──► executeCommand ──► gestionnaire de la commande ──► règles (units/, detection/…)
+ *                                          │
+ *                                          └─► CommandResult { ok, state, events } ou { ok: false, error }
+ *
+ * Exemple : { type: 'MOVE_UNIT', unitId: 'friend-fremm-1', destination: { col: 4, row: 2 } }
+ * accepté produit un état où la FREMM est en (4, 2) et l'événement UNIT_MOVED.
+ */
+
 import type { PurchasableShipClass, ShipClass } from '../config/game.config';
 import type { Contact, Identification } from '../detection/contact.types';
 import type { GameMap } from '../map/game-map.service';

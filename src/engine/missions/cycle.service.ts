@@ -1,3 +1,13 @@
+/*
+ * Cycle tactique (SF-03, G-06) : un cycle est une suite d'activations des unités alliées, puis la
+ * clôture (navigation du porte-avions, veille, résultat) et l'ouverture du cycle suivant.
+ *
+ *   activations des unités ──► clôture : `closeCycle`
+ *                                  1. `resolveCycleEnd`  (porte-avions, veille)
+ *                                  2. `determineOutcome` (victoire ?)
+ *                                  3. fin de mission, ou `startNextCycle`
+ */
+
 import type { GameConfig } from '../config/game.config';
 import type { MissionState, Progress } from '../core/game.types';
 import { resolveWatch } from '../detection/watch-sensor.service';
@@ -5,15 +15,17 @@ import type { Unit } from '../units/unit.model';
 import { hasCarrierArrived, moveCarrier } from '../units/carrier-movement.service';
 import type { MissionOutcome } from '../units/carrier-orders.service';
 
-/** Une unité alliée peut encore recevoir des ordres ce cycle. */
+/** Une unité alliée peut encore recevoir des ordres ce cycle (« disponible » ou « en cours »). */
 function isPending(unit: Unit): boolean {
   return unit.activation === 'available' || unit.activation === 'in_progress';
 }
 
+/** Il reste au moins une unité à activer : le cycle ne se clôt pas tout seul. */
 export function hasPendingActivation(units: readonly Unit[]): boolean {
   return units.some(isPending);
 }
 
+/** Une unité a commencé son activation (un ordre exécuté) sans l'avoir terminée. */
 export function hasActivationInProgress(units: readonly Unit[]): boolean {
   return units.some((unit) => unit.activation === 'in_progress');
 }

@@ -41,7 +41,7 @@ Le module sépare trois responsabilités, une par dossier ou fichier, derrière 
 | Responsabilité | Fichier | Rôle |
 |---|---|---|
 | Format et validation | `format/save-format.service.ts` | version, codes d'erreur, `serializeSave()`, `parseSave()` |
-| | `format/save.validator.ts`, `format/guards.validator.ts` | contrôles de l'état et du journal (internes au dossier) |
+| | `format/save.validator.ts`, `format/unit.validator.ts`, `format/contact.validator.ts`, `format/event.validator.ts`, `format/guards.validator.ts` | contrôles de l'état, des unités, des contacts et du journal, avec les gardes communes (internes au dossier) |
 | Contrat de stockage | `storage/save-storage.types.ts` | interface `SaveStorage` (lire, écrire, effacer), sans implémentation |
 | Stockage IndexedDB | `storage/indexed-db-storage.service.ts` | implémentation native, confirmée à la fin de la transaction ; la connexion est rouverte si le navigateur la ferme |
 

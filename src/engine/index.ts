@@ -1,4 +1,12 @@
-/** API publique du moteur : le reste de l'application n'importe que depuis ce module. */
+/**
+ * API publique du moteur : le reste de l'application (interface, store, persistance) n'importe que
+ * depuis ce module, sous le nom `engine` (`import * as engine from '../../engine'`). Ce qui n'est
+ * pas exporté ici est interne au moteur.
+ *
+ * Repères : `executeCommand` est le point d'entrée ; `observeFriend` donne à l'interface ce que le
+ * joueur a le droit de savoir (jamais l'état réel) ; `defaultConfig` porte toutes les valeurs du
+ * jeu.
+ */
 export { executeCommand } from './core/execute-command.service';
 export type {
   CommandResult,
