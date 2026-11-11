@@ -75,7 +75,7 @@ La déclarer dans l'interface de `GameConfig`, lui donner sa valeur dans `defaul
 | Balayage | Détection **voulue** par le joueur (action spéciale) : un tirage à 90 % par navire hostile à portée, qui donne un *contact identifié* (type et position exacte). Fait du bruit : +20 points de veille contre l'unité, ce cycle. Récupération d'un cycle. |
 | Contact suspect | Zone approximative de 7 hexagones au plus ; elle ne désigne pas la case réelle. |
 | Contact identifié | Navire repéré avec son type (frégate ou sous-marin, jamais la classe) et sa position exacte à l'instant du balayage ; « ancien » s'il date d'un cycle précédent. |
-| Projection amie | `observeFriend(mission)` : ce que le joueur a le droit de savoir. |
+| Projection amie / hostile | `observeFriend(mission)` : ce que le joueur a le droit de savoir ; `observeHostile(mission)` : ce que l'IA a le droit de savoir (ses unités et ses propres contacts). Chaque camp a ses contacts (`friendContacts`, `hostileContacts`). |
 | Brouillon | Action en préparation, pas encore confirmée ; sans effet sur l'état du jeu. |
 | `source` | Identifiant interne de la cible d'un contact. Jamais exposé. |
 
