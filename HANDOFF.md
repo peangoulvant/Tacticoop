@@ -135,6 +135,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | #35 | Arbitrage du balayage (AB-25 à AB-30), documents seuls | Fusionnée |
 | #36 | Jalon 5, PR C : balayage (moteur, persistance, interface) | Fusionnée |
 | #37 | Revue du propriétaire (AB-31 à AB-34) et revue du code | Fusionnée |
+| #38 | Fiabilisation des interfaces : tests React et synchronisation des documents | Ouverte |
 
 ## Prochain travail
 
