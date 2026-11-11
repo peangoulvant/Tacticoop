@@ -191,7 +191,7 @@ Plan exécuté, avec ces écarts et précisions :
 - **Pas de doublon** : `occupiedByOthers()` (déplacement), `Problem` et `firstProblem` (validateurs).
 - **Aucune valeur de jeu en dur** : paramètres de génération de la carte déplacés dans `GameConfig.map.generation`.
 - **Commentaires** : exemples chiffrés sur la géométrie, la carte, le budget, les unités, les blocages, le déplacement et le porte-avions ; en-têtes de module (`game.types.ts`, `cycle.service.ts`, `engine/index.ts`, `game.store.ts`).
-- **Mesure** : 3 fonctions au-dessus de la complexité conseillée (5) restent à 6 ou 7 ; aucune au-dessus de 10.
+- **Mesure** : aucune fonction au-dessus de la complexité conseillée (5) hors tests (5 l'étaient avant la revue, jusqu'à 8) ; aucune au-dessus de 10.
 - **Non fait volontairement** : `growShape` / `placeShape` restent dans `hex.service.ts` (formes aléatoires sur grille, utilisées par la veille) ; les gestionnaires `Handler` de la préparation et de la mission ne sont pas fusionnés (états différents) ; les assistants de test (`make`, `mission`) restent dupliqués par fichier de test, pour garder chaque test lisible seul.
 
 ## Pièges techniques rencontrés

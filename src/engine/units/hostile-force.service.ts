@@ -111,12 +111,13 @@ function candidateHexes(
   category: NavalCategory,
   taken: ReadonlySet<number>,
 ): Hex[] {
+  const isFree = (hex: Hex) =>
+    !taken.has(indexOf(map, hex)) && isNavigable(terrainAt(map, hex), category);
   const candidates: Hex[] = [];
   for (let row = 0; row < map.height; row++) {
     for (let col = zone.fromCol; col <= zone.toCol; col++) {
       const hex = { col, row };
-      const free = !taken.has(indexOf(map, hex)) && isNavigable(terrainAt(map, hex), category);
-      if (free && farEnough(hex, zone.minDistances)) candidates.push(hex);
+      if (isFree(hex) && farEnough(hex, zone.minDistances)) candidates.push(hex);
     }
   }
   return candidates;

@@ -19,8 +19,8 @@ import { endCycleEarly } from '../services/command-actions.service';
 function lossWarning(remaining: number, inProgress: number): string {
   const closing = inProgress > 0 ? 'L’activation en cours sera terminée. ' : '';
   if (remaining === 0) return `${closing}Le cycle suivant va s’ouvrir.`;
-  const units = remaining > 1 ? `${remaining} unités n’ont` : '1 unité n’a';
-  return `${closing}${units} pas été activée${remaining > 1 ? 's' : ''} : leurs activations seront perdues.`;
+  if (remaining === 1) return `${closing}1 unité n’a pas été activée : son activation sera perdue.`;
+  return `${closing}${remaining} unités n’ont pas été activées : leurs activations seront perdues.`;
 }
 
 /**
