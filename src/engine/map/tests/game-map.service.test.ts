@@ -48,6 +48,7 @@ describe('cartes de scénario', () => {
       35,
       createRng(9),
       NAVAL.alliedStartColumnRatio,
+      defaultConfig.map.generation,
     );
     expect(goal).toBeNull();
     expect(isNavigable(terrainAt(map, start), 'submarine')).toBe(true);
@@ -61,6 +62,7 @@ describe('cartes de scénario', () => {
       createRng(9),
       ESCORT.startColumnRatio,
       ESCORT.goalColumnRatio,
+      defaultConfig.map.generation,
     );
     expect(isNavigable(terrainAt(map, goal), 'carrier')).toBe(true);
     expect(shortestPath(map, start, goal, 'carrier')).not.toBeNull();

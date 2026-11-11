@@ -37,3 +37,22 @@ export function isHexOn(
 ): value is engine.Hex {
   return isHex(value) && value.col < map.width && value.row < map.height;
 }
+
+/**
+ * Premier problème détecté, en français, ou `null` si la valeur est valide. Chaque validateur
+ * renvoie un `Problem` : le texte sert au diagnostic, jamais à l'affichage (AB-08).
+ */
+export type Problem = string | null;
+
+/**
+ * Exécute les contrôles dans l'ordre et s'arrête au premier problème : les suivants supposent que
+ * les précédents sont passés (par exemple, lire `unit.position` n'a de sens que si `unit` est un
+ * objet).
+ */
+export function firstProblem(checks: ReadonlyArray<() => Problem>): Problem {
+  for (const check of checks) {
+    const problem = check();
+    if (problem) return problem;
+  }
+  return null;
+}

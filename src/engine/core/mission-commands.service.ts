@@ -22,16 +22,18 @@ import {
 import {
   closeCycle,
   closeCycleIfDone,
+  endActivationsInProgress,
   hasActivationInProgress,
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
-import { resolveActiveSearch } from '../detection/active-search.service';
+import { resolveSweep } from '../detection/sweep.service';
 import { observeFriend } from '../detection/observation.service';
 import {
   MOVE_REFUSAL_MESSAGES,
   planMove,
   checkMovedUnitPath,
 } from '../units/unit-movement.service';
+import { recordSpecialAction } from '../units/special-action.service';
 import type { Unit } from '../units/unit.model';
 import { accept, reject } from './results.service';
 import type {
@@ -71,7 +73,7 @@ function blockerRejection(blocker: MoveBlocker): CommandResult {
 
 /** Refus correspondant à un motif d'impossibilité d'action spéciale (ordre ou propre à l'action). */
 function specialActionRejection(blocker: SpecialActionBlocker): CommandResult {
-  return blocker === 'SPECIAL_ACTION_USED' || blocker === 'NO_SENSORS'
+  return blocker === 'SPECIAL_ACTION_USED' || blocker === 'ON_COOLDOWN' || blocker === 'NO_SENSORS'
     ? reject(blocker, SPECIAL_ACTION_BLOCKER_MESSAGES[blocker])
     : blockerRejection(blocker);
 }
@@ -145,22 +147,24 @@ const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config
 };
 
 /**
- * Recherche active (G-07.7, AB-25, AB-30) : résolue sur-le-champ, elle consomme l'action spéciale
- * de l'unité même sans résultat, et l'engage dans son activation. Elle ne touche ni au déplacement
- * ni à la discrétion de l'unité (AB-29) ; un refus ne consomme rien.
+ * Balayage (G-07.7, AB-25, AB-30) : résolu sur-le-champ, il consomme l'action spéciale de l'unité
+ * même sans résultat, l'engage dans son activation et enregistre le cycle de l'usage : ce numéro
+ * déclenche le délai de récupération (AB-34) et le bruit de l'émission (AB-33). Un refus ne
+ * consomme rien.
  */
-const activeSearch: Handler<'ACTIVE_SEARCH'> = (mission, { unitId }, config) => {
+const sweep: Handler<'SWEEP'> = (mission, { unitId }, config) => {
   const found = findOrderableUnit(mission, unitId);
   if ('rejection' in found) return found.rejection;
   const { unit } = found;
-  const blocker = specialActionBlocker(mission.units, unit, config);
+  const blocker = specialActionBlocker(mission.units, unit, 'sweep', mission.cycle, config);
   if (blocker) return specialActionRejection(blocker);
-  const searched = resolveActiveSearch(mission, unit, config);
-  const engaged = updateUnitInMission(searched.state, unitId, {
+  const swept = resolveSweep(mission, unit, config);
+  const engaged = updateUnitInMission(swept.state, unitId, {
+    ...recordSpecialAction(unit, 'sweep', mission.cycle),
     activation: 'in_progress',
     specialActionUsed: true,
   });
-  return accept(engaged, searched.events);
+  return accept(engaged, swept.events);
 };
 
 /**
@@ -183,12 +187,14 @@ const endActivation: Handler<'END_ACTIVATION'> = (mission, { unitId }, config) =
  *
  *****************************/
 
-/** Fin anticipée : possible entre deux séquences complètes, jamais pendant une activation (SF-03.5). */
+/**
+ * Fin anticipée du cycle (SF-03.5, AB-31) : l'activation en cours, s'il y en a une, est d'abord
+ * terminée comme par « Terminer l'activation », puis le cycle se clôt ; les unités non activées
+ * perdent leur activation. Le joueur n'a donc plus à terminer l'activation avant le cycle.
+ */
 const endCycleEarly: Handler<'END_CYCLE_EARLY'> = (mission, _command, config) => {
-  if (hasActivationInProgress(mission.units)) {
-    return blockerRejection('OTHER_ACTIVATION_IN_PROGRESS');
-  }
-  const { state, events } = closeCycle(mission, config);
+  const settled = { ...mission, units: endActivationsInProgress(mission.units) };
+  const { state, events } = closeCycle(settled, config);
   return accept(state, events);
 };
 
@@ -273,7 +279,7 @@ const closeCycleWithoutOrder: Handler<'CLOSE_CYCLE'> = (mission, _command, confi
 const handlers: { [T in MissionCommand['type']]: Handler<T> } = {
   MOVE_UNIT: moveUnit,
   END_ACTIVATION: endActivation,
-  ACTIVE_SEARCH: activeSearch,
+  SWEEP: sweep,
   END_CYCLE_EARLY: endCycleEarly,
   ORDER_CARRIER: orderCarrier,
   CLOSE_CYCLE: closeCycleWithoutOrder,

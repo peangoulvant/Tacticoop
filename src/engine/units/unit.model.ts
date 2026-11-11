@@ -1,4 +1,4 @@
-import type { GameConfig, ShipClass } from '../config/game.config';
+import type { GameConfig, ShipClass, SpecialActionKind } from '../config/game.config';
 import type { Hex } from '../map/hex.service';
 import type { NavalCategory } from '../map/terrain.model';
 
@@ -39,6 +39,11 @@ export interface Unit {
   hasMoved: boolean;
   /** L'action spéciale de l'activation en cours est consommée (une par activation, G-07.1). */
   specialActionUsed: boolean;
+  /**
+   * Cycle du dernier usage de chaque action spéciale ; sert au délai de récupération et au bruit
+   * du balayage (AB-33, AB-34). Une action jamais utilisée n'a pas d'entrée.
+   */
+  lastSpecialActionCycle: Partial<Record<SpecialActionKind, number>>;
 }
 
 export interface UnitModifiers {
@@ -53,6 +58,14 @@ export function initialActivation(side: Side, category: NavalCategory): Activati
   return side === 'friend' && category !== 'carrier' ? 'available' : 'not_activable';
 }
 
+/**
+ * Crée une unité à sa dotation de départ, d'après la fiche de sa classe dans `GameConfig` et les
+ * contraintes de la mission.
+ *
+ * Exemple : une frégate DA (6 missiles) avec « Stocks de munitions limités » (facteur 0,7) reçoit
+ * 4 missiles (6 × 0,7 = 4,2 arrondi à l'inférieur) ; avec « Météo défavorable » son déplacement de
+ * 3 est plafonné à 2. Le porte-avions n'est jamais plafonné.
+ */
 export function createUnit(
   id: string,
   side: Side,
@@ -79,5 +92,6 @@ export function createUnit(
     activation: initialActivation(side, spec.category),
     hasMoved: false,
     specialActionUsed: false,
+    lastSpecialActionCycle: {},
   };
 }

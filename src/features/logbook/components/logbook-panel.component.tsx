@@ -2,27 +2,10 @@ import { Box, Paper, Typography } from '@mui/material';
 import * as engine from '../../../engine';
 import * as labels from '../../../shared/ui.label';
 
-/** Texte d'un événement ; le catalogue complet du journal reste à arbitrer (D-11). */
-function describe(event: engine.GameEvent): string {
-  switch (event.type) {
-    case 'MISSION_LAUNCHED':
-      return `Mission lancée : ${labels.missionLabel[event.mission]}`;
-    case 'UNIT_MOVED':
-      if (event.interrupted) {
-        return `${engine.defaultConfig.ships[event.shipClass].label} : ${labels.interruptedMoveText} (de (${event.from.col}, ${event.from.row}) à (${event.to.col}, ${event.to.row}))`;
-      }
-      return `${engine.defaultConfig.ships[event.shipClass].label} : déplacement de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
-    case 'CYCLE_STARTED':
-      return `Cycle ${event.cycle} ouvert`;
-    case 'CONTACT_DETECTED':
-      return labels.contactEventLabel(event);
-    case 'ACTIVE_SEARCH_PERFORMED':
-      return labels.activeSearchEventLabel(event);
-    default:
-      return labels.carrierEventLabel(event);
-  }
-}
-
+/**
+ * Journal de bord : les événements du moteur, du plus ancien au plus récent, avec leur cycle. Les
+ * textes viennent de `labels.eventLabel` ; ce composant ne décide de rien.
+ */
 export function LogbookPanel({ events }: { events: engine.GameEvent[] }) {
   return (
     <Paper sx={{ p: 1.5, height: '100%', overflow: 'auto', boxSizing: 'border-box' }}>
@@ -34,7 +17,7 @@ export function LogbookPanel({ events }: { events: engine.GameEvent[] }) {
           <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
             Cycle {event.cycle}
           </Typography>
-          <Typography variant="body2">{describe(event)}</Typography>
+          <Typography variant="body2">{labels.eventLabel(event)}</Typography>
         </Box>
       ))}
     </Paper>

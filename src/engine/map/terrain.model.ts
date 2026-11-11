@@ -14,6 +14,10 @@ const NAVIGABLE: Record<Terrain, readonly NavalCategory[]> = {
   mountain: [],
 };
 
+/**
+ * Une unité de cette catégorie peut-elle naviguer sur ce terrain ? Exemple : une frégate navigue
+ * sur la mer côtière, jamais sur la plage ni la montagne.
+ */
 export function isNavigable(terrain: Terrain, category: NavalCategory): boolean {
   return NAVIGABLE[terrain].includes(category);
 }

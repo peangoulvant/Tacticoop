@@ -5,10 +5,10 @@ import type { Hex } from '../../map/hex.service';
 import type { Terrain } from '../../map/terrain.model';
 import { initialSetup, type Constraint } from '../../missions/setup.service';
 import { createUnit, type Side, type Unit } from '../../units/unit.model';
-import { activeSearchArea, activeSearchRange, resolveActiveSearch } from '../active-search.service';
+import { sweepArea, effectiveSweepRange, resolveSweep } from '../sweep.service';
 import type { Contact } from '../contact.types';
 import { observeFriend } from '../observation.service';
-import { resolvePassiveSensors } from '../passive-sensor.service';
+import { resolveWatch } from '../watch-sensor.service';
 
 const SIZE = 15;
 const AT: Hex = { col: 7, row: 7 };
@@ -60,14 +60,14 @@ function hostile(
   return unit(id, 'hostile', shipClass, position);
 }
 
-/** Configuration où la recherche active réussit toujours, pour isoler la portée et les contacts. */
+/** Configuration où le balayage réussit toujours, pour isoler la portée et les contacts. */
 const SURE: GameConfig = {
   ...defaultConfig,
   ships: {
     ...defaultConfig.ships,
     frigate_da: {
       ...defaultConfig.ships.frigate_da,
-      detection: { ...defaultConfig.ships.frigate_da.detection!, activeProbability: 1 },
+      detection: { ...defaultConfig.ships.frigate_da.detection!, sweepProbability: 1 },
     },
   },
 };
@@ -77,13 +77,13 @@ function successRate(build: (seed: number) => MissionState, runs = 3000): number
   let identified = 0;
   for (let seed = 1; seed <= runs; seed++) {
     const state = build(seed);
-    const result = resolveActiveSearch(state, searcher(), defaultConfig);
+    const result = resolveSweep(state, searcher(), defaultConfig);
     if (result.state.friendContacts.length > 0) identified++;
   }
   return identified / runs;
 }
 
-describe('recherche active : tirage et portée (AB-25)', () => {
+describe('balayage : tirage et portée (AB-25)', () => {
   it('identifie à environ 90 % un navire à portée (distance 3)', () => {
     const rate = successRate((seed) => mission([searcher(), hostile()], { seed }));
     expect(rate).toBeGreaterThan(0.87);
@@ -105,8 +105,8 @@ describe('recherche active : tirage et portée (AB-25)', () => {
       successRate((seed) => mission([searcher(), at3], { seed, constraints }), 500),
     ).toBeGreaterThan(0.8);
     expect(successRate((seed) => mission([searcher(), at4], { seed, constraints }), 500)).toBe(0);
-    expect(activeSearchRange(searcher(), constraints, defaultConfig)).toBe(3);
-    expect(activeSearchRange(searcher(), [], defaultConfig)).toBe(4);
+    expect(effectiveSweepRange(searcher(), constraints, defaultConfig)).toBe(3);
+    expect(effectiveSweepRange(searcher(), [], defaultConfig)).toBe(4);
   });
 
   it('ne donne aucun bonus côtier : un sous-marin en mer côtière reste à 90 %', () => {
@@ -121,7 +121,7 @@ describe('recherche active : tirage et portée (AB-25)', () => {
   it('un sous-marin allié cherche comme une frégate', () => {
     let identified = 0;
     for (let seed = 1; seed <= 1000; seed++) {
-      const result = resolveActiveSearch(
+      const result = resolveSweep(
         mission([unit('f1', 'friend', 'submarine', AT), hostile()], { seed }),
         unit('f1', 'friend', 'submarine', AT),
         defaultConfig,
@@ -135,29 +135,25 @@ describe('recherche active : tirage et portée (AB-25)', () => {
     const ally = unit('f2', 'friend', 'fremm', { col: 8, row: 7 });
     const wreck = { ...hostile(), hp: 0 };
     const state = mission([searcher(), ally, wreck], { seed: 5 });
-    const result = resolveActiveSearch(state, searcher(), SURE);
+    const result = resolveSweep(state, searcher(), SURE);
     expect(result.state.friendContacts).toEqual([]);
     expect(result.state.rngState).toBe(state.rngState);
   });
 
   it('est déterministe par graine et rend le générateur à la mission (AB-24)', () => {
     const state = mission([searcher(), hostile()], { seed: 9 });
-    const a = resolveActiveSearch(state, searcher(), defaultConfig);
-    const b = resolveActiveSearch(state, searcher(), defaultConfig);
+    const a = resolveSweep(state, searcher(), defaultConfig);
+    const b = resolveSweep(state, searcher(), defaultConfig);
     expect(a).toEqual(b);
     expect(a.state.rngState).not.toBe(state.rngState);
   });
 });
 
-describe('recherche active : contacts identifiés (AB-25, AB-26)', () => {
+describe('balayage : contacts identifiés (AB-25, AB-26)', () => {
   it('révèle le type (jamais la classe) et la position exacte, avec la cible en donnée interne', () => {
     const frigate = hostile('h1', 'frigate_asm', { col: 9, row: 7 });
     const submarine = hostile('h2', 'submarine', { col: 8, row: 9 });
-    const { state } = resolveActiveSearch(
-      mission([searcher(), frigate, submarine]),
-      searcher(),
-      SURE,
-    );
+    const { state } = resolveSweep(mission([searcher(), frigate, submarine]), searcher(), SURE);
     expect(state.friendContacts).toEqual([
       {
         kind: 'identified',
@@ -186,7 +182,7 @@ describe('recherche active : contacts identifiés (AB-25, AB-26)', () => {
         [searcher(), hostile('h1'), hostile('h2', 'submarine', { col: 8, row: 8 })],
         { seed },
       );
-      const result = resolveActiveSearch(state, searcher(), defaultConfig);
+      const result = resolveSweep(state, searcher(), defaultConfig);
       if (result.state.friendContacts.length === 2) both++;
     }
     // 0,9 × 0,9 ≈ 81 %
@@ -205,7 +201,7 @@ describe('recherche active : contacts identifiés (AB-25, AB-26)', () => {
     };
     const moved = hostile('h1', 'frigate_asm', { col: 9, row: 8 });
     const state = mission([searcher(), moved], { cycle: 2, contacts: [previous] });
-    const { state: after, events } = resolveActiveSearch(state, searcher(), SURE);
+    const { state: after, events } = resolveSweep(state, searcher(), SURE);
     expect(after.friendContacts).toEqual([
       {
         kind: 'identified',
@@ -230,29 +226,21 @@ describe('recherche active : contacts identifiés (AB-25, AB-26)', () => {
     });
     const contacts = [zoneOf('C-1', 'h1'), zoneOf('C-2', 'h2')];
     const targets = [hostile('h1'), hostile('h2', 'submarine', { col: 2, row: 2 })];
-    const found = resolveActiveSearch(
-      mission([searcher(), ...targets], { contacts }),
-      searcher(),
-      SURE,
-    );
+    const found = resolveSweep(mission([searcher(), ...targets], { contacts }), searcher(), SURE);
     expect(found.state.friendContacts.map((c) => [c.id, c.kind])).toEqual([
       ['C-2', 'suspect'],
       ['C-3', 'identified'],
     ]);
-    const missed = resolveActiveSearch(
-      mission([searcher(), ...targets], { contacts }),
-      searcher(),
-      {
-        ...SURE,
-        ships: {
-          ...SURE.ships,
-          frigate_da: {
-            ...SURE.ships.frigate_da,
-            detection: { ...SURE.ships.frigate_da.detection!, activeProbability: 0 },
-          },
+    const missed = resolveSweep(mission([searcher(), ...targets], { contacts }), searcher(), {
+      ...SURE,
+      ships: {
+        ...SURE.ships,
+        frigate_da: {
+          ...SURE.ships.frigate_da,
+          detection: { ...SURE.ships.frigate_da.detection!, sweepProbability: 0 },
         },
       },
-    );
+    });
     expect(missed.state.friendContacts).toEqual(contacts);
   });
 
@@ -268,20 +256,16 @@ describe('recherche active : contacts identifiés (AB-25, AB-26)', () => {
       cycle: 2,
       contacts: [zone('C-1', 1), zone('C-2', 2)],
     });
-    const after = resolveActiveSearch(state, searcher(), SURE).state;
+    const after = resolveSweep(state, searcher(), SURE).state;
     expect(after.friendContacts.map((c) => c.kind)).toEqual(['identified']);
   });
 
-  it('laisse la veille passive de fin de cycle s’appliquer au navire identifié : nouvelle zone', () => {
+  it('laisse la veille de fin de cycle s’appliquer au navire identifié : nouvelle zone', () => {
     const near = hostile('h1', 'frigate_asm', { col: 9, row: 7 });
     let zones = 0;
     for (let seed = 1; seed <= 300; seed++) {
-      const searched = resolveActiveSearch(
-        mission([searcher(), near], { seed }),
-        searcher(),
-        SURE,
-      ).state;
-      const ended = resolvePassiveSensors(searched, defaultConfig).state;
+      const searched = resolveSweep(mission([searcher(), near], { seed }), searcher(), SURE).state;
+      const ended = resolveWatch(searched, defaultConfig).state;
       const kinds = ended.friendContacts.map((c) => c.kind);
       expect(kinds).toContain('identified');
       if (kinds.includes('suspect')) zones++;
@@ -292,19 +276,19 @@ describe('recherche active : contacts identifiés (AB-25, AB-26)', () => {
   });
 });
 
-describe('recherche active : durée de vie et état « ancien » (AB-27)', () => {
+describe('balayage : durée de vie et état « ancien » (AB-27)', () => {
   it('suit la règle des zones : visible au cycle et au suivant, « ancien » au suivant, retiré ensuite', () => {
-    const searched = resolveActiveSearch(mission([searcher(), hostile()]), searcher(), SURE).state;
+    const searched = resolveSweep(mission([searcher(), hostile()]), searcher(), SURE).state;
     expect(observeFriend(searched).contacts).toMatchObject([{ id: 'C-1', stale: false }]);
-    const endOfCycle1 = resolvePassiveSensors(searched, defaultConfig).state;
+    const endOfCycle1 = resolveWatch(searched, defaultConfig).state;
     const cycle2 = { ...endOfCycle1, cycle: 2 };
     expect(observeFriend(cycle2).contacts).toMatchObject([{ id: 'C-1', stale: true }]);
-    const endOfCycle2 = resolvePassiveSensors(cycle2, defaultConfig).state;
+    const endOfCycle2 = resolveWatch(cycle2, defaultConfig).state;
     expect(endOfCycle2.friendContacts.filter((c) => c.kind === 'identified')).toEqual([]);
   });
 
   it('ne suit pas le navire : la position reste celle de l’identification', () => {
-    const searched = resolveActiveSearch(mission([searcher(), hostile()]), searcher(), SURE).state;
+    const searched = resolveSweep(mission([searcher(), hostile()]), searcher(), SURE).state;
     const moved = {
       ...searched,
       cycle: 2,
@@ -317,7 +301,7 @@ describe('recherche active : durée de vie et état « ancien » (AB-27)', () =>
 
   it('crée un nouveau contact quand l’ancien a expiré', () => {
     const expired = { ...mission([searcher(), hostile()], { cycle: 3 }) };
-    const after = resolveActiveSearch({ ...expired, nextContactNumber: 5 }, searcher(), SURE).state;
+    const after = resolveSweep({ ...expired, nextContactNumber: 5 }, searcher(), SURE).state;
     expect(after.friendContacts.map((c) => c.id)).toEqual(['C-5']);
   });
 });
@@ -325,15 +309,15 @@ describe('recherche active : durée de vie et état « ancien » (AB-27)', () =>
 describe('cases à portée (brouillon de recherche)', () => {
   it('renvoie les cases à distance 1 à 4, la case de l’unité exclue', () => {
     const observation = observeFriend(mission([searcher()]));
-    const area = activeSearchArea(observation, searcher(), defaultConfig);
+    const area = sweepArea(observation, searcher(), defaultConfig);
     expect(area).toHaveLength(60);
     expect(area.some((h) => h.col === AT.col && h.row === AT.row)).toBe(false);
     expect(area.every((h) => h.col >= 0 && h.col < SIZE && h.row >= 0 && h.row < SIZE)).toBe(true);
   });
 
   it('se réduit avec « Capteurs dégradés »', () => {
-    const full = activeSearchArea(observeFriend(mission([searcher()])), searcher(), defaultConfig);
-    const degraded = activeSearchArea(
+    const full = sweepArea(observeFriend(mission([searcher()])), searcher(), defaultConfig);
+    const degraded = sweepArea(
       observeFriend(mission([searcher()], { constraints: ['degraded_sensors'] })),
       searcher(),
       defaultConfig,

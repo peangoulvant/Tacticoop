@@ -1,5 +1,10 @@
 import type { CommandResult, GameError, GameErrorCode, GameEvent, GameState } from './game.types';
 
+/**
+ * Commande refusée : un code stable pour le code appelant, un message pour le joueur, et
+ * éventuellement des détails (`extra`). Un refus ne contient jamais de nouvel état : l'état
+ * d'avant reste valable.
+ */
 export function reject(
   code: GameErrorCode,
   message: string,

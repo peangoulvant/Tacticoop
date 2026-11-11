@@ -4,7 +4,7 @@ import { indexOf, terrainAt, type GameMap } from '../../map/game-map.service';
 import { generateTerrain } from '../../map/generate.service';
 import { hexDistance, hexNeighbors, sameHex, type Hex } from '../../map/hex.service';
 import { isWater, type Terrain } from '../../map/terrain.model';
-import { generatePassiveZone } from '../passive-zone.service';
+import { generateWatchZone } from '../watch-zone.service';
 
 const DETECTION = defaultConfig.detection;
 
@@ -48,13 +48,13 @@ function sampleTargets(map: GameMap): Hex[] {
   return targets;
 }
 
-describe('zone de contact passif (AB-20)', () => {
+describe('zone de contact de veille (AB-20)', () => {
   it('compte 7 hexagones contigus, dans la carte, sans terre, cible comprise, sur 200 cartes', () => {
     for (let seed = 1; seed <= 200; seed++) {
       const rng = createRng(seed);
-      const map = generateTerrain(35, 35, rng);
+      const map = generateTerrain(35, 35, rng, defaultConfig.map.generation);
       for (const target of sampleTargets(map).slice(0, 12)) {
-        const zone = generatePassiveZone(map, target, rng, DETECTION);
+        const zone = generateWatchZone(map, target, rng, DETECTION);
         expect(zone.length).toBeLessThanOrEqual(DETECTION.zoneSize);
         expect(zone.some((hex) => sameHex(hex, target))).toBe(true);
         expect(zone.every((hex) => isWater(terrainAt(map, hex)))).toBe(true);
@@ -69,11 +69,10 @@ describe('zone de contact passif (AB-20)', () => {
     let shortened = 0;
     for (let seed = 1; seed <= 50; seed++) {
       const rng = createRng(seed);
-      const map = generateTerrain(35, 35, rng);
+      const map = generateTerrain(35, 35, rng, defaultConfig.map.generation);
       for (const target of sampleTargets(map)) {
         total++;
-        if (generatePassiveZone(map, target, rng, DETECTION).length < DETECTION.zoneSize)
-          shortened++;
+        if (generateWatchZone(map, target, rng, DETECTION).length < DETECTION.zoneSize) shortened++;
       }
     }
     expect(shortened / total).toBeLessThan(0.01);
@@ -83,7 +82,7 @@ describe('zone de contact passif (AB-20)', () => {
     const rng = createRng(3);
     const map = openSea(15);
     for (let i = 0; i < 200; i++) {
-      expect(isSortedByPosition(generatePassiveZone(map, { col: 7, row: 7 }, rng, DETECTION))).toBe(
+      expect(isSortedByPosition(generateWatchZone(map, { col: 7, row: 7 }, rng, DETECTION))).toBe(
         true,
       );
     }
@@ -99,7 +98,7 @@ describe('zone de contact passif (AB-20)', () => {
       { col: 14, row: 0 },
     ]) {
       for (let i = 0; i < 100; i++) {
-        const zone = generatePassiveZone(map, target, rng, DETECTION);
+        const zone = generateWatchZone(map, target, rng, DETECTION);
         expect(zone.every((h) => h.col >= 0 && h.col < 15 && h.row >= 0 && h.row < 15)).toBe(true);
         expect(zone.some((hex) => sameHex(hex, target))).toBe(true);
       }
@@ -115,7 +114,7 @@ describe('zone de contact passif (AB-20)', () => {
     let cellSpread = 0;
     const draws = 4000;
     for (let i = 0; i < draws; i++) {
-      const zone = generatePassiveZone(map, target, rng, DETECTION);
+      const zone = generateWatchZone(map, target, rng, DETECTION);
       const spread = (hex: Hex) => zone.reduce((sum, other) => sum + distance(hex, other), 0);
       targetSpread += spread(target);
       cellSpread += zone.reduce((sum, hex) => sum + spread(hex), 0) / zone.length;
@@ -138,7 +137,7 @@ describe('zone de contact passif (AB-20)', () => {
     ];
     const terrain = [...map.terrain];
     for (const hex of lake) terrain[indexOf(map, hex)] = 'sea';
-    const zone = generatePassiveZone(
+    const zone = generateWatchZone(
       { ...map, terrain },
       { col: 4, row: 4 },
       createRng(2),
@@ -151,8 +150,8 @@ describe('zone de contact passif (AB-20)', () => {
 
   it('est reproductible pour une même graine', () => {
     const map = openSea(15);
-    const a = generatePassiveZone(map, { col: 6, row: 6 }, createRng(9), DETECTION);
-    const b = generatePassiveZone(map, { col: 6, row: 6 }, createRng(9), DETECTION);
+    const a = generateWatchZone(map, { col: 6, row: 6 }, createRng(9), DETECTION);
+    const b = generateWatchZone(map, { col: 6, row: 6 }, createRng(9), DETECTION);
     expect(a).toEqual(b);
   });
 });

@@ -1,17 +1,17 @@
 import { create } from 'zustand';
 
 /**
- * Retour explicite de la dernière recherche active, affiché pendant quelques secondes (AB-30).
+ * Retour explicite du dernier balayage, affiché pendant quelques secondes (AB-30).
  * Il ne garde que le nombre de navires identifiés : le détail est dans le journal. `serial`
- * redémarre l'affichage quand deux recherches se suivent.
+ * redémarre l'affichage quand deux balayages se suivent.
  */
-interface SearchResultStore {
+interface SweepResultStore {
   result: { identified: number; serial: number } | null;
   show: (identified: number) => void;
   clear: () => void;
 }
 
-export const useSearchResultStore = create<SearchResultStore>((set) => ({
+export const useSweepResultStore = create<SweepResultStore>((set) => ({
   result: null,
   show: (identified) =>
     set((s) => ({ result: { identified, serial: (s.result?.serial ?? 0) + 1 } })),

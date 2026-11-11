@@ -34,7 +34,7 @@ Les règles déjà arbitrées prévalent ; toute évolution du gameplay nécessi
 
 La revue a identifié des dépendances entre cycles, projectiles, navigation du porte-avions, détection, combat et débriefing. Les sujets bloquants pour une première version jouable sont classés par priorité dans [DECISIONS.md](DECISIONS.md).
 
-Les points majeurs sont la progression des projectiles hors séquences alliées/ennemies, les paramètres de navires et d'armes, les actions spéciales, les cas terminaux d'escorte et la construction des zones de détection passive.
+Les points majeurs sont la progression des projectiles hors séquences alliées/ennemies, les paramètres de navires et d'armes, les actions spéciales, les cas terminaux d'escorte et la construction des zones de détection de veille.
 
 ## Règle de fusion
 

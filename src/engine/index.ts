@@ -1,4 +1,12 @@
-/** API publique du moteur : le reste de l'application n'importe que depuis ce module. */
+/**
+ * API publique du moteur : le reste de l'application (interface, store, persistance) n'importe que
+ * depuis ce module, sous le nom `engine` (`import * as engine from '../../engine'`). Ce qui n'est
+ * pas exporté ici est interne au moteur.
+ *
+ * Repères : `executeCommand` est le point d'entrée ; `observeFriend` donne à l'interface ce que le
+ * joueur a le droit de savoir (jamais l'état réel) ; `defaultConfig` porte toutes les valeurs du
+ * jeu.
+ */
 export { executeCommand } from './core/execute-command.service';
 export type {
   CommandResult,
@@ -11,8 +19,15 @@ export type {
   MissionState,
   PreparationState,
 } from './core/game.types';
-export { defaultConfig, PURCHASABLE_CLASSES } from './config/game.config';
-export type { GameConfig, PurchasableShipClass, ShipClass, ShipSpec } from './config/game.config';
+export { defaultConfig, PURCHASABLE_CLASSES, SPECIAL_ACTION_KINDS } from './config/game.config';
+export type {
+  GameConfig,
+  PurchasableShipClass,
+  ShipClass,
+  ShipSpec,
+  SpecialActionKind,
+} from './config/game.config';
+export { availableFromCycle } from './units/special-action.service';
 export {
   CONSTRAINTS,
   DIFFICULTIES,
@@ -55,7 +70,7 @@ export type {
 export { hasActivationInProgress, isAwaitingFinalOrder } from './missions/cycle.service';
 export { plannedRoute } from './units/carrier-movement.service';
 export { observeFriend, observeHostile } from './detection/observation.service';
-export { activeSearchArea, activeSearchRange } from './detection/active-search.service';
+export { sweepArea, effectiveSweepRange } from './detection/sweep.service';
 export {
   CONTACT_ID_PATTERN,
   CONTACT_TARGET_TYPES,

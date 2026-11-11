@@ -68,8 +68,21 @@ function generateScenario(setup: MissionSetup, config: GameConfig, rng: Rng): Sc
   const { width, height } = config.map;
   const { navalCombat, escort } = config.missions;
   return setup.mission === 'escort'
-    ? generateEscortMap(width, height, rng, escort.startColumnRatio, escort.goalColumnRatio)
-    : generateNavalCombatMap(width, height, rng, navalCombat.alliedStartColumnRatio);
+    ? generateEscortMap(
+        width,
+        height,
+        rng,
+        escort.startColumnRatio,
+        escort.goalColumnRatio,
+        config.map.generation,
+      )
+    : generateNavalCombatMap(
+        width,
+        height,
+        rng,
+        navalCombat.alliedStartColumnRatio,
+        config.map.generation,
+      );
 }
 
 /**

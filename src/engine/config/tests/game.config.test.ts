@@ -3,7 +3,7 @@ import { defaultConfig } from '../game.config';
 /** Valeurs provisoires arbitrées (docs/functional-specs/DECISIONS.md, D-03 ; SF-01 ; SF-02). */
 describe('defaultConfig', () => {
   it('définit la carte par défaut en 35 × 35 hexagones', () => {
-    expect(defaultConfig.map).toEqual({ width: 35, height: 35 });
+    expect(defaultConfig.map).toMatchObject({ width: 35, height: 35 });
   });
 
   it('définit les budgets et les paramètres de contraintes', () => {
@@ -63,6 +63,14 @@ describe('defaultConfig', () => {
     expect(Object.values(hostile.frigateClassWeights)).toEqual([1, 1, 1]);
   });
 
+  it('génération de la carte : les parts de terrain totalisent 100 % (SF-02 §3)', () => {
+    const { terrainShares, smoothingPasses, bypassRowRatios } = defaultConfig.map.generation;
+    const total = Object.values(terrainShares).reduce((sum, share) => sum + share, 0);
+    expect(total).toBeCloseTo(1, 10);
+    expect(smoothingPasses).toBeGreaterThan(0);
+    expect(bypassRowRatios.every((ratio) => ratio > 0 && ratio < 1)).toBe(true);
+  });
+
   it("reprend les portées d'armes (D-05)", () => {
     expect(defaultConfig.weaponRanges).toEqual({ missile: 8, torpedo: 5 });
   });
@@ -71,10 +79,10 @@ describe('defaultConfig', () => {
     'donne à %s les capteurs validés (G-08.4)',
     (shipClass) => {
       expect(defaultConfig.ships[shipClass].detection).toEqual({
-        passiveRange: 2,
-        passiveProbability: 0.6,
-        activeRange: 4,
-        activeProbability: 0.9,
+        watchRange: 2,
+        watchProbability: 0.5,
+        sweepRange: 4,
+        sweepProbability: 0.9,
       });
     },
   );
@@ -83,11 +91,16 @@ describe('defaultConfig', () => {
     expect(defaultConfig.ships.carrier.detection).toBeNull();
   });
 
-  it('définit la détection passive arbitrée (AB-20, AB-22, SF-01 §4)', () => {
+  it('définit un délai de récupération du balayage d’un cycle (AB-34)', () => {
+    expect(defaultConfig.specialActions).toEqual({ sweep: { cooldownCycles: 1 } });
+  });
+
+  it('définit la veille arbitrée (AB-20, AB-22, SF-01 §4)', () => {
     expect(defaultConfig.detection).toEqual({
       zoneSize: 7,
       zoneMaxAttempts: 200,
-      coastalSubmarinePassiveBonus: 0.2,
+      coastalSubmarineWatchBonus: 0.2,
+      sweepNoiseWatchBonus: 0.2,
     });
     expect(defaultConfig.constraints.sensorsFactor).toBe(0.8);
   });
@@ -101,10 +114,10 @@ describe('defaultConfig', () => {
     'garde les distances minimales de départ au-delà des portées, sur une carte de %i',
     (width) => {
       const { weaponRanges, missions, ships } = defaultConfig;
-      const activeRanges = Object.values(ships).map((spec) => spec.detection?.activeRange ?? 0);
+      const sweepRanges = Object.values(ships).map((spec) => spec.detection?.sweepRange ?? 0);
       const reach =
-        Math.max(weaponRanges.missile, weaponRanges.torpedo, ...activeRanges) +
-        Math.max(...activeRanges);
+        Math.max(weaponRanges.missile, weaponRanges.torpedo, ...sweepRanges) +
+        Math.max(...sweepRanges);
       const distance = (ratio: number) => Math.round(width * ratio);
       expect(distance(missions.navalCombat.minStartDistanceRatio)).toBeGreaterThan(reach);
       expect(distance(missions.escort.minDistanceFromStartRatio)).toBeGreaterThan(reach);

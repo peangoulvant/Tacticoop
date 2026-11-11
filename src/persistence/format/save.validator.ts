@@ -1,26 +1,22 @@
 import * as engine from '../../engine';
+import { checkDetection } from './contact.validator';
 import {
+  firstProblem,
   isCount,
-  isHex,
   isHexOn,
   isOneOf,
   isPositive,
   isRecord,
-  isShipClass,
+  type Json,
+  type Problem,
 } from './guards.validator';
-import type { Json } from './guards.validator';
+import { checkUnits } from './unit.validator';
 
-/** Premier problème détecté, en français, ou `null` si la valeur est valide. */
-type Problem = string | null;
-
-/** Exécute les contrôles dans l'ordre et s'arrête au premier problème (les suivants en dépendent). */
-function firstProblem(checks: ReadonlyArray<() => Problem>): Problem {
-  for (const check of checks) {
-    const problem = check();
-    if (problem) return problem;
-  }
-  return null;
-}
+/*
+ * Validation de l'état d'une mission en cours : choix de préparation, carte, progression, points
+ * A et B, navigation du porte-avions, puis les unités (`unit.validator.ts`) et les contacts
+ * (`contact.validator.ts`). Le journal est validé à part (`event.validator.ts`).
+ */
 
 function checkConstraints(constraints: unknown): Problem {
   if (!Array.isArray(constraints)) return 'contraintes illisibles';
@@ -75,62 +71,6 @@ function checkEndpoints(state: Json, map: engine.GameMap, escort: boolean): Prob
   return goalIsValid ? null : 'point d’arrivée incohérent avec la mission';
 }
 
-function checkUnitIdentity(unit: Json): Problem {
-  if (typeof unit.id !== 'string' || unit.id === '') return 'identifiant d’unité invalide';
-  if (!isOneOf(engine.SIDES, unit.side)) return `camp inconnu pour l’unité ${unit.id}`;
-  return isShipClass(unit.shipClass) ? null : `classe de bâtiment inconnue pour l’unité ${unit.id}`;
-}
-
-const UNIT_COUNTERS = ['hp', 'movement', 'missiles', 'torpedoes', 'helicopters'] as const;
-
-function checkUnitState(unit: Json, map: engine.GameMap): Problem {
-  if (!isHexOn(map, unit.position)) return `unité ${String(unit.id)} hors de la carte`;
-  if (!UNIT_COUNTERS.every((key) => isCount(unit[key]))) {
-    return `valeurs numériques invalides pour l’unité ${String(unit.id)}`;
-  }
-  if (!isOneOf(engine.ACTIVATION_STATUSES, unit.activation)) return 'état d’activation inconnu';
-  if (typeof unit.hasMoved !== 'boolean') return 'état de déplacement illisible';
-  return typeof unit.specialActionUsed === 'boolean' ? null : 'état de l’action spéciale illisible';
-}
-
-function checkUnit(unit: unknown, map: engine.GameMap): Problem {
-  if (!isRecord(unit)) return 'unité illisible';
-  return checkUnitIdentity(unit) ?? checkUnitState(unit, map);
-}
-
-function checkUniqueness(units: readonly engine.Unit[]): Problem {
-  if (new Set(units.map((u) => u.id)).size !== units.length)
-    return 'identifiants d’unité en double';
-  const cells = new Set(units.map((u) => `${u.position.col},${u.position.row}`));
-  return cells.size === units.length ? null : 'deux unités sur la même case';
-}
-
-/** Le porte-avions existe, une seule fois, si et seulement si la mission est une escorte. */
-function checkCarrierPresence(units: readonly engine.Unit[], escort: boolean): Problem {
-  const carriers = units.filter((u) => u.shipClass === 'carrier').length;
-  return carriers === (escort ? 1 : 0) ? null : 'porte-avions incohérent avec la mission';
-}
-
-/** Une sauvegarde n'est faite qu'entre deux séquences complètes (PERSISTANCE.md). */
-function checkNoActivationInProgress(units: readonly engine.Unit[]): Problem {
-  return units.some((u) => u.activation === 'in_progress')
-    ? 'activation en cours : sauvegarde incomplète'
-    : null;
-}
-
-function checkUnits(state: Json, map: engine.GameMap, escort: boolean): Problem {
-  const units = state.units;
-  if (!Array.isArray(units)) return 'unités illisibles';
-  const first = units.map((unit) => checkUnit(unit, map)).find((problem) => problem !== null);
-  if (first) return first;
-  const valid = units as engine.Unit[];
-  return firstProblem([
-    () => checkUniqueness(valid),
-    () => checkCarrierPresence(valid, escort),
-    () => checkNoActivationInProgress(valid),
-  ]);
-}
-
 const NAVIGATION_MODES = [engine.CarrierOrderKind.CONTINUE, engine.CarrierOrderKind.STOP] as const;
 
 function checkNavigationFields(navigation: Json, map: engine.GameMap): Problem {
@@ -150,65 +90,6 @@ function checkCarrierNavigation(state: Json, map: engine.GameMap, escort: boolea
     : 'navigation du porte-avions absente';
 }
 
-/** Zone d'un contact suspect : de 1 à `zoneSize` hexagones, tous dans la carte. */
-function checkZone(contact: Json, map: engine.GameMap): Problem {
-  const zone = contact.zone;
-  const valid =
-    Array.isArray(zone) &&
-    zone.length >= 1 &&
-    zone.length <= engine.defaultConfig.detection.zoneSize &&
-    zone.every((hex) => isHexOn(map, hex));
-  return valid ? null : `zone invalide pour le contact ${String(contact.id)}`;
-}
-
-/** Type et position exacte d'un contact identifié. */
-function checkIdentified(contact: Json, map: engine.GameMap): Problem {
-  return isOneOf(engine.CONTACT_TARGET_TYPES, contact.targetType) && isHexOn(map, contact.position)
-    ? null
-    : `identification invalide pour le contact ${String(contact.id)}`;
-}
-
-/** Un contact : forme connue, identifiant, cycle plausible, puis zone ou identification. */
-function checkContact(contact: unknown, map: engine.GameMap, cycle: number): Problem {
-  if (!isRecord(contact)) return 'contact illisible';
-  if (typeof contact.id !== 'string' || !engine.CONTACT_ID_PATTERN.test(contact.id)) {
-    return 'identifiant de contact invalide';
-  }
-  if (!isPositive(contact.cycle) || contact.cycle > cycle)
-    return `cycle invalide pour le contact ${contact.id}`;
-  if (contact.kind === 'suspect') return checkZone(contact, map);
-  return contact.kind === 'identified'
-    ? checkIdentified(contact, map)
-    : `forme inconnue pour le contact ${contact.id}`;
-}
-
-/** La cible interne d'un contact est un navire hostile de la mission (AB-26). */
-function checkContactSources(contacts: readonly Json[], units: readonly engine.Unit[]): Problem {
-  const hostiles = new Set(units.filter((u) => u.side === 'hostile').map((u) => u.id));
-  if (!contacts.every((c) => typeof c.source === 'string' && hostiles.has(c.source))) {
-    return 'cible de contact inconnue';
-  }
-  // Un seul contact identifié par navire (AB-26).
-  const identified = contacts.filter((c) => c.kind === 'identified').map((c) => c.source);
-  return new Set(identified).size === identified.length
-    ? null
-    : 'plusieurs contacts identifiés pour un même navire';
-}
-
-/** Contacts du camp ami, compteur de numéros et état du générateur (AB-24). */
-function checkDetection(state: Json, map: engine.GameMap): Problem {
-  if (!isPositive(state.nextContactNumber)) return 'compteur de contacts invalide';
-  if (!isCount(state.rngState) || state.rngState > 0xffffffff) return 'état du hasard invalide';
-  const contacts = state.friendContacts;
-  if (!Array.isArray(contacts)) return 'contacts illisibles';
-  const cycle = state.cycle as number;
-  const first = contacts.map((c) => checkContact(c, map, cycle)).find((p) => p !== null);
-  if (first) return first;
-  const ids = new Set(contacts.map((c: Json) => c.id));
-  if (ids.size !== contacts.length) return 'identifiants de contact en double';
-  return checkContactSources(contacts as Json[], state.units as engine.Unit[]);
-}
-
 /** Contrôle de l'état d'une mission en cours ; renvoie le premier problème, ou `null`. */
 export function checkMissionState(state: unknown): Problem {
   if (!isRecord(state)) return 'état de la partie illisible';
@@ -224,88 +105,4 @@ export function checkMissionState(state: unknown): Problem {
     () => checkCarrierNavigation(state, map, escort),
     () => checkDetection(state, map),
   ]);
-}
-
-function isCarrierOrder(order: unknown): boolean {
-  if (!isRecord(order)) return false;
-  if (order.kind === engine.CarrierOrderKind.REROUTE) return isHex(order.waypoint);
-  return (
-    order.kind === engine.CarrierOrderKind.CONTINUE || order.kind === engine.CarrierOrderKind.STOP
-  );
-}
-
-/** Contrôle propre à chaque type d'événement ; le type `Record` impose de les couvrir tous. */
-/** Une unité, de la case `from` à la case `to` (déplacement d'unité). */
-function isMove(event: Json): boolean {
-  return (
-    typeof event.unitId === 'string' &&
-    isShipClass(event.shipClass) &&
-    isHex(event.from) &&
-    isHex(event.to)
-  );
-}
-
-/** Zone de contact : de 1 à `zoneSize` hexagones. */
-function isZone(zone: unknown): boolean {
-  return (
-    Array.isArray(zone) &&
-    zone.length >= 1 &&
-    zone.length <= engine.defaultConfig.detection.zoneSize &&
-    zone.every(isHex)
-  );
-}
-
-/** Drapeau facultatif : absent, ou vrai (un drapeau faux n'est jamais écrit). */
-function isAbsentOrTrue(value: unknown): boolean {
-  return value === undefined || value === true;
-}
-
-/** Navire identifié dans le journal : identifiant, type et position exacte (AB-28). */
-function isIdentification(item: unknown): boolean {
-  return (
-    isRecord(item) &&
-    typeof item.contactId === 'string' &&
-    engine.CONTACT_ID_PATTERN.test(item.contactId) &&
-    isOneOf(engine.CONTACT_TARGET_TYPES, item.targetType) &&
-    isHex(item.position)
-  );
-}
-
-/** Recherche active : unité émettrice et navires identifiés, éventuellement aucun (AB-28). */
-function isActiveSearch(event: Json): boolean {
-  return (
-    typeof event.unitId === 'string' &&
-    isShipClass(event.shipClass) &&
-    isPositive(event.cycle) &&
-    Array.isArray(event.identified) &&
-    event.identified.every(isIdentification)
-  );
-}
-
-const EVENT_CHECKS: Record<engine.GameEvent['type'], (event: Json) => boolean> = {
-  MISSION_LAUNCHED: (e) => isOneOf(engine.MISSIONS, e.mission) && isPositive(e.cycle),
-  UNIT_MOVED: (e) => isMove(e) && isPositive(e.cycle) && isAbsentOrTrue(e.interrupted),
-  CYCLE_STARTED: (e) => isPositive(e.cycle),
-  CARRIER_ORDERED: (e) => isCarrierOrder(e.order) && isPositive(e.cycle),
-  CARRIER_MOVED: (e) => isHex(e.from) && isHex(e.to) && isPositive(e.cycle),
-  CONTACT_DETECTED: (e) =>
-    typeof e.contactId === 'string' &&
-    engine.CONTACT_ID_PATTERN.test(e.contactId) &&
-    isPositive(e.cycle) &&
-    isZone(e.zone),
-  ACTIVE_SEARCH_PERFORMED: isActiveSearch,
-  MISSION_WON: (e) => isPositive(e.cycle),
-};
-
-const EVENT_TYPES = Object.keys(EVENT_CHECKS) as engine.GameEvent['type'][];
-
-function isEvent(event: unknown): boolean {
-  return isRecord(event) && isOneOf(EVENT_TYPES, event.type) && EVENT_CHECKS[event.type](event);
-}
-
-/** Contrôle du journal : chaque événement doit être connu et complet. */
-export function checkEvents(events: unknown): Problem {
-  if (!Array.isArray(events)) return 'journal de bord illisible';
-  const invalid = events.findIndex((event) => !isEvent(event));
-  return invalid === -1 ? null : `événement ${invalid + 1} du journal invalide`;
 }

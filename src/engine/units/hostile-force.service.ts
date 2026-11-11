@@ -29,7 +29,10 @@ export interface HostileZone {
   minDistances: MinDistance[];
 }
 
-/** Distance en hexagones correspondant à une part de la largeur de la carte. */
+/**
+ * Distance en hexagones correspondant à une part de la largeur de la carte.
+ * Exemple : 0,4 sur une carte de 35 de large donne 14 hexagones.
+ */
 function distanceOfRatio(width: number, ratio: number): number {
   return Math.round(width * ratio);
 }
@@ -97,19 +100,24 @@ function farEnough(hex: Hex, minDistances: readonly MinDistance[]): boolean {
   return minDistances.every(({ from, distance }) => hexDistance(hex, from) >= distance);
 }
 
-/** Hexagones libres de la zone où une unité de la catégorie peut partir. */
+/**
+ * Hexagones libres de la zone où une unité de la catégorie peut partir : dans les colonnes de la
+ * zone, sur un terrain navigable pour elle, hors cases déjà prises, et assez loin des points à
+ * éviter. Le parcours ligne par ligne rend la liste déterministe.
+ */
 function candidateHexes(
   map: GameMap,
   zone: HostileZone,
   category: NavalCategory,
   taken: ReadonlySet<number>,
 ): Hex[] {
+  const isFree = (hex: Hex) =>
+    !taken.has(indexOf(map, hex)) && isNavigable(terrainAt(map, hex), category);
   const candidates: Hex[] = [];
   for (let row = 0; row < map.height; row++) {
     for (let col = zone.fromCol; col <= zone.toCol; col++) {
       const hex = { col, row };
-      const free = !taken.has(indexOf(map, hex)) && isNavigable(terrainAt(map, hex), category);
-      if (free && farEnough(hex, zone.minDistances)) candidates.push(hex);
+      if (isFree(hex) && farEnough(hex, zone.minDistances)) candidates.push(hex);
     }
   }
   return candidates;

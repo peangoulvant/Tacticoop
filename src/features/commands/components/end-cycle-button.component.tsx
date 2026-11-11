@@ -12,11 +12,15 @@ import * as labels from '../../../shared/ui.label';
 import * as labelEngine from '../../../shared/engine.label';
 import { endCycleEarly } from '../services/command-actions.service';
 
-/** Texte d'avertissement : les activations non utilisées sont perdues (SF-03.5). */
-function lossWarning(remaining: number): string {
-  if (remaining === 0) return 'Le cycle suivant va s’ouvrir.';
-  const units = remaining > 1 ? `${remaining} unités n’ont` : '1 unité n’a';
-  return `${units} pas été activée${remaining > 1 ? 's' : ''} : leurs activations seront perdues.`;
+/**
+ * Texte d'avertissement : les activations non utilisées sont perdues et l'activation en cours est
+ * terminée (SF-03.5, AB-31).
+ */
+function lossWarning(remaining: number, inProgress: number): string {
+  const closing = inProgress > 0 ? 'L’activation en cours sera terminée. ' : '';
+  if (remaining === 0) return `${closing}Le cycle suivant va s’ouvrir.`;
+  if (remaining === 1) return `${closing}1 unité n’a pas été activée : son activation sera perdue.`;
+  return `${closing}${remaining} unités n’ont pas été activées : leurs activations seront perdues.`;
 }
 
 /**
@@ -26,9 +30,7 @@ function lossWarning(remaining: number): string {
 function disabledReason(mission: engine.MissionState): string | undefined {
   if (mission.outcome) return labelEngine.commandRefusalMessages.MISSION_ENDED;
   if (engine.isAwaitingFinalOrder(mission)) return labels.carrierText.endCycleDuringFinalOrder;
-  return engine.hasActivationInProgress(mission.units)
-    ? engine.BLOCKER_MESSAGES.OTHER_ACTIVATION_IN_PROGRESS
-    : undefined;
+  return undefined;
 }
 
 /** Fin anticipée du cycle, avec confirmation. */
@@ -36,6 +38,7 @@ export function EndCycleButton({ mission }: { mission: engine.MissionState }) {
   const [open, setOpen] = useState(false);
   const reason = disabledReason(mission);
   const remaining = mission.units.filter((u) => u.activation === 'available').length;
+  const inProgress = mission.units.filter((u) => u.activation === 'in_progress').length;
 
   return (
     <>
@@ -51,7 +54,7 @@ export function EndCycleButton({ mission }: { mission: engine.MissionState }) {
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Terminer le cycle ?</DialogTitle>
         <DialogContent>
-          <DialogContentText>{lossWarning(remaining)}</DialogContentText>
+          <DialogContentText>{lossWarning(remaining, inProgress)}</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Continuer à jouer</Button>

@@ -17,26 +17,22 @@ import { effectiveRange } from './sensor-range.service';
 /** Contact identifié tel que le moteur le conserve, avec sa cible interne. */
 type StoredIdentified = Extract<Contact, { kind: 'identified' }>;
 
-/** Portée effective de la recherche active d'une unité, capteurs dégradés compris (AB-25). */
-export function activeSearchRange(
+/** Portée effective du balayage d'une unité, capteurs dégradés compris (AB-25). */
+export function effectiveSweepRange(
   unit: Unit,
   constraints: readonly Constraint[],
   config: GameConfig,
 ): number {
   const spec = config.ships[unit.shipClass].detection as DetectorSpec;
-  return effectiveRange(spec.activeRange, unit, constraints, config);
+  return effectiveRange(spec.sweepRange, unit, constraints, config);
 }
 
 /**
- * Cases à portée de la recherche active d'une unité, sa propre case exclue : la zone que
+ * Cases à portée du balayage d'une unité, sa propre case exclue : la zone que
  * l'interface surligne pendant le brouillon. Calculée depuis la projection amie (SF-04 §1).
  */
-export function activeSearchArea(
-  observation: FriendObservation,
-  unit: Unit,
-  config: GameConfig,
-): Hex[] {
-  const range = activeSearchRange(unit, observation.constraints, config);
+export function sweepArea(observation: FriendObservation, unit: Unit, config: GameConfig): Hex[] {
+  const range = effectiveSweepRange(unit, observation.constraints, config);
   const { width, height } = observation.map;
   const area: Hex[] = [];
   for (let row = 0; row < height; row++) {
@@ -54,7 +50,7 @@ function targetTypeOf(unit: Unit, config: GameConfig): ContactTargetType {
 }
 
 /**
- * Navires hostiles identifiés par la recherche : un tirage à la probabilité active par navire
+ * Navires hostiles identifiés par le balayage : un tirage à la probabilité de balayage par navire
  * hostile opérationnel à portée, dans l'ordre des unités, sans bonus côtier ni aucun autre
  * modificateur (AB-25, AB-29).
  */
@@ -65,19 +61,19 @@ function drawIdentifiedTargets(
   rng: Rng,
 ): Unit[] {
   const spec = config.ships[searcher.shipClass].detection as DetectorSpec;
-  const range = activeSearchRange(searcher, mission.setup.constraints, config);
+  const range = effectiveSweepRange(searcher, mission.setup.constraints, config);
   return mission.units.filter(
     (unit) =>
       unit.side === 'hostile' &&
       unit.hp > 0 &&
       hexDistance(searcher.position, unit.position) <= range &&
-      rng() < spec.activeProbability,
+      rng() < spec.sweepProbability,
   );
 }
 
 /**
  * Contacts après identification d'une cible : le contact identifié de ce navire est actualisé s'il
- * existe encore (même identifiant, position figée à l'instant de la recherche), sinon un nouveau
+ * existe encore (même identifiant, position figée à l'instant du balayage), sinon un nouveau
  * est créé (AB-26). Les zones qui désignaient cette cible disparaissent, et elles seules.
  */
 function identify(
@@ -111,17 +107,13 @@ function identify(
 }
 
 /**
- * Recherche active d'une unité alliée, résolue au moment de l'action (G-08.3.6, AB-25) : chaque
- * navire hostile à portée est identifié avec la probabilité active, plusieurs pouvant l'être.
+ * Balayage d'une unité alliée, résolue au moment de l'action (G-08.3.6, AB-25) : chaque
+ * navire hostile à portée est identifié avec la probabilité de balayage, plusieurs pouvant l'être.
  * Le résultat est toujours journalisé, réussite ou non (AB-28). Le hasard est repris et rendu à
- * l'état de la mission (AB-24). N'appartient pas à la veille passive de fin de cycle, qui reste
+ * l'état de la mission (AB-24). N'appartient pas à la veille de fin de cycle, qui reste
  * appliquée à toute paire éligible. La consommation de l'action est faite par la commande.
  */
-export function resolveActiveSearch(
-  mission: MissionState,
-  searcher: Unit,
-  config: GameConfig,
-): Progress {
+export function resolveSweep(mission: MissionState, searcher: Unit, config: GameConfig): Progress {
   const rng = restoreRng(mission.rngState);
   const targets = drawIdentifiedTargets(mission, searcher, config, rng);
   let contacts: Contact[] = mission.friendContacts;
@@ -142,7 +134,7 @@ export function resolveActiveSearch(
     },
     events: [
       {
-        type: 'ACTIVE_SEARCH_PERFORMED',
+        type: 'SWEEP_PERFORMED',
         cycle: mission.cycle,
         unitId: searcher.id,
         shipClass: searcher.shipClass,

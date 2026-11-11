@@ -18,6 +18,7 @@ export const moveBlockerMessages = {
 export const specialActionBlockerMessages = {
   SPECIAL_ACTION_USED:
     'L’action spéciale de cette unité a déjà été utilisée pendant son activation.',
+  ON_COOLDOWN: 'Cette action spéciale est en récupération.',
   NO_SENSORS: 'Cette unité ne porte pas de capteurs.',
 };
 

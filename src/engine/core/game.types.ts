@@ -1,3 +1,19 @@
+/*
+ * Types centraux du moteur : l'état de la partie, les commandes que le joueur peut envoyer, les
+ * événements que le moteur produit et les erreurs qu'il renvoie.
+ *
+ * Le moteur est une fonction pure : `executeCommand(état, commande, config)` renvoie soit
+ * `{ ok: true, state, events }` (nouvel état et événements du journal), soit
+ * `{ ok: false, error }` (refus, sans nouvel état). L'état reçu n'est jamais modifié.
+ *
+ *   commande ──► executeCommand ──► gestionnaire de la commande ──► règles (units/, detection/…)
+ *                                          │
+ *                                          └─► CommandResult { ok, state, events } ou { ok: false, error }
+ *
+ * Exemple : { type: 'MOVE_UNIT', unitId: 'friend-fremm-1', destination: { col: 4, row: 2 } }
+ * accepté produit un état où la FREMM est en (4, 2) et l'événement UNIT_MOVED.
+ */
+
 import type { PurchasableShipClass, ShipClass } from '../config/game.config';
 import type { Contact, Identification } from '../detection/contact.types';
 import type { GameMap } from '../map/game-map.service';
@@ -38,7 +54,7 @@ export interface MissionState {
   carrierNavigation: CarrierNavigation | null;
   /** Résultat de la mission une fois terminée ; les commandes sont alors refusées. */
   outcome: MissionOutcome | null;
-  /** Contacts du camp ami : zones de la veille passive et navires identifiés (SF-04, AB-18, AB-25). */
+  /** Contacts du camp ami : zones de la veille et navires identifiés (SF-04, AB-18, AB-25). */
   friendContacts: Contact[];
   /** Numéro du prochain contact : les identifiants ne sont jamais réutilisés (AB-21). */
   nextContactNumber: number;
@@ -64,7 +80,7 @@ export type MissionCommand =
   | { type: 'END_ACTIVATION'; unitId: string }
   | { type: 'END_CYCLE_EARLY' }
   | { type: 'ORDER_CARRIER'; order: CarrierOrder }
-  | { type: 'ACTIVE_SEARCH'; unitId: string }
+  | { type: 'SWEEP'; unitId: string }
   | { type: 'CLOSE_CYCLE' };
 
 export type GameCommand = PreparationCommand | MissionCommand;
@@ -84,14 +100,14 @@ export type GameEvent =
   | { type: 'CYCLE_STARTED'; cycle: number }
   | { type: 'CARRIER_ORDERED'; order: CarrierOrder; cycle: number }
   | { type: 'CARRIER_MOVED'; from: Hex; to: Hex; cycle: number }
-  /** Contact suspect issu de la veille passive : sans cible, classe ni détecteur (AB-21). */
+  /** Contact suspect issu de la veille : sans cible, classe ni détecteur (AB-21). */
   | { type: 'CONTACT_DETECTED'; contactId: string; cycle: number; zone: Hex[] }
   /**
-   * Recherche active du camp ami, toujours journalisée (AB-28) : l'unité émettrice et les navires
+   * Balayage du camp ami, toujours journalisée (AB-28) : l'unité émettrice et les navires
    * identifiés. Ni cible réelle, ni zone retirée, ni tirage.
    */
   | {
-      type: 'ACTIVE_SEARCH_PERFORMED';
+      type: 'SWEEP_PERFORMED';
       cycle: number;
       unitId: string;
       shipClass: ShipClass;
@@ -111,6 +127,7 @@ export type GameErrorCode =
   | 'ACTIVATION_IN_PROGRESS'
   | 'ALREADY_MOVED'
   | 'SPECIAL_ACTION_USED'
+  | 'ON_COOLDOWN'
   | 'NO_SENSORS'
   | 'MOVE_REFUSED'
   | 'NOT_ESCORT_MISSION'

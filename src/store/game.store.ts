@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import * as engine from '../engine';
 
+/**
+ * Store principal : la **seule** copie de l'état de la partie (AT-03). Il ne contient aucune règle
+ * de jeu : `dispatch` transmet la commande au moteur (`engine.executeCommand`) et publie le
+ * résultat. Les composants lisent l'état, mais ne le calculent jamais eux-mêmes : pour savoir ce
+ * que le joueur connaît, ils passent par `engine.observeFriend(mission)`.
+ */
 interface GameStore {
   /** Source de vérité métier : copie unique du GameState (AT-03). */
   state: engine.GameState;
   /** Événements produits par le moteur, du plus ancien au plus récent (alimente le journal). */
   events: engine.GameEvent[];
   lastError: engine.GameError | null;
-  /** Transmet la commande au moteur puis publie le résultat ; renvoie true si elle est acceptée. */
+  /** Transmet la commande au moteur puis publie le résultat ; renvoie true s'il est accepté. */
   dispatch: (command: engine.GameCommand) => boolean;
   clearError: () => void;
   reset: () => void;

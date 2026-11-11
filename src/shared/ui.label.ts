@@ -111,25 +111,8 @@ export function carrierDraftLabel(
   return `Ordre « ${carrierOrderLabel[kind]} » : confirmez pour l’exécuter.`;
 }
 
-type CarrierEvent = Extract<
-  engine.GameEvent,
-  { type: 'CARRIER_ORDERED' | 'CARRIER_MOVED' | 'MISSION_WON' }
->;
-
 /** Message neutre d'un déplacement interrompu par un obstacle inconnu : l'obstacle n'est pas révélé (SF-02 §7). */
 export const interruptedMoveText = 'Déplacement interrompu';
-
-/** Texte du journal pour les événements du porte-avions et la victoire (catalogue provisoire, D-11). */
-export function carrierEventLabel(event: CarrierEvent): string {
-  switch (event.type) {
-    case 'CARRIER_ORDERED':
-      return `Porte-avions : ordre « ${carrierOrderLabel[event.order.kind]} »`;
-    case 'CARRIER_MOVED':
-      return `Porte-avions : navigation de (${event.from.col}, ${event.from.row}) vers (${event.to.col}, ${event.to.row})`;
-    case 'MISSION_WON':
-      return 'Mission réussie : le porte-avions est arrivé à destination';
-  }
-}
 
 /*****************************
  *
@@ -143,16 +126,16 @@ function coordinatesLabel(hexes: readonly engine.Hex[]): string {
 }
 
 /**
- * Texte du journal pour un contact de veille passive (AB-21) : « contact suspect » et « zone
+ * Texte du journal pour un contact de veille (AB-21) : « contact suspect » et « zone
  * approximative », toutes les cases citées, sans jamais désigner la cible.
  */
 export function contactEventLabel(
   event: Extract<engine.GameEvent, { type: 'CONTACT_DETECTED' }>,
 ): string {
-  return `Veille passive : contact suspect ${event.contactId}, zone approximative ${coordinatesLabel(event.zone)}`;
+  return `Veille : contact suspect ${event.contactId}, zone approximative ${coordinatesLabel(event.zone)}`;
 }
 
-/** Type de navire révélé par une recherche active : frégate ou sous-marin, jamais la classe (AB-25). */
+/** Type de navire révélé par un balayage : frégate ou sous-marin, jamais la classe (AB-25). */
 export const contactTargetLabel: Record<engine.ContactTargetType, string> = {
   frigate: 'frégate',
   submarine: 'sous-marin',
@@ -174,7 +157,7 @@ export function contactCaption(contact: engine.FriendContact): string {
   return `Contact identifié ${contact.id} : ${contactTargetLabel[contact.targetType]}, position exacte (${col}, ${row}), détecté au cycle ${contact.cycle}${old}`;
 }
 
-/** Navires identifiés par une recherche, au format du journal : « C-5, sous-marin en (14, 22) ». */
+/** Navires identifiés par un balayage, au format du journal : « C-5, sous-marin en (14, 22) ». */
 function identificationsLabel(identified: readonly engine.Identification[]): string {
   return identified
     .map(
@@ -185,47 +168,53 @@ function identificationsLabel(identified: readonly engine.Identification[]): str
 }
 
 /**
- * Texte du journal pour une recherche active (AB-28) : toujours une entrée, réussie ou non. Les
+ * Texte du journal pour un balayage (AB-28) : toujours une entrée, réussie ou non. Les
  * mots sont les mêmes pour une première identification et une actualisation ; ni cible réelle ni
  * zone retirée.
  */
-export function activeSearchEventLabel(
-  event: Extract<engine.GameEvent, { type: 'ACTIVE_SEARCH_PERFORMED' }>,
+export function sweepEventLabel(
+  event: Extract<engine.GameEvent, { type: 'SWEEP_PERFORMED' }>,
 ): string {
   const unit = engine.defaultConfig.ships[event.shipClass].label;
   const { identified } = event;
-  if (identified.length === 0) return `Recherche active (${unit}) : aucun nouveau contact`;
+  if (identified.length === 0) return `Balayage (${unit}) : aucun nouveau contact`;
   const noun = identified.length > 1 ? 'contacts identifiés' : 'contact identifié';
-  return `Recherche active (${unit}) : ${noun} ${identificationsLabel(identified)}`;
+  return `Balayage (${unit}) : ${noun} ${identificationsLabel(identified)}`;
 }
 
 /*****************************
  *
- * PARTIE RECHERCHE ACTIVE
+ * PARTIE BALAYAGE
  *
  *****************************/
 
-/** Textes de l'action « Recherche active » (AB-30). */
-export const searchText = {
-  button: 'Recherche active',
+/** Textes de l'action « Balayage » (AB-30). */
+export const sweepText = {
+  button: 'Balayage',
   title: 'Cherche les navires hostiles à portée',
   confirm: 'Confirmer',
   cancel: 'Annuler',
+  unavailable: 'Balayage indisponible',
   noNewContact: 'Aucun nouveau contact',
   identified: 'Contact identifié',
   identifiedSeveral: 'Contacts identifiés',
 };
 
-/** Consigne de la barre de confirmation d'une recherche active en préparation. */
-export function searchDraftLabel(unitLabel: string, range: number, cells: number): string {
+/** Consigne de la barre de confirmation d'un balayage en préparation. */
+export function sweepDraftLabel(unitLabel: string, range: number, cells: number): string {
   const plural = range > 1 ? 's' : '';
-  return `${unitLabel} : recherche active, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour la lancer.`;
+  return `${unitLabel} : balayage, portée ${range} hexagone${plural} (${cells} cases surlignées). Confirmez pour le lancer.`;
 }
 
-/** Retour explicite d'une recherche, affiché 4 secondes : identification ou absence de résultat. */
-export function searchResultLabel(identified: number): string {
-  if (identified === 0) return searchText.noNewContact;
-  return identified > 1 ? searchText.identifiedSeveral : searchText.identified;
+/** Motif affiché pendant la récupération du balayage : le cycle où il redevient possible (AB-34). */
+export function sweepCooldownLabel(availableFrom: number): string {
+  return `${sweepText.unavailable} : en récupération, de nouveau possible au cycle ${availableFrom}.`;
+}
+
+/** Retour explicite d'un balayage, affiché 4 secondes : identification ou absence de résultat. */
+export function sweepResultLabel(identified: number): string {
+  if (identified === 0) return sweepText.noNewContact;
+  return identified > 1 ? sweepText.identifiedSeveral : sweepText.identified;
 }
 
 /*****************************
@@ -269,4 +258,54 @@ export function savedGameSummary(
 /** Heure locale au format HH:MM. */
 export function savedTime(date: Date): string {
   return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+/*****************************
+ *
+ * PARTIE JOURNAL DE BORD
+ *
+ *****************************/
+
+/** Un événement du moteur d'un type donné. */
+type EventOf<T extends engine.GameEvent['type']> = Extract<engine.GameEvent, { type: T }>;
+
+/** Nom d'une classe de bâtiment, tel qu'affiché au joueur (« Frégate DA »). */
+function shipLabelOf(shipClass: engine.ShipClass): string {
+  return engine.defaultConfig.ships[shipClass].label;
+}
+
+/** Coordonnées d'une case au format du journal : « (3, 7) ». */
+function hexLabel(hex: engine.Hex): string {
+  return `(${hex.col}, ${hex.row})`;
+}
+
+/**
+ * Texte du journal de chaque type d'événement (catalogue provisoire, D-11). Le type `Record`
+ * oblige à décrire **tous** les événements : ajouter un `GameEvent` sans son texte ne compile pas.
+ * Les textes ne révèlent jamais d'information cachée (SF-07 §3).
+ *
+ * Exemple : `UNIT_MOVED` de (2, 4) à (3, 4) pour une FREMM s'affiche
+ * « FREMM multimission : déplacement de (2, 4) vers (3, 4) ».
+ */
+const eventDescribers: { [T in engine.GameEvent['type']]: (event: EventOf<T>) => string } = {
+  MISSION_LAUNCHED: (event) => `Mission lancée : ${missionLabel[event.mission]}`,
+  UNIT_MOVED: (event) =>
+    event.interrupted
+      ? `${shipLabelOf(event.shipClass)} : ${interruptedMoveText} (de ${hexLabel(event.from)} à ${hexLabel(event.to)})`
+      : `${shipLabelOf(event.shipClass)} : déplacement de ${hexLabel(event.from)} vers ${hexLabel(event.to)}`,
+  CYCLE_STARTED: (event) => `Cycle ${event.cycle} ouvert`,
+  CARRIER_ORDERED: (event) => `Porte-avions : ordre « ${carrierOrderLabel[event.order.kind]} »`,
+  CARRIER_MOVED: (event) =>
+    `Porte-avions : navigation de ${hexLabel(event.from)} vers ${hexLabel(event.to)}`,
+  CONTACT_DETECTED: contactEventLabel,
+  SWEEP_PERFORMED: sweepEventLabel,
+  MISSION_WON: () => 'Mission réussie : le porte-avions est arrivé à destination',
+};
+
+/** Texte du journal pour n'importe quel événement du moteur. */
+export function eventLabel(event: engine.GameEvent): string {
+  // TypeScript ne relie pas le type de l'événement à son descripteur : le lien est garanti par le
+  // type de `eventDescribers`, qui impose un descripteur pour chaque type d'événement.
+  const describe = eventDescribers[event.type] as (event: engine.GameEvent) => string;
+  return describe(event);
 }

@@ -1,6 +1,6 @@
 import type { Hex } from '../map/hex.service';
 
-/** Type de navire révélé par une recherche active : frégate ou sous-marin, jamais la classe (AB-25). */
+/** Type de navire révélé par un balayage : frégate ou sous-marin, jamais la classe (AB-25). */
 export const CONTACT_TARGET_TYPES = ['frigate', 'submarine'] as const;
 export type ContactTargetType = (typeof CONTACT_TARGET_TYPES)[number];
 
@@ -13,8 +13,8 @@ interface ContactBase {
 }
 
 /**
- * Contact suspect du camp ami (SF-04 §4, G-08.7) : une zone approximative issue d'une détection
- * passive. Il ne porte que ce que le joueur est autorisé à connaître : ni la cible, ni sa classe,
+ * Contact suspect du camp ami (SF-04 §4, G-08.7) : une zone approximative issue de la veille
+ * (détection continue de fin de cycle). Il ne porte que ce que le joueur est autorisé à connaître : ni la cible, ni sa classe,
  * ni le détecteur, ni l'ordre dans lequel la zone a été construite (AB-20, AB-21).
  */
 export interface SuspectContact extends ContactBase {
@@ -24,8 +24,8 @@ export interface SuspectContact extends ContactBase {
 }
 
 /**
- * Contact identifié par une recherche active (AB-25) : le type du navire et sa position exacte à
- * l'instant de la recherche. La position n'est jamais actualisée automatiquement (AB-27).
+ * Contact identifié par un balayage (AB-25) : le type du navire et sa position exacte à
+ * l'instant du balayage. La position n'est jamais actualisée automatiquement (AB-27).
  */
 export interface IdentifiedContact extends ContactBase {
   kind: 'identified';
@@ -33,7 +33,7 @@ export interface IdentifiedContact extends ContactBase {
   position: Hex;
 }
 
-/** Navire identifié par une recherche : ce que l'événement et le journal peuvent dire (AB-28). */
+/** Navire identifié par un balayage : ce que l'événement et le journal peuvent dire (AB-28). */
 export interface Identification {
   contactId: string;
   targetType: ContactTargetType;
@@ -49,7 +49,7 @@ export type Contact = (SuspectContact | IdentifiedContact) & { source: string };
 
 /**
  * Contact tel que le joueur le voit (`observeFriend()`), sans `source`. Un contact identifié
- * détecté avant le cycle courant est « ancien » (AB-27) ; une zone passive ne l'est jamais.
+ * détecté avant le cycle courant est « ancien » (AB-27) ; une zone de veille ne l'est jamais.
  */
 export type FriendContact = SuspectContact | (IdentifiedContact & { stale: boolean });
 

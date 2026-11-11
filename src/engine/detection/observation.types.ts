@@ -18,13 +18,13 @@ export interface FriendObservation {
   cycle: number;
   outcome: MissionOutcome | null;
   carrierNavigation: CarrierNavigation | null;
-  /** Contraintes choisies par le joueur (« Capteurs dégradés » réduit la portée de recherche). */
+  /** Contraintes choisies par le joueur (« Capteurs dégradés » réduit la portée de veille et de balayage). */
   constraints: readonly Constraint[];
   /** Unités connues du joueur : les siennes ; un hostile identifié n'est jamais une unité (AB-30). */
   units: Unit[];
   /**
-   * Contacts du camp ami : zones suspectes de la veille passive et navires identifiés par
-   * recherche active, jamais une unité (AB-23, AB-30). Sans la cible interne (AB-26).
+   * Contacts du camp ami : zones suspectes de la veille et navires identifiés par
+   * balayage, jamais une unité (AB-23, AB-30). Sans la cible interne (AB-26).
    */
   contacts: FriendContact[];
 }

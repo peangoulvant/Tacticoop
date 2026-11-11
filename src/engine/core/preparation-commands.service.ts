@@ -22,10 +22,12 @@ type Handler<T extends PreparationCommand['type']> = (
   config: GameConfig,
 ) => CommandResult;
 
+/** Accepte la commande : la préparation devient `setup`, sans événement. */
 function acceptSetup(setup: MissionSetup): CommandResult {
   return accept({ status: 'preparation', setup });
 }
 
+/** Refus d'un nombre ou d'un choix de contraintes hors limites (SF-01 §4). */
 function invalidConstraints(max: number): CommandResult {
   return reject('INVALID_CONSTRAINTS', labelEngine.invalidConstraintsMessage(max));
 }
@@ -55,6 +57,10 @@ const drawRandomConstraints: Handler<'DRAW_RANDOM_CONSTRAINTS'> = (
     : invalidConstraints(max);
 };
 
+/**
+ * Nouvelle préparation où le nombre de bâtiments d'une classe change de `delta`.
+ * Exemple : `delta = 1` ajoute une FREMM ; `delta = -1` en retire une.
+ */
 function withShipCount(setup: MissionSetup, shipClass: keyof MissionSetup['force'], delta: number) {
   return {
     ...setup,

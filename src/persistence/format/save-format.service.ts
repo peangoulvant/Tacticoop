@@ -1,14 +1,16 @@
 import * as engine from '../../engine';
 import { isRecord } from './guards.validator';
-import { checkEvents, checkMissionState } from './save.validator';
+import { checkEvents } from './event.validator';
+import { checkMissionState } from './save.validator';
 
 /**
  * Version du format. La version 2 ajoutait les contacts et l'état du générateur (AB-24) ; la
- * version 3 ajoute l'action spéciale utilisée des unités et les contacts identifiés (AB-30). Une
- * autre version, les versions 1 et 2 comprises, est refusée : aucune migration n'existe en V1
+ * version 3 ajoute l'action spéciale utilisée des unités et les contacts identifiés (AB-30) ; la
+ * version 4 ajoute le cycle du dernier usage de chaque action spéciale (AB-33, AB-34). Une autre
+ * version, les versions 1 à 3 comprises, est refusée : aucune migration n'existe en V1
  * (AB-08).
  */
-export const SAVE_SCHEMA_VERSION = 3;
+export const SAVE_SCHEMA_VERSION = 4;
 
 /** Pourquoi une sauvegarde est refusée (diagnostic ; aucun message n'est affiché au joueur, voir AB-08). */
 export const SaveErrorCode = {

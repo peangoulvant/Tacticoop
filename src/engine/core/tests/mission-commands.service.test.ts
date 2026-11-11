@@ -182,12 +182,15 @@ describe('END_CYCLE_EARLY', () => {
     expect(accepted(mission(), { type: 'END_CYCLE_EARLY' }).state.cycle).toBe(2);
   });
 
-  it('est refusée pendant une activation engagée', () => {
+  it('termine l’activation en cours puis clôt le cycle, sans passer par « Terminer l’activation » (AB-31)', () => {
     const { state } = accepted(mission(), move('a', 4, 2));
-    expect(run(state, { type: 'END_CYCLE_EARLY' })).toMatchObject({
-      ok: false,
-      error: { code: 'ACTIVATION_IN_PROGRESS' },
-    });
+    expect(unitOf(state, 'a').activation).toBe('in_progress');
+    const closed = accepted(state, { type: 'END_CYCLE_EARLY' });
+    expect(closed.state.cycle).toBe(2);
+    expect(closed.events).toEqual([{ type: 'CYCLE_STARTED', cycle: 2 }]);
+    // Le cycle suivant rend toutes les unités activables disponibles, déplacement renouvelé.
+    expect(unitOf(closed.state, 'a')).toMatchObject({ activation: 'available', hasMoved: false });
+    expect(unitOf(closed.state, 'a').position).toEqual({ col: 4, row: 2 });
   });
 });
 
