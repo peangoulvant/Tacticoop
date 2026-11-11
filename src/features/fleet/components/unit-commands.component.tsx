@@ -1,4 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import * as engine from '../../../engine';
 import * as labelEngine from '../../../shared/engine.label';
 import * as labels from '../../../shared/ui.label';
@@ -38,31 +39,68 @@ function sweepBlocker(
 }
 
 /**
- * Motif propre au balayage (action déjà utilisée, récupération, absence de capteurs), ou `null`.
- * Les motifs d'ordre sont déjà affichés par `unavailabilityReason`. Pendant la récupération, le
- * message dit à quel cycle le balayage redevient possible.
+ * Motif propre au balayage affiché sous les boutons (action déjà utilisée, absence de capteurs),
+ * ou `null`. Les motifs d'ordre sont déjà affichés par `unavailabilityReason` ; la récupération,
+ * elle, se lit sur le bouton (icône et compte à rebours, `CooldownBadge`).
  */
 function sweepOwnReason(mission: engine.MissionState, unit: engine.Unit): string | null {
   const blocker = sweepBlocker(mission, unit);
-  if (blocker === 'ON_COOLDOWN') {
-    const from = engine.availableFromCycle(unit, 'sweep', engine.defaultConfig);
-    return labels.sweepCooldownLabel(from);
-  }
   if (blocker !== 'SPECIAL_ACTION_USED' && blocker !== 'NO_SENSORS') return null;
   return `${labels.sweepText.unavailable} : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
 }
 
-/** Bouton « Balayage » : ouvre le brouillon ; désactivé avec son motif sinon (AB-30). */
+/**
+ * Compte à rebours de la récupération d'une action : une horloge suivie du nombre de cycles
+ * restants, posée à gauche du bouton (AB-34). Purement visuel : le texte du bouton reste son nom
+ * accessible, et le détail (cycle de retour) est dans l'info-bulle.
+ */
+function CooldownBadge({ cycles }: { cycles: number }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{ position: 'absolute', left: 10, display: 'flex', alignItems: 'center', gap: 0.5 }}
+    >
+      <AccessTimeIcon fontSize="small" />
+      <Typography component="span" variant="body2" sx={{ fontWeight: 700 }}>
+        {cycles}
+      </Typography>
+    </Box>
+  );
+}
+
+/**
+ * Bouton « Balayage » : ouvre le brouillon ; désactivé avec son motif sinon (AB-30). Pendant la
+ * récupération (AB-34), il passe en orange et affiche l'horloge avec les cycles restants.
+ */
 function SweepButton({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
-  const disabled = mission.outcome !== null || sweepBlocker(mission, unit) !== null;
-  const reason = sweepOwnReason(mission, unit) ?? unavailabilityReason(mission, unit);
+  const observation = engine.observeFriend(mission);
+  const blocker = sweepBlocker(mission, unit);
+  const disabled = mission.outcome !== null || blocker !== null;
+  const cooling = blocker === 'ON_COOLDOWN';
+  const remaining = engine.cooldownRemaining(
+    unit,
+    'sweep',
+    observation.cycle,
+    engine.defaultConfig,
+  );
+  const from = engine.availableFromCycle(unit, 'sweep', engine.defaultConfig);
+  const reason = cooling
+    ? labels.sweepCooldownLabel(from)
+    : (sweepOwnReason(mission, unit) ?? unavailabilityReason(mission, unit));
   return (
     <Button
       variant="outlined"
       disabled={disabled}
       title={disabled && reason ? reason : labels.sweepText.title}
       onClick={() => startSweepDraft(unit.id)}
+      sx={{
+        position: 'relative',
+        ...(cooling && {
+          '&.Mui-disabled': { color: 'warning.main', borderColor: 'warning.main' },
+        }),
+      }}
     >
+      {cooling && <CooldownBadge cycles={remaining} />}
       {labels.sweepText.button}
     </Button>
   );

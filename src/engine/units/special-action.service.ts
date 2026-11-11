@@ -29,6 +29,22 @@ export function availableFromCycle(
   return lastUse === undefined ? 1 : lastUse + 1 + config.specialActions[kind].cooldownCycles;
 }
 
+/**
+ * Nombre de cycles pendant lesquels l'action reste indisponible, à partir du cycle donné (0 si
+ * elle est possible). Sert à afficher le compte à rebours de la récupération.
+ *
+ * Exemple avec `cooldownCycles = 1` : usage au cycle 3 ; au cycle 4 il reste 1 cycle, au cycle 5
+ * il en reste 0.
+ */
+export function cooldownRemaining(
+  unit: Unit,
+  kind: SpecialActionKind,
+  cycle: number,
+  config: GameConfig,
+): number {
+  return Math.max(0, availableFromCycle(unit, kind, config) - cycle);
+}
+
 /** L'action est en récupération au cycle donné. */
 export function isOnCooldown(
   unit: Unit,

@@ -27,7 +27,7 @@ export type {
   ShipSpec,
   SpecialActionKind,
 } from './config/game.config';
-export { availableFromCycle } from './units/special-action.service';
+export { availableFromCycle, cooldownRemaining } from './units/special-action.service';
 export {
   CONSTRAINTS,
   DIFFICULTIES,

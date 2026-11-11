@@ -212,7 +212,14 @@ describe('fin de cycle', () => {
     expect(screen.getByText('Cycle 2 ouvert')).toBeInTheDocument();
     // Nouveau cycle : l'unité est de nouveau disponible, mais le balayage récupère un cycle.
     expect(screen.getByRole('button', { name: 'Déplacement' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Balayage' })).toBeDisabled();
-    expect(screen.getByText(/de nouveau possible au cycle 3/)).toBeInTheDocument();
+    // Pendant la récupération : bouton désactivé, compte à rebours (1 cycle) et cycle de retour en info-bulle.
+    const sweep = screen.getByRole('button', { name: 'Balayage' });
+    expect(sweep).toBeDisabled();
+    expect(within(sweep).getByText('1')).toBeInTheDocument();
+    expect(sweep).toHaveAttribute(
+      'title',
+      expect.stringContaining('de nouveau possible au cycle 3'),
+    );
+    expect(screen.queryByText(/en récupération/)).not.toBeInTheDocument();
   });
 });
