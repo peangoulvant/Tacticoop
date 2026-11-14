@@ -747,3 +747,36 @@ describe('contacts du camp hostile (version 5)', () => {
     expect(result.ok).toBe(true);
   });
 });
+
+describe("reprise d'une mission où l'IA a joué (version 6)", () => {
+  /** Mission en cours après la fin d'activation d'une unité alliée : une unité ennemie a réagi. */
+  function afterOneReaction(): engine.MissionState {
+    const { state } = playedMission('naval_combat');
+    const unit = state.units.find((u) => u.side === 'friend' && u.activation === 'available')!;
+    const result = engine.executeCommand(
+      state,
+      { type: 'END_ACTIVATION', unitId: unit.id },
+      engine.defaultConfig,
+    );
+    if (!result.ok || result.state.status !== 'in_progress') throw new Error('commande refusée');
+    return result.state;
+  }
+
+  it("relit l'état d'une réaction ennemie : unité activée, contacts et générateur compris", () => {
+    const state = afterOneReaction();
+    expect(state.units.some((u) => u.side === 'hostile' && u.activation === 'activated')).toBe(
+      true,
+    );
+    const result = parseSave(serializeSave(state, [], SAVED_AT));
+    expect(result.ok && result.save.state).toEqual(state);
+  });
+
+  it('la partie reprise se poursuit exactement comme la partie originale', () => {
+    const state = afterOneReaction();
+    const parsed = parseSave(serializeSave(state, [], SAVED_AT));
+    if (!parsed.ok) throw new Error('sauvegarde illisible');
+    const next = (from: engine.MissionState) =>
+      engine.executeCommand(from, { type: 'END_CYCLE_EARLY' }, engine.defaultConfig);
+    expect(next(parsed.save.state)).toEqual(next(state));
+  });
+});

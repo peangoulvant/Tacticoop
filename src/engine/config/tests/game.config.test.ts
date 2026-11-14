@@ -105,6 +105,10 @@ describe('defaultConfig', () => {
     expect(defaultConfig.constraints.sensorsFactor).toBe(0.8);
   });
 
+  it("place la station de l'IA en lutte navale au centre de la carte (AB-37, AB-40)", () => {
+    expect(defaultConfig.ai).toEqual({ navalCombatStationColumnRatio: 0.5 });
+  });
+
   /**
    * Contrôle de cohérence (AB-16) : à toute largeur de carte, les distances minimales de départ
    * dépassent la portée d'arme maximale plus la portée de détection active. Ce test casse si la

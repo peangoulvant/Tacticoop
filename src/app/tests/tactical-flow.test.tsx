@@ -223,3 +223,31 @@ describe('fin de cycle', () => {
     expect(screen.queryByText(/en récupération/)).not.toBeInTheDocument();
   });
 });
+
+describe("réaction de l'IA ennemie", () => {
+  it('joue après l’activation du joueur sans laisser aucune trace dans l’interface ni le journal', async () => {
+    const user = await startAndSelectFrigate(mission(HOSTILE_FAR, 1));
+    await user.click(screen.getByRole('button', { name: 'Terminer l’activation' }));
+
+    // Le moteur a bien fait jouer une unité ennemie (état réel, hors de la vue du joueur)...
+    const state = useGameStore.getState().state;
+    if (state.status !== 'in_progress') throw new Error('mission non en cours');
+    expect(
+      state.units.filter((u) => u.side === 'hostile' && u.activation === 'activated'),
+    ).toHaveLength(1);
+
+    // ... mais ni les événements, ni la page n'en disent rien, et le joueur garde la main.
+    expect(JSON.stringify(useGameStore.getState().events)).not.toContain('hostile');
+    expect(document.body.textContent).not.toMatch(/hostile/i);
+    expect(screen.getByRole('button', { name: /Sous-marin, Disponible/ })).toBeInTheDocument();
+  });
+
+  it('le décompte de « Terminer le cycle » ne compte que les unités du joueur', async () => {
+    const user = await startAndSelectFrigate(mission(HOSTILE_FAR, 1));
+    await user.click(screen.getByRole('button', { name: 'Terminer le cycle' }));
+    // Deux unités alliées disponibles, trois navires ennemis disponibles : seul le premier compte.
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      '2 unités n’ont pas été activées : leurs activations seront perdues.',
+    );
+  });
+});
