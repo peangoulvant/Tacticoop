@@ -102,7 +102,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 
 ## État du projet
 
-**Branche `main`** : après la PR #39 (jalon de fiabilisation des interfaces fusionné, D-13 arbitré). La détection symétrique est en revue (PR #40).
+**Branche `main`** : après la PR #40 (détection symétrique fusionnée). Aucune IA ne joue encore ; le cadre de l'IA est la PR suivante.
 
 **Implémenté et vérifié par des tests** (détail et statuts exigence par exigence : [TRACEABILITY.md](docs/TRACEABILITY.md))
 - Préparation de mission (SF-01), génération de carte par graine, force ennemie créée au lancement (cachée, inerte).
@@ -138,7 +138,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | #37 | Revue du propriétaire (AB-31 à AB-34) et revue du code | Fusionnée |
 | #38 | Fiabilisation des interfaces : tests React et synchronisation des documents | Fusionnée |
 | #39 | Arbitrage de l'IA hostile (D-13, AB-35 à AB-40), documents seuls | Fusionnée |
-| #40 | Détection symétrique : contacts de l'IA, veille et balayage des deux camps, météo ennemie | Ouverte |
+| #40 | Détection symétrique : contacts de l'IA, veille et balayage des deux camps, météo ennemie | Fusionnée |
 
 ## Prochain travail
 
