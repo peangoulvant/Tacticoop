@@ -1,6 +1,6 @@
 import type { MissionState } from '../core/game.types';
 import type { Unit } from '../units/unit.model';
-import type { Contact, FriendContact } from './contact.types';
+import type { Contact, ObservedContact } from './contact.types';
 import type { FriendObservation, HostileObservation } from './observation.types';
 
 /**
@@ -18,10 +18,10 @@ function isKnownToHostile(unit: Unit): boolean {
 }
 
 /**
- * Contact tel que le joueur le voit : la cible interne (`source`) est retirée, et un contact
+ * Contact tel que son camp le voit (joueur ou IA) : la cible interne (`source`) est retirée, et un contact
  * identifié détecté avant le cycle courant est marqué « ancien » (AB-26, AB-27).
  */
-function toFriendContact(contact: Contact, cycle: number): FriendContact {
+function toObservedContact(contact: Contact, cycle: number): ObservedContact {
   const { id, cycle: detectedAt } = contact;
   if (contact.kind === 'suspect')
     return { kind: 'suspect', id, cycle: detectedAt, zone: contact.zone };
@@ -47,16 +47,20 @@ export function observeFriend(mission: MissionState): FriendObservation {
     carrierNavigation: mission.carrierNavigation,
     constraints: mission.setup.constraints,
     units: mission.units.filter(isKnownToFriend),
-    contacts: mission.friendContacts.map((contact) => toFriendContact(contact, mission.cycle)),
+    contacts: mission.friendContacts.map((contact) => toObservedContact(contact, mission.cycle)),
   };
 }
 
-/** Projection autorisée du camp hostile (IA) sur l'état réel : carte et unités connues seulement. */
+/**
+ * Projection autorisée du camp hostile (IA) sur l'état réel : carte, ses unités et ses propres
+ * contacts, comme `observeFriend` pour le joueur (AB-35). Les unités alliées n'y figurent jamais.
+ */
 export function observeHostile(mission: MissionState): HostileObservation {
   return {
     map: mission.map,
     cycle: mission.cycle,
     outcome: mission.outcome,
     units: mission.units.filter(isKnownToHostile),
+    contacts: mission.hostileContacts.map((contact) => toObservedContact(contact, mission.cycle)),
   };
 }

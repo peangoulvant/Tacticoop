@@ -86,14 +86,35 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
       );
     });
 
-    it('ne dépend ni de la difficulté ni des contraintes initiales', () => {
+    it('ne dépend ni de la difficulté, ni des munitions limitées, ni des capteurs dégradés (AB-36)', () => {
       const plain = launchMission(setupFor(mission), defaultConfig, 31);
       const other = launchMission(
-        setupFor(mission, { difficulty: 'expert', constraints: ['limited_ammo', 'bad_weather'] }),
+        setupFor(mission, {
+          difficulty: 'expert',
+          constraints: ['limited_ammo', 'degraded_sensors'],
+        }),
         defaultConfig,
         31,
       );
       expect(hostilesOf(other)).toEqual(hostilesOf(plain));
+    });
+
+    it('la météo défavorable plafonne le déplacement ennemi à 2 hexagones, rien d’autre (AB-36)', () => {
+      const plain = launchMission(setupFor(mission), defaultConfig, 31);
+      const stormy = launchMission(
+        setupFor(mission, { constraints: ['bad_weather'] }),
+        defaultConfig,
+        31,
+      );
+      const capped = hostilesOf(stormy);
+      expect(capped.every((unit) => unit.movement <= 2)).toBe(true);
+      // Mêmes navires, mêmes positions, mêmes dotations : seul le mouvement change, et seulement
+      // pour une unité dont la fiche dépasse le plafond.
+      const normal = hostilesOf(plain);
+      expect(capped.map((u) => [u.id, u.position, u.missiles, u.torpedoes])).toEqual(
+        normal.map((u) => [u.id, u.position, u.missiles, u.torpedoes]),
+      );
+      expect(normal.some((u) => u.movement > 2)).toBe(true);
     });
 
     it("ne révèle aucun ennemi au joueur : la projection amie n'en contient aucun", () => {

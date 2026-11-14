@@ -54,10 +54,17 @@ function checkContact(contact: unknown, map: engine.GameMap, cycle: number): Pro
     : `forme inconnue pour le contact ${contact.id}`;
 }
 
-/** La cible interne d'un contact est un navire hostile de la mission (AB-26). */
-function checkContactSources(contacts: readonly Json[], units: readonly engine.Unit[]): Problem {
-  const hostiles = new Set(units.filter((u) => u.side === 'hostile').map((u) => u.id));
-  if (!contacts.every((c) => typeof c.source === 'string' && hostiles.has(c.source))) {
+/**
+ * La cible interne d'un contact est une unité du camp d'en face : un navire hostile pour les
+ * contacts du joueur, un navire allié pour ceux de l'IA (AB-26, AB-35).
+ */
+function checkContactSources(
+  contacts: readonly Json[],
+  units: readonly engine.Unit[],
+  targetSide: engine.Side,
+): Problem {
+  const targets = new Set(units.filter((u) => u.side === targetSide).map((u) => u.id));
+  if (!contacts.every((c) => typeof c.source === 'string' && targets.has(c.source))) {
     return 'cible de contact inconnue';
   }
   // Un seul contact identifié par navire (AB-26).
@@ -67,22 +74,36 @@ function checkContactSources(contacts: readonly Json[], units: readonly engine.U
     : 'plusieurs contacts identifiés pour un même navire';
 }
 
-/** Compteur de numéros de contact et état du générateur (entier 32 bits, AB-24). */
+/** Compteurs de numéros de contact (un par camp) et état du générateur (entier 32 bits, AB-24). */
 function checkCounters(state: Json): Problem {
-  if (!isPositive(state.nextContactNumber)) return 'compteur de contacts invalide';
+  if (!isPositive(state.nextContactNumber) || !isPositive(state.nextHostileContactNumber)) {
+    return 'compteur de contacts invalide';
+  }
   return isCount(state.rngState) && state.rngState <= 0xffffffff ? null : 'état du hasard invalide';
 }
 
-/** Contacts du camp ami, compteur de numéros et état du générateur (AB-24). */
-export function checkDetection(state: Json, map: engine.GameMap): Problem {
-  const counterProblem = checkCounters(state);
-  if (counterProblem) return counterProblem;
-  const contacts = state.friendContacts;
+/** Liste de contacts d'un camp : formes, identifiants uniques dans la liste, cibles du camp d'en face. */
+function checkSideContacts(
+  state: Json,
+  field: 'friendContacts' | 'hostileContacts',
+  targetSide: engine.Side,
+  map: engine.GameMap,
+): Problem {
+  const contacts = state[field];
   if (!Array.isArray(contacts)) return 'contacts illisibles';
   const cycle = state.cycle as number;
   const first = contacts.map((c) => checkContact(c, map, cycle)).find((p) => p !== null);
   if (first) return first;
   const ids = new Set(contacts.map((c: Json) => c.id));
   if (ids.size !== contacts.length) return 'identifiants de contact en double';
-  return checkContactSources(contacts as Json[], state.units as engine.Unit[]);
+  return checkContactSources(contacts as Json[], state.units as engine.Unit[], targetSide);
+}
+
+/** Compteurs, état du générateur, contacts du camp ami puis contacts du camp hostile (AB-35). */
+export function checkDetection(state: Json, map: engine.GameMap): Problem {
+  return (
+    checkCounters(state) ??
+    checkSideContacts(state, 'friendContacts', 'hostile', map) ??
+    checkSideContacts(state, 'hostileContacts', 'friend', map)
+  );
 }

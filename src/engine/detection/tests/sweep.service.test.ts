@@ -44,6 +44,8 @@ function mission(
     outcome: null,
     friendContacts: contacts,
     nextContactNumber: contacts.length + 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: createRng(seed).state(),
   };
 }
@@ -324,5 +326,57 @@ describe('cases à portée (brouillon de recherche)', () => {
     );
     expect(full).toHaveLength(60); // 6 + 12 + 18 + 24 hexagones aux distances 1 à 4
     expect(degraded).toHaveLength(36); // 6 + 12 + 18
+  });
+});
+
+describe('balayage du camp hostile : mêmes règles que le joueur (AB-35)', () => {
+  /** Navire de l'IA qui balaie, en `AT` (frégate DA : balayage sûr dans `SURE`). */
+  const aiSearcher = (): Unit => unit('h1', 'hostile', 'frigate_da', AT);
+  const ally = (position: Hex = { col: 10, row: 7 }): Unit =>
+    unit('f1', 'friend', 'frigate_asm', position);
+
+  it('identifie une unité alliée à portée : le contact va au camp hostile seulement', () => {
+    const state = mission([aiSearcher(), ally()]);
+    const result = resolveSweep(state, aiSearcher(), SURE);
+    expect(result.state.hostileContacts).toEqual([
+      {
+        kind: 'identified',
+        id: 'C-1',
+        cycle: 1,
+        targetType: 'frigate',
+        position: { col: 10, row: 7 },
+        source: 'f1',
+      },
+    ]);
+    expect(result.state.nextHostileContactNumber).toBe(2);
+    // Le joueur n'apprend rien de ce que l'IA identifie : ni contact, ni compteur, ni événement.
+    expect(result.state.friendContacts).toEqual(state.friendContacts);
+    expect(result.state.nextContactNumber).toBe(state.nextContactNumber);
+    expect(result.events).toEqual([]);
+  });
+
+  it('révèle le porte-avions allié comme tel, jamais comme une frégate', () => {
+    const carrier = unit('c', 'friend', 'carrier', { col: 9, row: 7 });
+    const result = resolveSweep(mission([aiSearcher(), carrier]), aiSearcher(), SURE);
+    expect(result.state.hostileContacts).toMatchObject([
+      { kind: 'identified', targetType: 'carrier', source: 'c' },
+    ]);
+  });
+
+  it('respecte la portée et ne cherche jamais son propre camp', () => {
+    const far = ally({ col: 13, row: 7 }); // distance 6 : hors de portée (4)
+    const sister = unit('h2', 'hostile', 'frigate_asm', { col: 8, row: 7 });
+    const result = resolveSweep(mission([aiSearcher(), far, sister]), aiSearcher(), SURE);
+    expect(result.state.hostileContacts).toEqual([]);
+  });
+
+  it('ne subit pas « Capteurs dégradés », propre au joueur : portée 4 conservée (AB-36)', () => {
+    const at4 = ally({ col: 11, row: 7 });
+    const state = mission([aiSearcher(), at4], { constraints: ['degraded_sensors'] });
+    expect(resolveSweep(state, aiSearcher(), SURE).state.hostileContacts).toHaveLength(1);
+    // Le même balayage côté joueur est, lui, réduit à 3.
+    const hostileTarget = unit('h3', 'hostile', 'frigate_asm', { col: 11, row: 7 });
+    const friendState = mission([searcher(), hostileTarget], { constraints: ['degraded_sensors'] });
+    expect(resolveSweep(friendState, searcher(), SURE).state.friendContacts).toEqual([]);
   });
 });

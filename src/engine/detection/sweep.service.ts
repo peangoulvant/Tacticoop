@@ -13,6 +13,7 @@ import {
 } from './contact.types';
 import type { FriendObservation } from './observation.types';
 import { effectiveRange } from './sensor-range.service';
+import { readContacts, opposingSide, writeContacts } from './side-contacts.service';
 
 /** Contact identifié tel que le moteur le conserve, avec sa cible interne. */
 type StoredIdentified = Extract<Contact, { kind: 'identified' }>;
@@ -44,15 +45,19 @@ export function sweepArea(observation: FriendObservation, unit: Unit, config: Ga
   return area;
 }
 
-/** Type de navire révélé : frégate ou sous-marin, jamais la classe (AB-25). Aucun hostile n'est porte-avions. */
+/**
+ * Type de navire révélé : frégate, sous-marin ou (pour un balayage de l'IA) porte-avions, jamais
+ * la classe (AB-25). Le type « porte-avions » est une précision d'implémentation de la symétrie
+ * (AB-35) : le porte-avions allié doit pouvoir être identifié par l'IA sans passer pour une frégate.
+ */
 function targetTypeOf(unit: Unit, config: GameConfig): ContactTargetType {
-  return config.ships[unit.shipClass].category === 'submarine' ? 'submarine' : 'frigate';
+  return config.ships[unit.shipClass].category;
 }
 
 /**
- * Navires hostiles identifiés par le balayage : un tirage à la probabilité de balayage par navire
- * hostile opérationnel à portée, dans l'ordre des unités, sans bonus côtier ni aucun autre
- * modificateur (AB-25, AB-29).
+ * Navires du camp d'en face identifiés par le balayage : un tirage à la probabilité de balayage
+ * par navire opérationnel à portée, dans l'ordre des unités, sans bonus côtier ni aucun autre
+ * modificateur (AB-25, AB-29). Même règle pour les deux camps (AB-35).
  */
 function drawIdentifiedTargets(
   mission: MissionState,
@@ -64,7 +69,7 @@ function drawIdentifiedTargets(
   const range = effectiveSweepRange(searcher, mission.setup.constraints, config);
   return mission.units.filter(
     (unit) =>
-      unit.side === 'hostile' &&
+      unit.side === opposingSide(searcher.side) &&
       unit.hp > 0 &&
       hexDistance(searcher.position, unit.position) <= range &&
       rng() < spec.sweepProbability,
@@ -107,17 +112,22 @@ function identify(
 }
 
 /**
- * Balayage d'une unité alliée, résolue au moment de l'action (G-08.3.6, AB-25) : chaque
- * navire hostile à portée est identifié avec la probabilité de balayage, plusieurs pouvant l'être.
- * Le résultat est toujours journalisé, réussite ou non (AB-28). Le hasard est repris et rendu à
- * l'état de la mission (AB-24). N'appartient pas à la veille de fin de cycle, qui reste
- * appliquée à toute paire éligible. La consommation de l'action est faite par la commande.
+ * Balayage d'une unité, résolu au moment de l'action (G-08.3.6, AB-25) : chaque navire du camp
+ * d'en face à portée est identifié avec la probabilité de balayage, plusieurs pouvant l'être. Les
+ * contacts créés vont au camp de l'unité qui balaie (AB-35).
+ *
+ * Le balayage d'une unité alliée est toujours journalisé, réussite ou non (AB-28). Celui d'une
+ * unité de l'IA ne produit **aucun événement** : le journal du joueur ne montre jamais les
+ * actions cachées de l'IA (SF-06 §2). Le hasard est repris et rendu à l'état de la mission
+ * (AB-24). N'appartient pas à la veille de fin de cycle ; la consommation de l'action est faite
+ * par la commande.
  */
 export function resolveSweep(mission: MissionState, searcher: Unit, config: GameConfig): Progress {
   const rng = restoreRng(mission.rngState);
   const targets = drawIdentifiedTargets(mission, searcher, config, rng);
-  let contacts: Contact[] = mission.friendContacts;
-  let nextNumber = mission.nextContactNumber;
+  const known = readContacts(mission, searcher.side);
+  let contacts: Contact[] = known.contacts;
+  let nextNumber = known.nextNumber;
   const identified: Identification[] = [];
   for (const target of targets) {
     const result = identify(mission, contacts, nextNumber, target, config);
@@ -125,21 +135,18 @@ export function resolveSweep(mission: MissionState, searcher: Unit, config: Game
     nextNumber = result.nextNumber;
     identified.push(result.identification);
   }
-  return {
-    state: {
-      ...mission,
-      friendContacts: contacts,
-      nextContactNumber: nextNumber,
-      rngState: rng.state(),
-    },
-    events: [
-      {
-        type: 'SWEEP_PERFORMED',
-        cycle: mission.cycle,
-        unitId: searcher.id,
-        shipClass: searcher.shipClass,
-        identified,
-      },
-    ],
-  };
+  const state = writeContacts(mission, searcher.side, { contacts, nextNumber });
+  const events: Progress['events'] =
+    searcher.side === 'friend'
+      ? [
+          {
+            type: 'SWEEP_PERFORMED',
+            cycle: mission.cycle,
+            unitId: searcher.id,
+            shipClass: searcher.shipClass,
+            identified,
+          },
+        ]
+      : [];
+  return { state: { ...state, rngState: rng.state() }, events };
 }

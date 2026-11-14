@@ -8,10 +8,10 @@ Wargame naval tactique web, destiné à la réflexion et au débriefing collecti
 - Préparation de mission : lutte navale ou escorte, difficulté, contraintes, budget et composition de la force navale (SF-01).
 - Carte hexagonale générée par graine, force ennemie créée au lancement mais cachée.
 - Déplacement des unités alliées, activations et cycles ; navigation du porte-avions et victoire à l'arrivée en B.
-- Détection du camp ami : **veille** automatique de fin de cycle (contacts suspects) et **balayage** voulu par le joueur (contacts identifiés, bruit, délai de récupération).
+- Détection, symétrique pour les deux camps : **veille** automatique de fin de cycle (contacts suspects) et **balayage** (contacts identifiés, bruit, délai de récupération), chaque camp ayant ses propres contacts.
 - Journal de bord, sauvegarde automatique et reprise de la partie en cours.
 
-**À développer** : IA hostile et détection hostile, combat et dégâts, défaite et bilan, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), débriefing. Le détail, exigence par exigence, est dans la [matrice de traçabilité](docs/TRACEABILITY.md).
+**À développer** : IA hostile (la détection du camp hostile existe côté moteur, aucune IA ne joue encore), combat et dégâts, défaite et bilan, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), débriefing. Le détail, exigence par exigence, est dans la [matrice de traçabilité](docs/TRACEABILITY.md).
 
 ## Stack
 

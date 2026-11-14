@@ -41,6 +41,8 @@ function mission(
     outcome: null,
     friendContacts: contacts,
     nextContactNumber: contacts.length + 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: createRng(seed).state(),
   };
 }
@@ -324,5 +326,117 @@ describe('veille : hasard conservé (AB-24)', () => {
   it("ne tire rien quand aucune paire n'est éligible : l'état du générateur est inchangé", () => {
     const start = mission([friend(), hostile('frigate_asm', { col: 12, row: 7 })]);
     expect(resolveWatch(start, defaultConfig).state.rngState).toBe(start.rngState);
+  });
+});
+
+/** Part des tirages où la veille donne au moins un contact au camp hostile (l'IA). */
+function hostileDetectionRate(build: (seed: number) => MissionState, runs = 3000): number {
+  let detected = 0;
+  for (let seed = 1; seed <= runs; seed++) {
+    if (resolveWatch(build(seed), defaultConfig).state.hostileContacts.length > 0) detected++;
+  }
+  return detected / runs;
+}
+
+describe('veille du camp hostile : mêmes règles que le joueur (AB-35)', () => {
+  /** Détecteur hostile en `AT`, unité alliée à 2 hexagones (dans la portée de veille). */
+  const target = (shipClass: ShipClass = 'frigate_da', patch: Partial<Unit> = {}): Unit => ({
+    ...unit('f1', 'friend', shipClass, { col: 9, row: 7 }),
+    ...patch,
+  });
+  const watcher = (): Unit => unit('h1', 'hostile', 'frigate_asm', AT);
+
+  it('détecte à environ 50 % une unité alliée à portée, comme le joueur détecte un ennemi', () => {
+    const rate = hostileDetectionRate((seed) => mission([watcher(), target()], { seed }));
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
+  });
+
+  it('crée un contact propre à l’IA, avec l’unité alliée pour cible interne, et rien pour le joueur', () => {
+    // Le porte-avions n'a pas de capteurs : il ne détecte pas l'ennemi, seul l'ennemi le détecte.
+    const carrier = target('carrier');
+    for (let seed = 1; seed <= 100; seed++) {
+      const result = resolveWatch(mission([watcher(), carrier], { seed }), defaultConfig);
+      for (const contact of result.state.hostileContacts) {
+        expect(contact).toMatchObject({ kind: 'suspect', cycle: 1, source: 'f1' });
+      }
+      // Le journal du joueur ne montre jamais ce que l'IA détecte (SF-06 §2, SF-07 §3).
+      expect(result.events).toEqual([]);
+      expect(result.state.friendContacts).toEqual([]);
+    }
+  });
+
+  it('détecte aussi le porte-avions allié', () => {
+    const rate = hostileDetectionRate((seed) => mission([watcher(), target('carrier')], { seed }));
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
+  });
+
+  it('relève de 50 à 70 % la détection d’une unité alliée qui a balayé pendant le cycle (bruit)', () => {
+    const rate = hostileDetectionRate((seed) =>
+      mission([watcher(), target('frigate_da', { lastSpecialActionCycle: { sweep: 1 } })], {
+        seed,
+      }),
+    );
+    expect(rate).toBeGreaterThan(0.65);
+    expect(rate).toBeLessThan(0.75);
+  });
+
+  it('relève de 50 à 70 % la détection d’un sous-marin allié en mer côtière', () => {
+    const rate = hostileDetectionRate((seed) =>
+      mission([watcher(), target('submarine')], { seed, terrain: 'coastal_sea' }),
+    );
+    expect(rate).toBeGreaterThan(0.65);
+    expect(rate).toBeLessThan(0.75);
+  });
+
+  it('ne subit pas « Capteurs dégradés », propre au joueur (AB-36)', () => {
+    const rate = hostileDetectionRate((seed) =>
+      mission([watcher(), target()], { seed, constraints: ['degraded_sensors'] }),
+    );
+    // Portée de veille inchangée (2) : la cible à 2 hexagones reste détectable à 50 %.
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
+  });
+
+  it('numérote ses contacts à part : C-1 même si le joueur en est à C-5', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const state = resolveWatch(
+        { ...mission([watcher(), target()], { seed }), nextContactNumber: 5 },
+        defaultConfig,
+      ).state;
+      if (state.hostileContacts.length === 0) continue;
+      expect(state.hostileContacts.map((c) => c.id)).toEqual(['C-1']);
+      expect(state.nextHostileContactNumber).toBe(2);
+      expect(state.nextContactNumber).toBe(5);
+      return;
+    }
+    throw new Error('aucune détection sur 200 graines');
+  });
+
+  it('applique la même expiration : un contact de l’IA détecté avant ce cycle disparaît', () => {
+    const old: Contact = { kind: 'suspect', id: 'C-1', cycle: 1, zone: [AT], source: 'f1' };
+    const state = resolveWatch(
+      {
+        ...mission([watcher()], { cycle: 2 }),
+        hostileContacts: [old],
+        nextHostileContactNumber: 2,
+      },
+      defaultConfig,
+    ).state;
+    expect(state.hostileContacts).toEqual([]);
+  });
+
+  it('ne change pas les tirages du joueur : le camp ami tire d’abord', () => {
+    // Un porte-avions allié n'est pas un détecteur : il n'ajoute des tirages que côté hostile.
+    for (let seed = 1; seed <= 100; seed++) {
+      const alone = resolveWatch(mission([friend(), hostile()], { seed }), defaultConfig).state;
+      const carrier = unit('c', 'friend', 'carrier', { col: 8, row: 8 });
+      const withCarrier = resolveWatch(
+        mission([friend(), hostile(), carrier], { seed }),
+        defaultConfig,
+      ).state;
+      expect(withCarrier.friendContacts).toEqual(alone.friendContacts);
+    }
   });
 });

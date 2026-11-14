@@ -39,6 +39,8 @@ function mission(): MissionState {
     outcome: null,
     friendContacts: [],
     nextContactNumber: 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: 7,
     units: [
       make('a', 'friend', 'fremm', { col: 3, row: 4 }),

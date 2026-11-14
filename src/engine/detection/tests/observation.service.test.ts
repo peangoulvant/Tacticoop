@@ -26,6 +26,8 @@ function missionWithHostiles(): MissionState {
     outcome: null,
     friendContacts: [],
     nextContactNumber: 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: 1,
     units: [
       make('carrier', 'friend', 'carrier', { col: 0, row: 4 }),
@@ -117,5 +119,45 @@ describe('projection du camp hostile', () => {
     const text = JSON.stringify(observation);
     expect(text).not.toContain('"id":"a"');
     expect(text).not.toContain('"id":"carrier"');
+  });
+
+  const aiContact: Contact = {
+    kind: 'identified',
+    id: 'C-1',
+    cycle: 1,
+    targetType: 'frigate',
+    position: { col: 2, row: 2 },
+    source: 'a',
+  };
+
+  it('donne à l’IA ses propres contacts, sans cible interne, avec l’état « ancien » (AB-35)', () => {
+    const observation = observeHostile({ ...missionWithHostiles(), hostileContacts: [aiContact] });
+    expect(observation.contacts).toEqual([
+      {
+        kind: 'identified',
+        id: 'C-1',
+        cycle: 1,
+        targetType: 'frigate',
+        position: { col: 2, row: 2 },
+        stale: true,
+      },
+    ]);
+    // L'unité alliée identifiée n'est jamais une unité connue de l'IA : seulement un contact.
+    expect(observation.units.every((u) => u.side === 'hostile')).toBe(true);
+    expect(JSON.stringify(observation)).not.toContain('"source"');
+  });
+
+  it('garde les contacts des deux camps séparés', () => {
+    const state = {
+      ...missionWithHostiles(),
+      friendContacts: [
+        { kind: 'suspect', id: 'C-1', cycle: 2, zone: [{ col: 5, row: 4 }], source: 'hostile-1' },
+      ] satisfies Contact[],
+      hostileContacts: [aiContact],
+    };
+    expect(observeFriend(state).contacts.map((c) => c.kind)).toEqual(['suspect']);
+    expect(observeHostile(state).contacts.map((c) => c.kind)).toEqual(['identified']);
+    // Ce que l'IA a appris n'apparaît jamais dans la projection du joueur.
+    expect(JSON.stringify(observeFriend(state))).not.toContain('"targetType"');
   });
 });

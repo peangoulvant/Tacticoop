@@ -30,6 +30,8 @@ function mission(hostileAt: Hex): MissionState {
     outcome: null,
     friendContacts: [],
     nextContactNumber: 1,
+    hostileContacts: [],
+    nextHostileContactNumber: 1,
     rngState: 1,
     units: [
       make('a', 'friend', 'fremm', { col: 2, row: 4 }),
@@ -130,5 +132,32 @@ describe('déplacement confirmé : obstacle non détecté (SF-02.15, SF-02.16)',
     const { state, events } = accepted(mission({ col: 8, row: 8 }), move({ col: 5, row: 4 }));
     expect(unitA(state).position).toEqual({ col: 5, row: 4 });
     expect(events[0]).not.toHaveProperty('interrupted');
+  });
+});
+
+describe('ce que l’IA détecte reste caché au joueur (AB-35, SF-06 §2)', () => {
+  it('une clôture de cycle où l’IA détecte une unité alliée ne produit aucun événement ni information côté joueur', () => {
+    let aiDetections = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      // Un porte-avions allié (sans capteurs) à 2 hexagones d'une frégate hostile : seule l'IA détecte.
+      const state: MissionState = {
+        ...mission({ col: 4, row: 4 }),
+        rngState: seed,
+        units: [
+          make('carrier', 'friend', 'carrier', { col: 2, row: 4 }),
+          make('hostile-1', 'hostile', 'frigate_da', { col: 4, row: 4 }),
+        ],
+      };
+      const closed = accepted(state, { type: 'END_CYCLE_EARLY' });
+      if (closed.state.hostileContacts.length > 0) aiDetections++;
+      expect(closed.events).toEqual([{ type: 'CYCLE_STARTED', cycle: 2 }]);
+      const visible = JSON.stringify([closed.events, observeFriend(closed.state)]);
+      expect(visible).not.toContain('hostileContacts');
+      expect(visible).not.toContain('"source"');
+      expect(closed.state.friendContacts).toEqual([]);
+    }
+    // Environ 50 % de détections : le test n'est pas vide.
+    expect(aiDetections).toBeGreaterThan(30);
+    expect(aiDetections).toBeLessThan(70);
   });
 });

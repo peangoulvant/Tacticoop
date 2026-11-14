@@ -1,4 +1,4 @@
-import type { FriendContact } from './contact.types';
+import type { ObservedContact } from './contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
 import type { Constraint } from '../missions/setup.service';
@@ -26,17 +26,20 @@ export interface FriendObservation {
    * Contacts du camp ami : zones suspectes de la veille et navires identifiés par
    * balayage, jamais une unité (AB-23, AB-30). Sans la cible interne (AB-26).
    */
-  contacts: FriendContact[];
+  contacts: ObservedContact[];
 }
 
 /**
- * Ce que l'IA ennemie est autorisée à connaître pour décider (SF-06 §2) : jamais les positions
- * réelles non détectées du camp ami. Pas encore consommée : l'IA n'existe pas.
+ * Ce que l'IA ennemie est autorisée à connaître pour décider (SF-06 §2, AB-35) : ses unités et ses
+ * propres contacts, jamais les positions réelles non détectées du camp ami. Symétrique de
+ * `FriendObservation`. Pas encore consommée : l'IA ne joue pas encore.
  */
 export interface HostileObservation {
   map: GameMap;
   cycle: number;
   outcome: MissionOutcome | null;
-  /** Unités connues de l'IA : les siennes, et plus tard les alliés détectés. */
+  /** Unités connues de l'IA : les siennes ; un navire allié identifié n'est jamais une unité. */
   units: Unit[];
+  /** Contacts de l'IA (zones de veille, navires identifiés), sans la cible interne (AB-26). */
+  contacts: ObservedContact[];
 }

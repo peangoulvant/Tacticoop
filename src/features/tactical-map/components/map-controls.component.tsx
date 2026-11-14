@@ -43,7 +43,7 @@ export function HexCaption({
   map: engine.GameMap;
   hex: engine.Hex | null;
   unit?: engine.Unit;
-  contacts: readonly engine.FriendContact[];
+  contacts: readonly engine.ObservedContact[];
 }) {
   const text = hex
     ? `(${hex.col}, ${hex.row}) — ${labels.terrainLabel[engine.terrainAt(map, hex)]}`

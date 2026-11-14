@@ -102,17 +102,17 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 
 ## État du projet
 
-**Branche `main`** : après la PR #37, plus le jalon de fiabilisation des interfaces (tests React et synchronisation documentaire), tant que sa PR n'est pas fusionnée.
+**Branche `main`** : après la PR #39 (jalon de fiabilisation des interfaces fusionné, D-13 arbitré). La détection symétrique est en revue (PR #40).
 
 **Implémenté et vérifié par des tests** (détail et statuts exigence par exigence : [TRACEABILITY.md](docs/TRACEABILITY.md))
 - Préparation de mission (SF-01), génération de carte par graine, force ennemie créée au lancement (cachée, inerte).
 - Déplacement des unités alliées, activations, cycles ; « Terminer le cycle » termine d'abord l'activation en cours (AB-31) ; une seule unité « en cours » à la fois (tour par tour, SF-03.8).
 - Navigation du porte-avions et victoire à l'arrivée en B.
-- Détection du camp ami : **veille** automatique de fin de cycle (50 % de base, contacts suspects) et **balayage** (action du joueur : 90 %, contacts identifiés), bruit du balayage (+20 points de veille contre l'unité qui a balayé, AB-33), délai de récupération d'un cycle (AB-34, mécanisme commun aux futures actions spéciales).
-- Journal de bord, sauvegarde automatique (`schemaVersion` 4) et reprise.
+- Détection des deux camps, symétrique (AB-35) : **veille** automatique de fin de cycle (50 % de base, contacts suspects) et **balayage** (action du joueur : 90 %, contacts identifiés), bruit du balayage (+20 points de veille contre l'unité qui a balayé, AB-33), délai de récupération d'un cycle (AB-34, mécanisme commun aux futures actions spéciales).
+- Journal de bord, sauvegarde automatique (`schemaVersion` 5) et reprise.
 - Interface correspondante, avec des tests React sur les parcours principaux.
 
-**Absent** : IA hostile et détection hostile, combat et dégâts, défaite, bilan et débriefing, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), synthèse de cycle, panneau de fiche de contact, planification des déplacements face aux contacts.
+**Absent** : IA hostile (la détection du camp hostile existe côté moteur, aucune IA ne joue), combat et dégâts, défaite, bilan et débriefing, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), synthèse de cycle, panneau de fiche de contact, planification des déplacements face aux contacts.
 
 **Organisation des tests** (`npm test`, un seul lancement)
 - Tests métier (moteur, store, persistance) : environnement Node, dans un sous-dossier `tests/` du dossier testé. Les tirages se testent avec une probabilité forcée à 0 ou à 1 dans une configuration d'essai, ou sur des centaines de graines avec des bornes larges.
@@ -123,7 +123,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - jsdom ne permet pas de tester le clic sur la carte, le zoom, le glisser ni le rendu SVG (cases surlignées, tracés, couleurs, pointillés des contacts anciens) : vérification dans un vrai navigateur, ou tests Playwright à envisager plus tard. Le choix de destination d'un déplacement est posé dans le store du brouillon en test.
 - Deux onglets sur la même partie s'écrasent (le dernier écrit gagne). Une sauvegarde n'est faite qu'entre deux séquences complètes.
 - Les validateurs de sauvegarde sont écrits à la main : un champ ajouté à l'état n'est pas contrôlé tant qu'on ne les met pas à jour (recette dans le guide du développeur).
-- L'effet du bruit du balayage sur les unités alliées n'existe qu'avec la détection hostile (D-13) ; il est testé sur des navires hostiles fictifs.
+- Les contacts de l'IA sont construits et testés, mais aucune IA ne les utilise encore : ni commande de balayage de l'IA, ni déplacement ennemi.
 
 **Derniers changements significatifs** : PR #36 (balayage), PR #37 (revue du propriétaire : fin de cycle, vocabulaire veille / balayage, veille à 50 % avec bruit, délai de récupération, revue du code), jalon de fiabilisation (tests d'interface, documents synchronisés, nom accessible des cartes d'unité).
 
@@ -136,11 +136,13 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | #35 | Arbitrage du balayage (AB-25 à AB-30), documents seuls | Fusionnée |
 | #36 | Jalon 5, PR C : balayage (moteur, persistance, interface) | Fusionnée |
 | #37 | Revue du propriétaire (AB-31 à AB-34) et revue du code | Fusionnée |
-| #38 | Fiabilisation des interfaces : tests React et synchronisation des documents | Ouverte |
+| #38 | Fiabilisation des interfaces : tests React et synchronisation des documents | Fusionnée |
+| #39 | Arbitrage de l'IA hostile (D-13, AB-35 à AB-40), documents seuls | Fusionnée |
+| #40 | Détection symétrique : contacts de l'IA, veille et balayage des deux camps, météo ennemie | Ouverte |
 
 ## Prochain travail
 
-**IA hostile et combat.** D-13 est arbitré en principe (AB-35 à AB-40, voir la table des décisions). Ordre prévu, une PR chacune : (1) **détection symétrique** : contacts propres à l'IA, veille et balayage du camp hostile, `observeHostile` enrichi, météo plafonnant ses unités ; l'effet du bruit et de la récupération jouera alors contre les alliés ; (2) **cadre de l'IA** : `engine/ai/` (`nom.ai.service.ts`), choix de l'unité, tour par tour après chaque activation alliée, déplacement sans armes, avec l'algorithme de trajectoire **proposé au propriétaire avant codage** ; (3) **combat** : arbitrer d'abord D-04 et D-05 (compléments), puis les dégâts, la défaite et le bilan (D-11, D-12). Restent ouverts : algorithme de trajectoire, politique de balayage de l'IA, Classique / Expert (D-08), équilibrage (G-03.1.5).
+**IA hostile et combat.** D-13 est arbitré en principe (AB-35 à AB-40, voir la table des décisions). Ordre prévu, une PR chacune : (1) **détection symétrique : faite** (PR #40, contacts propres à l'IA, veille et balayage des deux camps, `observeHostile` enrichi, météo plafonnant les unités ennemies) ; (2) **cadre de l'IA** : `engine/ai/` (`nom.ai.service.ts`), choix de l'unité, tour par tour après chaque activation alliée, déplacement sans armes, avec l'algorithme de trajectoire **proposé au propriétaire avant codage** ; (3) **combat** : arbitrer d'abord D-04 et D-05 (compléments), puis les dégâts, la défaite et le bilan (D-11, D-12). Restent ouverts : algorithme de trajectoire, politique de balayage de l'IA, Classique / Expert (D-08), équilibrage (G-03.1.5).
 
 **Avant de modifier le code** : lire le guide du développeur, respecter les conventions ci-dessous (nommage des fichiers, complexité, commentaires, aucune valeur de jeu en dur, hasard injecté), ajouter les tests (métier, et d'interface si un parcours change), puis mettre à jour `TRACEABILITY.md` et ce document.
 
