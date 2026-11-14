@@ -27,8 +27,13 @@ export function contactsOf(mission: MissionState, side: Side): SideContacts {
 }
 
 /**
- * Nouvelle mission où les contacts d'un camp sont remplacés. L'autre camp n'est jamais touché :
- * ce que l'IA apprend ne change rien pour le joueur, et inversement.
+ * Enregistre les contacts d'un camp dans la mission : c'est le pendant de `contactsOf`, qui les lit.
+ * Elle écrit la bonne liste (`friendContacts` ou `hostileContacts`) et le bon compteur selon le
+ * camp, pour que la veille et le balayage n'aient pas à choisir eux-mêmes. L'autre camp n'est
+ * jamais modifié : ce que l'IA apprend ne change rien pour le joueur, et inversement.
+ *
+ * Exemple : `withContacts(mission, 'hostile', { contacts, nextNumber: 3 })` met à jour
+ * `hostileContacts` et `nextHostileContactNumber`, et laisse `friendContacts` tel quel.
  */
 export function withContacts(mission: MissionState, side: Side, value: SideContacts): MissionState {
   return side === 'friend'

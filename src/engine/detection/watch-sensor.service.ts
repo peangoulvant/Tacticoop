@@ -13,11 +13,8 @@ import { effectiveRange } from './sensor-range.service';
 /** Contact suspect tel que le moteur le conserve, avec sa cible interne. */
 type StoredSuspect = Extract<Contact, { kind: 'suspect' }>;
 
-/**
- * Une unité détecte si elle est du camp donné, opérationnelle et dotée de capteurs (le
- * porte-avions non, D-04). Valable pour les deux camps (AB-35).
- */
-function isDetector(unit: Unit, side: Side, config: GameConfig): boolean {
+/** L'unité peut détecter : elle est du camp donné, en état et dotée de capteurs (pas le porte-avions). */
+function canDetect(unit: Unit, side: Side, config: GameConfig): boolean {
   return unit.side === side && unit.hp > 0 && config.ships[unit.shipClass].detection !== null;
 }
 
@@ -32,13 +29,12 @@ function watchRangeOf(
 }
 
 /**
- * Probabilité de détection de veille d'une cible : la probabilité de base du détecteur (50 %),
- * plus 20 points si la cible est un sous-marin en mer côtière au moment du tirage (AB-22), plus
- * 20 points si la cible a fait un balayage pendant ce cycle (AB-33), plafonnée à 100 %. Les bonus
- * se cumulent.
+ * Probabilité d'être détecté par la veille, pour les deux camps :
+ * - la base est de 50 %, quelle que soit l'unité ;
+ * - unité qui a balayé pendant le cycle : +20 % (AB-33) ;
+ * - unité de type sous-marin située sur une case de mer côtière : +20 % (AB-22).
  *
- * Exemples : frégate qui a balayé : 50 + 20 = 70 % ; sous-marin côtier qui a balayé : 50 + 20 +
- * 20 = 90 %. Valable pour les deux camps.
+ * Les bonus se cumulent, dans la limite de 100 %.
  */
 function watchProbability(
   spec: DetectorSpec,
@@ -93,7 +89,7 @@ function watchOf(
   config: GameConfig,
   rng: Rng,
 ): { state: MissionState; created: StoredSuspect[] } {
-  const detectors = mission.units.filter((unit) => isDetector(unit, side, config));
+  const detectors = mission.units.filter((unit) => canDetect(unit, side, config));
   const targets = mission.units.filter((unit) => unit.side === opposingSide(side) && unit.hp > 0);
   const known = contactsOf(mission, side);
   const created: StoredSuspect[] = [];
