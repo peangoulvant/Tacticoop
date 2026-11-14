@@ -13,7 +13,7 @@ import {
 } from './contact.types';
 import type { FriendObservation } from './observation.types';
 import { effectiveRange } from './sensor-range.service';
-import { contactsOf, opposingSide, withContacts } from './side-contacts.service';
+import { readContacts, opposingSide, writeContacts } from './side-contacts.service';
 
 /** Contact identifié tel que le moteur le conserve, avec sa cible interne. */
 type StoredIdentified = Extract<Contact, { kind: 'identified' }>;
@@ -125,7 +125,7 @@ function identify(
 export function resolveSweep(mission: MissionState, searcher: Unit, config: GameConfig): Progress {
   const rng = restoreRng(mission.rngState);
   const targets = drawIdentifiedTargets(mission, searcher, config, rng);
-  const known = contactsOf(mission, searcher.side);
+  const known = readContacts(mission, searcher.side);
   let contacts: Contact[] = known.contacts;
   let nextNumber = known.nextNumber;
   const identified: Identification[] = [];
@@ -135,7 +135,7 @@ export function resolveSweep(mission: MissionState, searcher: Unit, config: Game
     nextNumber = result.nextNumber;
     identified.push(result.identification);
   }
-  const state = withContacts(mission, searcher.side, { contacts, nextNumber });
+  const state = writeContacts(mission, searcher.side, { contacts, nextNumber });
   const events: Progress['events'] =
     searcher.side === 'friend'
       ? [

@@ -6,7 +6,7 @@ import { hexDistance } from '../map/hex.service';
 import { usedActionDuringCycle } from '../units/special-action.service';
 import type { Side, Unit } from '../units/unit.model';
 import { contactId, type Contact } from './contact.types';
-import { contactsOf, opposingSide, withContacts } from './side-contacts.service';
+import { readContacts, opposingSide, writeContacts } from './side-contacts.service';
 import { generateWatchZone } from './watch-zone.service';
 import { effectiveRange } from './sensor-range.service';
 
@@ -91,7 +91,7 @@ function watchOf(
 ): { state: MissionState; created: StoredSuspect[] } {
   const detectors = mission.units.filter((unit) => canDetect(unit, side, config));
   const targets = mission.units.filter((unit) => unit.side === opposingSide(side) && unit.hp > 0);
-  const known = contactsOf(mission, side);
+  const known = readContacts(mission, side);
   const created: StoredSuspect[] = [];
   for (const target of targets) {
     if (!isDetected(target, detectors, mission, config, rng)) continue;
@@ -100,7 +100,7 @@ function watchOf(
     created.push({ kind: 'suspect', id, cycle: mission.cycle, zone, source: target.id });
   }
   const kept = known.contacts.filter((contact) => contact.cycle >= mission.cycle);
-  const state = withContacts(mission, side, {
+  const state = writeContacts(mission, side, {
     contacts: [...kept, ...created],
     nextNumber: known.nextNumber + created.length,
   });
