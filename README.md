@@ -9,9 +9,10 @@ Wargame naval tactique web, destiné à la réflexion et au débriefing collecti
 - Carte hexagonale générée par graine, force ennemie créée au lancement mais cachée.
 - Déplacement des unités alliées, activations et cycles ; navigation du porte-avions et victoire à l'arrivée en B.
 - Détection, symétrique pour les deux camps : **veille** automatique de fin de cycle (contacts suspects) et **balayage** (contacts identifiés, bruit, délai de récupération), chaque camp ayant ses propres contacts.
+- IA hostile (cadre) : les unités ennemies se déplacent vers leur objectif et balayent avec les mêmes commandes que le joueur, sans arme.
 - Journal de bord, sauvegarde automatique et reprise de la partie en cours.
 
-**À développer** : IA hostile (la détection du camp hostile existe côté moteur, aucune IA ne joue encore), combat et dégâts, défaite et bilan, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), débriefing. Le détail, exigence par exigence, est dans la [matrice de traçabilité](docs/TRACEABILITY.md).
+**À développer** : combat et dégâts (armes de l'IA comprises), défaite et bilan, autres actions spéciales (torpille, hélicoptère, réparation, tir, leurre), débriefing. Le détail, exigence par exigence, est dans la [matrice de traçabilité](docs/TRACEABILITY.md).
 
 ## Stack
 

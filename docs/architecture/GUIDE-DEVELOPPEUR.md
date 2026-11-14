@@ -11,7 +11,8 @@ src/
 │  ├─ config/       GameConfig : TOUTES les valeurs du jeu (portées, probabilités, délais…)
 │  ├─ map/          hexagones, carte, génération du relief
 │  ├─ units/        unités, déplacement, porte-avions, force ennemie, actions spéciales
-│  ├─ detection/    veille, balayage, contacts, projection du camp ami (observeFriend)
+│  ├─ detection/    veille, balayage, contacts, projections des camps (observeFriend, observeHostile)
+│  ├─ ai/           IA ennemie : objectif, déplacement, choix de l'unité, balayage, tour (nom.ai.service.ts)
 │  └─ missions/     préparation, lancement, activations, cycles
 ├─ persistence/   Sauvegarde : format JSON versionné, validation, stockage IndexedDB
 ├─ store/         Zustand : état de la partie, brouillons, sauvegarde automatique
@@ -27,7 +28,7 @@ Sens des dépendances : `features → store → engine`, et `store → persisten
 1. **Clic** sur « Balayage » dans `features/fleet/.../unit-commands.component.tsx` → `startSweepDraft(unitId)` ouvre un *brouillon* (`store/sweep-draft.store.ts`). Rien n'est encore décidé : un brouillon n'est que de l'état d'interface.
 2. La carte surligne les cases à portée : `useSweepDraft` demande au moteur `engine.sweepArea(...)`.
 3. **Confirmer** → `confirmSweep(unitId)` → `dispatchAndCloseDrafts({ type: 'SWEEP', unitId })` → `useGameStore.dispatch` → `engine.executeCommand`.
-4. Le moteur (`core/mission-commands.service.ts`, gestionnaire `sweep`) vérifie les préconditions (`specialActionBlocker`), appelle la règle (`detection/sweep.service.ts`), enregistre l'usage (`special-action.service.ts`) et renvoie le **nouvel état** et un **événement** `SWEEP_PERFORMED`.
+4. Le moteur (`core/unit-commands.service.ts`, fonction `sweep`, partagée avec l'IA) vérifie les préconditions (`specialActionBlocker`), appelle la règle (`detection/sweep.service.ts`), enregistre l'usage (`special-action.service.ts`) et renvoie le **nouvel état** et un **événement** `SWEEP_PERFORMED`.
 5. Le store publie l'état et l'événement ; React redessine. Le journal affiche `labels.eventLabel(event)` ; la sauvegarde automatique écrit le JSON (`store/auto-save.service.ts`).
 
 Si le moteur refuse (`ok: false`), l'état ne change pas et l'interface affiche le message de l'erreur.
@@ -44,7 +45,7 @@ Si le moteur refuse (`ok: false`), l'état ne change pas et l'interface affiche 
 
 ### Ajouter une commande du joueur
 1. Ajouter son type à `MissionCommand` (`core/game.types.ts`).
-2. Écrire son gestionnaire dans `core/mission-commands.service.ts` ; le type `handlers` oblige à le brancher.
+2. Écrire son gestionnaire dans `core/mission-commands.service.ts` (ou, si l'IA doit aussi pouvoir l'utiliser, dans `core/unit-commands.service.ts` avec un paramètre `actor: Side`) ; le type `handlers` oblige à le brancher.
 3. Ajouter ses codes d'erreur à `GameErrorCode` et leurs messages à `shared/engine.label.ts`.
 4. Tester dans `core/tests/` : cas accepté, chaque refus, et « un refus ne consomme rien ».
 
@@ -65,6 +66,12 @@ La déclarer dans l'interface de `GameConfig`, lui donner sa valeur dans `defaul
 2. **Monter `SAVE_SCHEMA_VERSION`** (`persistence/format/save-format.service.ts`) : les anciennes sauvegardes sont alors traitées comme absentes (AB-08). Mettre à jour le validateur correspondant (`unit.validator.ts`, `contact.validator.ts`, `event.validator.ts`, `save.validator.ts`) : un champ non validé n'est pas contrôlé.
 3. Ajouter le test d'aller-retour dans `persistence/format/tests/`.
 
+### Faire jouer l'IA (jalon 5, AB-42)
+- L'IA lit **uniquement** `observeHostile(mission)` (carte, mission, point B en escorte, ses unités, ses contacts) et agit par les **mêmes fonctions** que le joueur (`unit-commands.service.ts`) avec `actor = 'hostile'` : mêmes refus, mêmes limites, mêmes délais. Ces commandes ne produisent **aucun événement** pour le camp hostile.
+- Un tour d'IA (`ai/turn.ai.service.ts`) : balayer si la politique le veut, se déplacer vers l'ancre (`objective.ai.service.ts`, `unit-movement.ai.service.ts`), terminer l'activation. `endActivation` du joueur déclenche **une** réaction ; la clôture (`resolveCycleEnd`) fait jouer les restantes avant le porte-avions.
+- Une unité n'obéit qu'à son camp : le joueur reçoit « introuvable » pour toute unité hostile. L'interface n'a jamais à lire `mission.units` pour compter ou afficher (`observeFriend(mission).units`).
+- Ajouter une décision à l'IA : un fichier `nom.ai.service.ts` pur (observation en entrée, intention ou commande en sortie), un test dans `ai/tests/` avec la fixture `mission-fixture.model.ts`, et un test de non-divulgation si la décision lit un état.
+
 ## 5. Glossaire
 
 | Terme | Sens |
@@ -76,6 +83,7 @@ La déclarer dans l'interface de `GameConfig`, lui donner sa valeur dans `defaul
 | Contact suspect | Zone approximative de 7 hexagones au plus ; elle ne désigne pas la case réelle. |
 | Contact identifié | Navire repéré avec son type (frégate ou sous-marin, jamais la classe) et sa position exacte à l'instant du balayage ; « ancien » s'il date d'un cycle précédent. |
 | Projection amie / hostile | `observeFriend(mission)` : ce que le joueur a le droit de savoir ; `observeHostile(mission)` : ce que l'IA a le droit de savoir (ses unités et ses propres contacts). Chaque camp a ses contacts (`friendContacts`, `hostileContacts`). |
+| Ancre / arrêt (IA) | Point que l'IA vise (point B, station au centre de la carte, ou contact) et distance de marche à laquelle elle s'arrête (portée de veille ou de balayage de l'unité). |
 | Brouillon | Action en préparation, pas encore confirmée ; sans effet sur l'état du jeu. |
 | `source` | Identifiant interne de la cible d'un contact. Jamais exposé. |
 
