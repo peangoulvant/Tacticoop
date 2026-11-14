@@ -2,15 +2,6 @@ import * as labelEngine from '../../shared/engine.label';
 import type { GameConfig } from '../config/game.config';
 import type { Hex } from '../map/hex.service';
 import {
-  type MoveBlocker,
-  type SpecialActionBlocker,
-  BLOCKER_MESSAGES,
-  SPECIAL_ACTION_BLOCKER_MESSAGES,
-  moveBlocker,
-  orderBlocker,
-  specialActionBlocker,
-} from '../missions/activation.service';
-import {
   CarrierOrderKind,
   WAYPOINT_REFUSAL_MESSAGES,
   applyOrder,
@@ -26,27 +17,14 @@ import {
   hasActivationInProgress,
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
-import { resolveSweep } from '../detection/sweep.service';
-import { observeFriend } from '../detection/observation.service';
-import {
-  MOVE_REFUSAL_MESSAGES,
-  planMove,
-  checkMovedUnitPath,
-} from '../units/unit-movement.service';
-import { recordSpecialAction } from '../units/special-action.service';
-import type { Unit } from '../units/unit.model';
+import { reactToFriendActivation } from '../ai/turn.ai.service';
 import { accept, reject } from './results.service';
-import type {
-  CommandResult,
-  GameCommand,
-  GameErrorCode,
-  MissionCommand,
-  MissionState,
-} from './game.types';
+import { blockerRejection, finishActivation, moveUnit, sweep } from './unit-commands.service';
+import type { CommandResult, GameCommand, MissionCommand, MissionState } from './game.types';
 
 /*****************************
  *
- * PARTIE COMMUNE : types et refus partagés
+ * PARTIE COMMUNE : types partagés
  *
  *****************************/
 
@@ -59,125 +37,24 @@ type Handler<T extends MissionCommand['type']> = (
   config: GameConfig,
 ) => CommandResult;
 
-const BLOCKER_CODES: Record<MoveBlocker, GameErrorCode> = {
-  NOT_ACTIVABLE: 'UNIT_NOT_ACTIVABLE',
-  ALREADY_ACTIVATED: 'UNIT_ALREADY_ACTIVATED',
-  OTHER_ACTIVATION_IN_PROGRESS: 'ACTIVATION_IN_PROGRESS',
-  ALREADY_MOVED: 'ALREADY_MOVED',
-};
-
-/** Refus correspondant à un motif d'impossibilité d'ordre. */
-function blockerRejection(blocker: MoveBlocker): CommandResult {
-  return reject(BLOCKER_CODES[blocker], BLOCKER_MESSAGES[blocker]);
-}
-
-/** Refus correspondant à un motif d'impossibilité d'action spéciale (ordre ou propre à l'action). */
-function specialActionRejection(blocker: SpecialActionBlocker): CommandResult {
-  return blocker === 'SPECIAL_ACTION_USED' || blocker === 'ON_COOLDOWN' || blocker === 'NO_SENSORS'
-    ? reject(blocker, SPECIAL_ACTION_BLOCKER_MESSAGES[blocker])
-    : blockerRejection(blocker);
-}
-
 /*****************************
  *
- * PARTIE UNITÉS : déplacement et activation
+ * PARTIE UNITÉS : fin d'activation
  *
  *****************************/
 
 /**
- * Retrouve l'unité visée par son identifiant et vérifie qu'elle peut recevoir un ordre
- * maintenant. Renvoie l'unité, ou le refus à transmettre tel quel au joueur.
+ * Clôture explicite de l'activation, même sans déplacement (SF-03.1, SF-03.2). Une unité ennemie
+ * réagit aussitôt, résolue entièrement avant la prochaine décision du joueur (AB-39) ; puis,
+ * quand toutes les activations sont achevées, le cycle se clôt et le suivant s'ouvre
+ * automatiquement (SF-03.4). La progression des projectiles (G-06.6) n'existe pas encore.
  */
-function findOrderableUnit(
-  mission: MissionState,
-  unitId: string,
-): { unit: Unit } | { rejection: CommandResult } {
-  const unit = mission.units.find((u) => u.id === unitId);
-  if (!unit)
-    return {
-      rejection: reject('UNIT_NOT_FOUND', labelEngine.commandRefusalMessages.UNIT_NOT_FOUND),
-    };
-  const blocker = orderBlocker(mission.units, unit);
-  return blocker ? { rejection: blockerRejection(blocker) } : { unit };
-}
-
-/** Nouvelle mission où seule l'unité `unitId` est modifiée (position, activation…). */
-function updateUnitInMission(
-  mission: MissionState,
-  unitId: string,
-  patch: Partial<Unit>,
-): MissionState {
-  return {
-    ...mission,
-    units: mission.units.map((u) => (u.id === unitId ? { ...u, ...patch } : u)),
-  };
-}
-
-/** Un déplacement par activation, exécuté après validation ; l'activation reste engagée (SF-03.3). */
-const moveUnit: Handler<'MOVE_UNIT'> = (mission, { unitId, destination }, config) => {
-  const found = findOrderableUnit(mission, unitId);
-  if ('rejection' in found) return found.rejection;
-  const { unit } = found;
-  const blocker = moveBlocker(mission.units, unit);
-  if (blocker) return blockerRejection(blocker);
-  // Le trajet et les refus ne reposent que sur ce que le joueur connaît (SF-02 §7).
-  const plan = planMove(observeFriend(mission), unit, destination, config);
-  if (!plan.ok) {
-    return reject('MOVE_REFUSED', MOVE_REFUSAL_MESSAGES[plan.reason], { moveRefusal: plan.reason });
-  }
-  // Sur l'état réel, un occupant non détecté interrompt le déplacement (SF-02.15) : il est tout de
-  // même consommé, et l'occupant n'est ni identifié ni révélé.
-  const { stop, interrupted } = checkMovedUnitPath(mission, unit, plan.path);
-  const moved = updateUnitInMission(mission, unitId, {
-    position: stop,
-    activation: 'in_progress',
-    hasMoved: true,
-  });
-  return accept(moved, [
-    {
-      type: 'UNIT_MOVED',
-      unitId,
-      shipClass: unit.shipClass,
-      from: unit.position,
-      to: stop,
-      cycle: mission.cycle,
-      ...(interrupted && { interrupted: true }),
-    },
-  ]);
-};
-
-/**
- * Balayage (G-07.7, AB-25, AB-30) : résolu sur-le-champ, il consomme l'action spéciale de l'unité
- * même sans résultat, l'engage dans son activation et enregistre le cycle de l'usage : ce numéro
- * déclenche le délai de récupération (AB-34) et le bruit de l'émission (AB-33). Un refus ne
- * consomme rien.
- */
-const sweep: Handler<'SWEEP'> = (mission, { unitId }, config) => {
-  const found = findOrderableUnit(mission, unitId);
-  if ('rejection' in found) return found.rejection;
-  const { unit } = found;
-  const blocker = specialActionBlocker(mission.units, unit, 'sweep', mission.cycle, config);
-  if (blocker) return specialActionRejection(blocker);
-  const swept = resolveSweep(mission, unit, config);
-  const engaged = updateUnitInMission(swept.state, unitId, {
-    ...recordSpecialAction(unit, 'sweep', mission.cycle),
-    activation: 'in_progress',
-    specialActionUsed: true,
-  });
-  return accept(engaged, swept.events);
-};
-
-/**
- * Clôture explicite de l'activation, même sans déplacement (SF-03.1, SF-03.2). Quand toutes les
- * activations sont achevées, le cycle se clôt et le suivant s'ouvre automatiquement (SF-03.4).
- * La réaction ennemie et la progression des projectiles, qui suivent normalement une activation
- * (G-06.6), n'existent pas encore.
- */
-const endActivation: Handler<'END_ACTIVATION'> = (mission, { unitId }, config) => {
-  const found = findOrderableUnit(mission, unitId);
-  if ('rejection' in found) return found.rejection;
-  const ended = updateUnitInMission(mission, unitId, { activation: 'activated' });
-  const { state, events } = closeCycleIfDone(ended, config);
+const endActivation: Handler<'END_ACTIVATION'> = (mission, command, config) => {
+  const finished = finishActivation(mission, command, config);
+  if (!finished.ok) return finished;
+  // `finishActivation` renvoie toujours une mission en cours.
+  const reacted = reactToFriendActivation(finished.state as MissionState, config);
+  const { state, events } = closeCycleIfDone(reacted, config);
   return accept(state, events);
 };
 

@@ -7,7 +7,9 @@ export type Side = (typeof SIDES)[number];
 
 /**
  * État d'activation dans le cycle (SF-03.6). « En cours » commence au premier ordre exécuté
- * (SF-03.3). Le porte-avions et les unités hostiles ne reçoivent pas d'activation du joueur.
+ * (SF-03.3). Le porte-avions n'est pas activable. Une unité hostile est activée par l'IA, jamais
+ * par le joueur (AB-39) ; une unité hostile n'est jamais « en cours » entre deux décisions du
+ * joueur, car sa réaction est résolue entièrement.
  */
 export const ACTIVATION_STATUSES = [
   'available',
@@ -53,9 +55,13 @@ export interface UnitModifiers {
   movementCap: number | null;
 }
 
-/** Seules les unités alliées autres que le porte-avions sont activées par le joueur (G-03.2.4). */
-export function initialActivation(side: Side, category: NavalCategory): ActivationStatus {
-  return side === 'friend' && category !== 'carrier' ? 'available' : 'not_activable';
+/**
+ * Toute unité navale hors porte-avions est activable (G-03.2.4) : les alliées par le joueur, les
+ * hostiles par l'IA (AB-39). Exemple : une frégate hostile commence disponible, le porte-avions
+ * allié non.
+ */
+export function initialActivation(_side: Side, category: NavalCategory): ActivationStatus {
+  return category === 'carrier' ? 'not_activable' : 'available';
 }
 
 /**

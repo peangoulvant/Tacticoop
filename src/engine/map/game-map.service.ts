@@ -128,3 +128,26 @@ export function shortestPath(
   if (!canEnter(from) || !canEnter(to)) return null;
   return pathTo(map, exploreFrom(map, from, canEnter), to);
 }
+
+/**
+ * Distance de marche (en pas) depuis `from` jusqu'à chaque case accessible par `canEnter`, par
+ * parcours en largeur. Une case absente du résultat est inaccessible. Contrairement à la distance
+ * à vol d'oiseau, elle contourne le relief : sert à l'IA pour approcher une ancre sans rester
+ * coincée contre une côte. Exemple : de part et d'autre d'une île, deux cases voisines à vol
+ * d'oiseau peuvent être distantes de 12 pas.
+ */
+export function distanceField(
+  map: GameMap,
+  from: Hex,
+  canEnter: (hex: Hex) => boolean,
+): Map<number, number> {
+  const origin = indexOf(map, from);
+  const previous = new Map<number, Hex | null>([[origin, null]]);
+  const distances = new Map<number, number>([[origin, 0]]);
+  let frontier: Hex[] = [from];
+  for (let step = 1; frontier.length > 0; step++) {
+    frontier = expandFrontier(map, frontier, canEnter, previous);
+    for (const hex of frontier) distances.set(indexOf(map, hex), step);
+  }
+  return distances;
+}

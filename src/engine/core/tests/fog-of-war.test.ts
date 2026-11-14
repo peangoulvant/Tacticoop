@@ -145,7 +145,12 @@ describe('ce que l’IA détecte reste caché au joueur (AB-35, SF-06 §2)', () 
         rngState: seed,
         units: [
           make('carrier', 'friend', 'carrier', { col: 2, row: 4 }),
-          make('hostile-1', 'hostile', 'frigate_da', { col: 4, row: 4 }),
+          // Immobile et en récupération de balayage : seule la veille agit (50 %).
+          {
+            ...make('hostile-1', 'hostile', 'frigate_da', { col: 4, row: 4 }),
+            movement: 0,
+            lastSpecialActionCycle: { sweep: 1 },
+          },
         ],
       };
       const closed = accepted(state, { type: 'END_CYCLE_EARLY' });

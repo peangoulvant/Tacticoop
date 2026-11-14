@@ -17,9 +17,8 @@ export const BLOCKER_MESSAGES = labelEngine.moveBlockerMessages satisfies Record
 
 /**
  * Motif pour lequel l'unité ne peut pas recevoir d'ordre, ou `null` si elle le peut. Ne reçoivent
- * pas d'ordre : le porte-avions et les unités ennemies (non activables), une unité déjà activée
- * ce cycle, et toute unité tant qu'une autre est en cours d'activation (seule celle-ci reçoit des
- * ordres).
+ * pas d'ordre : le porte-avions (non activable), une unité déjà activée ce cycle, et toute unité
+ * tant qu'une autre unité de son camp est en cours d'activation (seule celle-ci reçoit des ordres).
  *
  * Exemples :
  * - le porte-avions : `NOT_ACTIVABLE` ;
@@ -30,7 +29,9 @@ export const BLOCKER_MESSAGES = labelEngine.moveBlockerMessages satisfies Record
 export function orderBlocker(units: readonly Unit[], unit: Unit): OrderBlocker | null {
   if (unit.activation === 'not_activable') return 'NOT_ACTIVABLE';
   if (unit.activation === 'activated') return 'ALREADY_ACTIVATED';
-  const otherEngaged = units.some((u) => u.id !== unit.id && u.activation === 'in_progress');
+  const otherEngaged = units.some(
+    (u) => u.side === unit.side && u.id !== unit.id && u.activation === 'in_progress',
+  );
   return otherEngaged ? 'OTHER_ACTIVATION_IN_PROGRESS' : null;
 }
 

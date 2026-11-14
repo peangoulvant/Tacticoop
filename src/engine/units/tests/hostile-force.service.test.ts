@@ -30,12 +30,12 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
   (mission) => {
     const missions = launchAll(mission);
 
-    it('aligne trois ennemis en camp hostile, inactifs pour le joueur, avec leur fiche de classe', () => {
+    it("aligne trois ennemis en camp hostile, disponibles pour l'IA (AB-39), avec leur fiche de classe", () => {
       for (const launched of missions) {
         const hostiles = hostilesOf(launched);
         expect(hostiles).toHaveLength(3);
         for (const hostile of hostiles) {
-          expect(hostile.activation).toBe('not_activable');
+          expect(hostile.activation).toBe('available');
           expect(hostile.hp).toBe(defaultConfig.ships[hostile.shipClass].maxHp);
         }
       }

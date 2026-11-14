@@ -139,11 +139,25 @@ export interface MapGenerationConfig {
   bypassRowRatios: readonly number[];
 }
 
+/**
+ * Paramètres de l'IA ennemie (AB-40). Les arrêts de l'IA se déduisent des portées de détection de
+ * l'unité (`DetectorSpec`) : aucune distance d'arrêt propre à l'IA.
+ */
+export interface AiConfig {
+  /**
+   * Lutte navale : colonne de la station de départ des unités ennemies, en part de la largeur. Le
+   * centre (0,5) est la seule ancre qui n'indique pas le point de départ allié, ignoré de l'IA
+   * (AB-37). Exemple : 0,5 sur une carte de 35 de large donne la colonne 17.
+   */
+  navalCombatStationColumnRatio: number;
+}
+
 export interface GameConfig {
   map: { width: number; height: number; generation: MapGenerationConfig };
   missions: MissionsConfig;
   weaponRanges: WeaponRangesConfig;
   detection: DetectionConfig;
+  ai: AiConfig;
   specialActions: Record<SpecialActionKind, SpecialActionSpec>;
   budget: { normal: number; limitedMeans: number };
   constraints: {
@@ -225,6 +239,7 @@ export const defaultConfig: GameConfig = {
     coastalSubmarineWatchBonus: 0.2,
     sweepNoiseWatchBonus: 0.2,
   },
+  ai: { navalCombatStationColumnRatio: 0.5 },
   specialActions: { sweep: { cooldownCycles: 1 } },
   budget: { normal: 100, limitedMeans: 70 },
   constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2, sensorsFactor: 0.8 },

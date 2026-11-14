@@ -178,7 +178,8 @@ describe('commande SWEEP (G-07.7, AB-30)', () => {
     const state = mission();
     expect(refusedCode(state, search('zzz'))).toBe('UNIT_NOT_FOUND');
     expect(refusedCode(state, search('carrier'))).toBe('UNIT_NOT_ACTIVABLE');
-    expect(refusedCode(state, search('hostile-submarine-1'))).toBe('UNIT_NOT_ACTIVABLE');
+    // Une unité hostile n'obéit pas au joueur et son existence n'est pas confirmée.
+    expect(refusedCode(state, search('hostile-submarine-1'))).toBe('UNIT_NOT_FOUND');
     const done = accepted(state, { type: 'END_ACTIVATION', unitId: 'a' }).state;
     expect(refusedCode(done, search('a'))).toBe('UNIT_ALREADY_ACTIVATED');
     const engaged = accepted(state, {

@@ -123,10 +123,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 6;
+      save.schemaVersion = 7;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 6/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 7/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -523,7 +523,7 @@ describe('balayage (version 3) et délai de récupération (version 4)', () => {
   it("aller-retour d'une mission où un balayage a eu lieu", () => {
     const { state, events } = searchedMission();
     const result = parseSave(serializeSave(state, events, SAVED_AT));
-    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 5 } });
+    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 6 } });
     expect(result.ok && result.save.state).toEqual(state);
     expect(events.some((e) => e.type === 'SWEEP_PERFORMED')).toBe(true);
     expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);
