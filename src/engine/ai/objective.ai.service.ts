@@ -48,8 +48,14 @@ function contactAnchor(observation: HostileObservation, unit: Unit): Hex | null 
 }
 
 /**
- * Rang de l'unité parmi les unités de l'IA, dans l'ordre stable des identifiants (AB-38), et leur
- * nombre. Exemple : parmi `hostile-fremm-1`, `hostile-submarine-1`, `hostile-submarine-2`, la
+ * Rang de l'unité parmi les unités de l'IA (les navires hostiles, qui sont ses propres unités),
+ * dans l'ordre stable des identifiants, et leur nombre. Ce classement sert à étaler les stations
+ * de la lutte navale en hauteur (`objectiveAnchor`) : sans lui, les trois unités visant le même
+ * point du centre de la carte s'y entasseraient. Chaque unité calcule son ancre seule, à chaque
+ * activation, sans état conservé : le rang, déduit des identifiants, donne le même résultat à
+ * chaque fois et reste le même quelle que soit l'unité activée (reproductible, AB-38).
+ *
+ * Exemple : parmi `hostile-fremm-1`, `hostile-submarine-1`, `hostile-submarine-2`, la
  * seconde a le rang 1 sur 3.
  */
 function rankAmongOwn(

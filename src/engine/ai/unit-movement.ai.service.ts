@@ -53,15 +53,11 @@ export function stepsLeft(
   return field.get(indexOf(observation.map, unit.position)) as number;
 }
 
-/** Coût d'une distance : en deçà de l'arrêt, tout vaut l'arrêt (on ne s'enfonce pas dans l'ancre). */
-function stopScore(distance: number, holdDistance: number): number {
-  return Math.max(distance, holdDistance);
-}
-
 /**
  * Destination de l'unité pour cette activation, ou `null` si elle tient position (déjà à
- * l'arrêt, ou aucune case atteignable ne la rapproche). On choisit la case de moindre coût
- * (`stopScore`), la plus éloignée de l'ancre en cas d'égalité de coût (on s'arrête au bord de la
+ * l'arrêt, ou aucune case atteignable ne la rapproche). Le coût d'une case est sa distance à
+ * l'ancre, mais en deçà de la distance d'arrêt tout vaut l'arrêt : l'unité ne s'enfonce pas dans
+ * l'ancre. On choisit la case de moindre coût, la plus éloignée de l'ancre en cas d'égalité de coût (on s'arrête au bord de la
  * distance d'arrêt) ; les cases encore ex æquo se départagent par un tirage de `rng`.
  *
  * Exemple : à 8 pas de l'ancre avec un mouvement de 3 et un arrêt à 2, elle vise les cases à 5
@@ -80,7 +76,7 @@ export function chooseDestination(
     const distance = field.get(indexOf(observation.map, hex));
     return distance === undefined ? [] : [{ hex, distance }];
   });
-  const cost = (distance: number) => stopScore(distance, intent.holdDistance);
+  const cost = (distance: number) => Math.max(distance, intent.holdDistance);
   const best = options.reduce<(typeof options)[number] | null>(
     (kept, option) =>
       kept === null ||
