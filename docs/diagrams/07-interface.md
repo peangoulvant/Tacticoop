@@ -3,34 +3,40 @@
 Les écrans (`src/features/`) et l'état de l'application (`src/store/`). Une feature n'importe une autre feature que par son `index.ts`.
 
 ```mermaid
+---
+config:
+  layout: elk
+---
 flowchart TB
-    subgraph features["Écrans (features)"]
-        setup["mission-setup<br/>préparation de la mission"]:::ui
-        tactique["tactical-map<br/>écran tactique et carte"]:::ui
-        flotte["fleet<br/>forces, fiche d'unité,<br/>porte-avions"]:::ui
-        commandes["commands<br/>déplacement, balayage,<br/>fin de cycle"]:::ui
-        journal["logbook<br/>journal de bord"]:::ui
+    subgraph features["`**Écrans (features/)**`"]
+        setup["`**mission-setup/**<br>*préparation de la mission*`"]:::ui
+        tactique["`**tactical-map/**<br>*écran tactique et carte*`"]:::ui
+        flotte["`**fleet/**<br>*forces, fiche d'unité, porte-avions*`"]:::ui
+        commandes["`**commands/**<br>*déplacement, balayage, fin de cycle*`"]:::ui
+        journal["`**logbook/**<br>*journal de bord*`"]:::ui
         tactique --> flotte
         tactique --> commandes
         tactique --> journal
         flotte --> commandes
     end
 
-    subgraph store["Store (Zustand)"]
-        jeu["game.store<br/>état de la partie et dispatch"]:::state
-        brouillons["brouillons<br/>déplacement, balayage,<br/>ordre du porte-avions"]:::state
-        selection["selection<br/>unité et case choisies"]:::state
-        sauvegarde["save et auto-save<br/>sauvegarde et reprise"]:::state
+    subgraph store["`**Store (store/, Zustand)**`"]
+        jeu["`**game.store**<br>*état de la partie et dispatch*`"]:::ui
+        brouillons["`**brouillons**<br>*déplacement, balayage, ordre du porte-avions*`"]:::ui
+        selection["`**selection**<br>*unité et case choisies*`"]:::ui
+        sauvegarde["`**save et auto-save**<br>*sauvegarde et reprise*`"]:::ui
     end
 
-    moteur["engine<br/>règles du jeu"]:::core
+    moteur["`**engine/**<br>*règles du jeu*`"]:::ui
 
-    features -->|"lisent l'état, préparent des actions,<br/>envoient des commandes"| store
+    features -->|"lisent l'état, préparent des actions, envoient des commandes"| store
     store -->|"executeCommand"| moteur
 
-    classDef ui fill:#dbeafe,stroke:#2563eb,color:#111
-    classDef state fill:#fef3c7,stroke:#d97706,color:#111
-    classDef core fill:#dcfce7,stroke:#16a34a,color:#111
+    style features stroke:#fffff,fill:transparent,color:#ffffff
+    style store stroke:#fffff,fill:transparent,color:#ffffff
+
+    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
+    classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
 ```
 
 ## Lecture

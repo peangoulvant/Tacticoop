@@ -5,29 +5,35 @@ Comment la partie est sauvegardée automatiquement, puis reprise au démarrage. 
 ## Sauvegarde
 
 ```mermaid
+---
+config:
+  layout: elk
+---
 flowchart LR
-    jeu["game.store<br/>état de la partie"]:::state -->|"à chaque séquence complète"| auto["auto-save<br/>écoute l'état"]:::state
-    auto --> ecrire["serializeSave<br/>texte JSON versionné"]:::pers
-    ecrire --> stockage["storage<br/>IndexedDB"]:::pers
-    stockage --> idb[("Un seul emplacement")]:::ext
+    jeu["`**game.store**<br>*état de la partie*`"]:::ui -->|"à chaque séquence complète"| auto["`**auto-save**<br>*écoute l'état*`"]:::ui
+    auto --> ecrire["`**serializeSave**<br>*texte JSON versionné*`"]:::ui
+    ecrire --> stockage["`**storage**<br>*IndexedDB*`"]:::ui
+    stockage --> idb[("`**Un seul emplacement**`")]:::ext
 
-    classDef state fill:#fef3c7,stroke:#d97706,color:#111
-    classDef pers fill:#dbeafe,stroke:#2563eb,color:#111
+    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
     classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
 ```
 
 ## Reprise au démarrage
 
 ```mermaid
+---
+config:
+  layout: elk
+---
 flowchart LR
-    idb[("Emplacement<br/>de sauvegarde")]:::ext --> stockage["storage<br/>IndexedDB"]:::pers
-    stockage -->|"texte lu"| lire["parseSave<br/>et validateurs"]:::pers
-    lire --> verdict{"Valide ?"}
-    verdict -->|"oui"| reprise["reprise proposée<br/>restaure game.store"]:::state
-    verdict -->|"illisible ou version inconnue"| rien(["Traitée comme absente<br/>nouvelle partie"]):::ext
+    idb[("`**Emplacement de sauvegarde**`")]:::ext --> stockage["`**storage**<br>*IndexedDB*`"]:::ui
+    stockage -->|"texte lu"| lire["`**parseSave**<br>*et validateurs*`"]:::ui
+    lire --> verdict{"`**Valide ?**`"}:::ui
+    verdict -->|"oui"| reprise["`**Reprise proposée**<br>*restaure game.store*`"]:::ui
+    verdict -->|"illisible ou version inconnue"| rien(["`**Traitée comme absente**<br>*nouvelle partie*`"]):::ext
 
-    classDef state fill:#fef3c7,stroke:#d97706,color:#111
-    classDef pers fill:#dbeafe,stroke:#2563eb,color:#111
+    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
     classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
 ```
 

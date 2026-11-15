@@ -19,7 +19,12 @@ Des schémas **simples**, pour comprendre comment le code est organisé sans le 
 ## Conventions
 
 - **Un schéma, une question**, une douzaine de boîtes au plus. Pas de variables ni de fonctions dans les boîtes, sauf le point d'entrée (`executeCommand`) ou la vue du camp (`observeFriend`).
-- **Couleurs** : bleu = interface ou joueur, jaune = état et sauvegarde, vert = règles du jeu, rouge = IA ennemie, indigo = socle et vues, gris = extérieur.
+- **Style commun** (celui de [01-architecture.md](01-architecture.md)) :
+  - disposition `elk` (en-tête `config: layout: elk`) ;
+  - libellés en deux temps, le **nom en gras** (avec `/` pour un dossier) puis l'*explication en italique* : `"`**store/**<br>*état de la partie*`"` ;
+  - **gris uni** pour tous les blocs (`fill:#cccccc`, `stroke:#6b7280`), gris plus clair pour ce qui est extérieur ou sert de départ et d'arrivée (joueur, base de données, début et fin) ;
+  - cadre des groupes (`subgraph`) transparent, avec la ligne `style groupe stroke:#fffff,fill:transparent,color:#ffffff`.
+  - Les diagrammes de séquence et de classes reprennent les mêmes gris.
 - **Une flèche = « appelle » ou « lit »**, sauf mention contraire sur la flèche. Un trait pointillé = lien secondaire.
 - Les liens entre dossiers viennent des imports réels du code (aucun cycle de dépendances entre fichiers).
 
@@ -31,4 +36,4 @@ Mettre à jour le schéma concerné quand une PR :
 - change l'ordre d'un cycle ou le rôle de l'IA (4, 5) ;
 - change la détection, la sauvegarde ou un type principal (6, 8, 9).
 
-Pour vérifier qu'un schéma s'affiche, ouvrir le fichier sur GitHub ou coller le bloc dans l'[éditeur Mermaid](https://mermaid.live/).
+Pour vérifier qu'un schéma s'affiche, ouvrir le fichier sur GitHub ou coller le bloc dans l'[éditeur Mermaid](https://mermaid.live/). Si une flèche revient en arrière sur un grand cycle, la disposition `elk` peut inverser l'ordre du schéma : terminer plutôt le schéma par une boîte « retour au début » (voir [le cycle](04-cycle.md)).

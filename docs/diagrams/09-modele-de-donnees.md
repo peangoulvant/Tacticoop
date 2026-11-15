@@ -34,6 +34,21 @@ classDiagram
     CommandResult --> MissionState : nouvel état
     CommandResult --> GameEvent : journal
     GameConfig ..> CommandResult : valeurs lues par les règles
+
+
+    style GameState fill:#cccccc,stroke:#6b7280,color:#111
+    style PreparationState fill:#cccccc,stroke:#6b7280,color:#111
+    style MissionState fill:#cccccc,stroke:#6b7280,color:#111
+    style MissionSetup fill:#cccccc,stroke:#6b7280,color:#111
+    style Unit fill:#cccccc,stroke:#6b7280,color:#111
+    style ShipSpec fill:#cccccc,stroke:#6b7280,color:#111
+    style GameMap fill:#cccccc,stroke:#6b7280,color:#111
+    style Contact fill:#cccccc,stroke:#6b7280,color:#111
+    style CarrierNavigation fill:#cccccc,stroke:#6b7280,color:#111
+    style GameCommand fill:#cccccc,stroke:#6b7280,color:#111
+    style CommandResult fill:#cccccc,stroke:#6b7280,color:#111
+    style GameEvent fill:#cccccc,stroke:#6b7280,color:#111
+    style GameConfig fill:#cccccc,stroke:#6b7280,color:#111
 ```
 
 ## Lecture

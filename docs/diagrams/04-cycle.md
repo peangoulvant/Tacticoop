@@ -3,32 +3,36 @@
 L'enchaînement d'un cycle de jeu, avec la place de l'IA ennemie.
 
 ```mermaid
+---
+config:
+  layout: elk
+---
 flowchart TB
-    debut(["Début du cycle"]):::etape --> act["Le joueur active une unité alliée<br/>déplacement et balayage"]:::joueur
-    act --> fin["Fin de son activation"]:::joueur
-    fin --> reac["Une unité ennemie réagit"]:::ia
-    reac --> reste{"Il reste des unités<br/>alliées à activer ?"}
+    debut(["`**Début du cycle**`"]):::ext --> act["`**Le joueur active une unité alliée**<br>*déplacement et balayage*`"]:::ui
+    act --> fin["`**Fin de son activation**`"]:::ui
+    fin --> reac["`**Une unité ennemie réagit**<br>*IA*`"]:::ui
+    reac --> reste{"`**Il reste des unités alliées à activer ?**`"}:::ui
     reste -->|"oui"| act
-    reste -->|"non, ou fin anticipée"| ordre["Escorte : dernière occasion<br/>d'un ordre au porte-avions"]:::joueur
+    reste -->|"non, ou fin anticipée"| ordre["`**Escorte : dernière occasion d'ordre**<br>*navigation du porte-avions*`"]:::ui
     ordre --> cloture
 
-    subgraph cloture["Clôture du cycle"]
+    subgraph cloture["`**Clôture du cycle**`"]
         direction TB
-        c1["Les unités ennemies<br/>restantes jouent"]:::ia
-        c2["Le porte-avions<br/>navigue"]:::moteur
-        c3["Veille des deux camps<br/>nouveaux contacts"]:::moteur
-        c4{"Résultat ?"}
+        c1["`**Les unités ennemies restantes jouent**<br>*IA*`"]:::ui
+        c2["`**Le porte-avions navigue**`"]:::ui
+        c3["`**Veille des deux camps**<br>*nouveaux contacts*`"]:::ui
+        c4{"`**Résultat ?**`"}:::ui
         c1 --> c2 --> c3 --> c4
     end
 
-    c4 -->|"victoire"| victoire(["Fin de la mission"]):::etape
-    c4 -->|"la mission continue"| suivant["Cycle suivant<br/>les unités redeviennent disponibles"]:::moteur
-    suivant --> debut
+    c4 -->|"victoire"| victoire(["`**Fin de la mission**`"]):::ext
+    c4 -->|"la mission continue"| suivant["`**Cycle suivant**<br>*les unités redeviennent disponibles*`"]:::ui
+    suivant --> retour(["`**Retour au début du cycle**`"]):::ext
 
-    classDef etape fill:#f3f4f6,stroke:#6b7280,color:#111
-    classDef joueur fill:#dbeafe,stroke:#2563eb,color:#111
-    classDef ia fill:#fee2e2,stroke:#dc2626,color:#111
-    classDef moteur fill:#dcfce7,stroke:#16a34a,color:#111
+    style cloture stroke:#fffff,fill:transparent,color:#ffffff
+
+    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
+    classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
 ```
 
 ## Lecture

@@ -3,20 +3,24 @@
 Les modules du moteur et qui appelle qui. Un module = un dossier.
 
 ```mermaid
+---
+config:
+  layout: elk
+---
 flowchart TB
-    api(["index.ts<br/>API publique"]):::api
+    api(["`**index.ts**<br>*API publique*`"]):::ext
 
-    subgraph regles["Règles du jeu"]
-        core["core<br/>executeCommand et commandes"]:::core
-        missions["missions<br/>préparation, lancement,<br/>activations, cycles"]:::core
-        units["units<br/>déplacement, porte-avions,<br/>force ennemie, actions spéciales"]:::core
-        detection["detection<br/>veille, balayage, contacts,<br/>vue de chaque camp"]:::core
-        ai["ai<br/>IA ennemie"]:::ai
+    subgraph regles["`**Règles du jeu**`"]
+        core["`**core/**<br>*executeCommand et commandes*`"]:::ui
+        missions["`**missions/**<br>*préparation, lancement, activations, cycles*`"]:::ui
+        units["`**units/**<br>*déplacement, porte-avions, force ennemie, actions spéciales*`"]:::ui
+        detection["`**detection/**<br>*veille, balayage, contacts, vue de chaque camp*`"]:::ui
+        ai["`**ai/**<br>*IA ennemie*`"]:::ui
     end
 
-    subgraph socle["Socle"]
-        map["map<br/>hexagones, carte, génération"]:::base
-        config["config<br/>GameConfig : toutes les valeurs"]:::base
+    subgraph socle["`**Socle**`"]
+        map["`**map/**<br>*hexagones, carte, génération*`"]:::ui
+        config["`**config/**<br>*GameConfig : toutes les valeurs*`"]:::ui
     end
 
     api --> core
@@ -33,10 +37,11 @@ flowchart TB
     detection --> map
     regles -->|"lisent les valeurs"| config
 
-    classDef api fill:#f3f4f6,stroke:#6b7280,color:#111
-    classDef core fill:#dcfce7,stroke:#16a34a,color:#111
-    classDef ai fill:#fee2e2,stroke:#dc2626,color:#111
-    classDef base fill:#e0e7ff,stroke:#4f46e5,color:#111
+    style regles stroke:#fffff,fill:transparent,color:#ffffff
+    style socle stroke:#fffff,fill:transparent,color:#ffffff
+
+    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
+    classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
 ```
 
 ## Lecture

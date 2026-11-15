@@ -3,27 +3,31 @@
 Comment chaque camp apprend où sont les navires adverses. Les deux camps suivent exactement les mêmes règles.
 
 ```mermaid
+---
+config:
+  layout: elk
+---
 flowchart TB
-    reel[("État réel<br/>toutes les unités")]:::reel
+    reel[("`**État réel**<br>*toutes les unités*`")]:::ext
 
-    veille["Veille<br/>automatique, à la clôture du cycle<br/>tirage de base 50 %"]:::regle
-    balayage["Balayage<br/>action choisie, à la demande<br/>tirage 90 %"]:::regle
+    veille["`**Veille**<br>*automatique, à la clôture du cycle<br>tirage de base 50 %*`"]:::ui
+    balayage["`**Balayage**<br>*action choisie, à la demande<br>tirage 90 %*`"]:::ui
 
-    suspect["Contact suspect<br/>une zone approximative"]:::contact
-    identifie["Contact identifié<br/>type et position exacte"]:::contact
+    suspect["`**Contact suspect**<br>*une zone approximative*`"]:::ui
+    identifie["`**Contact identifié**<br>*type et position exacte*`"]:::ui
 
-    amis[("Contacts du camp ami")]:::contact
-    hostiles[("Contacts du camp hostile")]:::contact
+    amis[("`**Contacts du camp ami**`")]:::ui
+    hostiles[("`**Contacts du camp hostile**`")]:::ui
 
-    vueAmie["observeFriend<br/>ce que le joueur sait"]:::vue
-    vueHostile["observeHostile<br/>ce que l'IA sait"]:::vue
+    vueAmie["`**observeFriend**<br>*ce que le joueur sait*`"]:::ui
+    vueHostile["`**observeHostile**<br>*ce que l'IA sait*`"]:::ui
 
-    ecran(["Interface du joueur"]):::fin
-    ia(["IA ennemie"]):::fin
+    ecran(["`**Interface du joueur**`"]):::ext
+    ia(["`**IA ennemie**`"]):::ext
 
     reel --> veille --> suspect
     reel --> balayage --> identifie
-    balayage -.->|"du bruit : la veille<br/>repère plus facilement l'émetteur"| veille
+    balayage -.->|"du bruit : la veille repère plus facilement l'émetteur"| veille
     suspect -->|"détecteur ami"| amis
     suspect -->|"détecteur hostile"| hostiles
     identifie -->|"détecteur ami"| amis
@@ -31,11 +35,8 @@ flowchart TB
     amis --> vueAmie --> ecran
     hostiles --> vueHostile --> ia
 
-    classDef reel fill:#f3f4f6,stroke:#6b7280,color:#111
-    classDef regle fill:#dcfce7,stroke:#16a34a,color:#111
-    classDef contact fill:#fef3c7,stroke:#d97706,color:#111
-    classDef vue fill:#e0e7ff,stroke:#4f46e5,color:#111
-    classDef fin fill:#dbeafe,stroke:#2563eb,color:#111
+    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
+    classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
 ```
 
 ## Lecture

@@ -3,6 +3,24 @@
 Ce qui se passe quand le joueur confirme une action, par exemple un déplacement ou un balayage.
 
 ```mermaid
+---
+config:
+  theme: base
+  themeVariables:
+    actorBkg: '#cccccc'
+    actorBorder: '#6b7280'
+    actorTextColor: '#111111'
+    actorLineColor: '#6b7280'
+    signalColor: '#6b7280'
+    signalTextColor: '#6b7280'
+    labelBoxBkgColor: '#cccccc'
+    labelBoxBorderColor: '#6b7280'
+    labelTextColor: '#111111'
+    loopTextColor: '#6b7280'
+    noteBkgColor: '#f3f4f6'
+    noteBorderColor: '#6b7280'
+    noteTextColor: '#111111'
+---
 sequenceDiagram
     actor J as Joueur
     participant UI as Interface (features)
@@ -13,7 +31,7 @@ sequenceDiagram
 
     J->>UI: choisit une action
     UI->>S: ouvre un brouillon
-    Note over UI,S: un brouillon n'est que de l'état d'interface
+    Note over UI,S: brouillon = état d'interface seulement
     J->>UI: confirme
     UI->>S: dispatch(commande)
     S->>M: executeCommand
