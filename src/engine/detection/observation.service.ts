@@ -58,6 +58,9 @@ export function observeFriend(mission: MissionState): FriendObservation {
 export function observeHostile(mission: MissionState): HostileObservation {
   return {
     map: mission.map,
+    missionKind: mission.setup.mission,
+    // En lutte navale, B n'existe pas ; en escorte, l'IA le connaît comme le joueur (AB-37).
+    goal: mission.goal,
     cycle: mission.cycle,
     outcome: mission.outcome,
     units: mission.units.filter(isKnownToHostile),

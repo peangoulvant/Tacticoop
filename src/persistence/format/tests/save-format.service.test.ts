@@ -123,10 +123,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 6;
+      save.schemaVersion = 7;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 6/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 7/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -523,7 +523,7 @@ describe('balayage (version 3) et délai de récupération (version 4)', () => {
   it("aller-retour d'une mission où un balayage a eu lieu", () => {
     const { state, events } = searchedMission();
     const result = parseSave(serializeSave(state, events, SAVED_AT));
-    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 5 } });
+    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 6 } });
     expect(result.ok && result.save.state).toEqual(state);
     expect(events.some((e) => e.type === 'SWEEP_PERFORMED')).toBe(true);
     expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);
@@ -745,5 +745,38 @@ describe('contacts du camp hostile (version 5)', () => {
       s.state.nextHostileContactNumber = 2;
     });
     expect(result.ok).toBe(true);
+  });
+});
+
+describe("reprise d'une mission où l'IA a joué (version 6)", () => {
+  /** Mission en cours après la fin d'activation d'une unité alliée : une unité ennemie a réagi. */
+  function afterOneReaction(): engine.MissionState {
+    const { state } = playedMission('naval_combat');
+    const unit = state.units.find((u) => u.side === 'friend' && u.activation === 'available')!;
+    const result = engine.executeCommand(
+      state,
+      { type: 'END_ACTIVATION', unitId: unit.id },
+      engine.defaultConfig,
+    );
+    if (!result.ok || result.state.status !== 'in_progress') throw new Error('commande refusée');
+    return result.state;
+  }
+
+  it("relit l'état d'une réaction ennemie : unité activée, contacts et générateur compris", () => {
+    const state = afterOneReaction();
+    expect(state.units.some((u) => u.side === 'hostile' && u.activation === 'activated')).toBe(
+      true,
+    );
+    const result = parseSave(serializeSave(state, [], SAVED_AT));
+    expect(result.ok && result.save.state).toEqual(state);
+  });
+
+  it('la partie reprise se poursuit exactement comme la partie originale', () => {
+    const state = afterOneReaction();
+    const parsed = parseSave(serializeSave(state, [], SAVED_AT));
+    if (!parsed.ok) throw new Error('sauvegarde illisible');
+    const next = (from: engine.MissionState) =>
+      engine.executeCommand(from, { type: 'END_CYCLE_EARLY' }, engine.defaultConfig);
+    expect(next(parsed.save.state)).toEqual(next(state));
   });
 });

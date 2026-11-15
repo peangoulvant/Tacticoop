@@ -7,11 +7,11 @@ import { checkMissionState } from './save.validator';
  * Version du format. La version 2 ajoutait les contacts et l'état du générateur (AB-24) ; la
  * version 3 ajoute l'action spéciale utilisée des unités et les contacts identifiés (AB-30) ; la
  * version 4 ajoute le cycle du dernier usage de chaque action spéciale (AB-33, AB-34) ; la
- * version 5 ajoute les contacts du camp hostile (AB-35). Une autre version, les versions 1 à 4
- * comprises, est refusée : aucune migration n'existe en V1
+ * version 5 ajoute les contacts du camp hostile (AB-35) ; la version 6 rend les unités hostiles
+ * activables par l'IA (AB-39). Une autre version, les versions 1 à 5 comprises, est refusée : aucune migration n'existe en V1
  * (AB-08).
  */
-export const SAVE_SCHEMA_VERSION = 5;
+export const SAVE_SCHEMA_VERSION = 6;
 
 /** Pourquoi une sauvegarde est refusée (diagnostic ; aucun message n'est affiché au joueur, voir AB-08). */
 export const SaveErrorCode = {

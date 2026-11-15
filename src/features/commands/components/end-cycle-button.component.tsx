@@ -37,8 +37,10 @@ function disabledReason(mission: engine.MissionState): string | undefined {
 export function EndCycleButton({ mission }: { mission: engine.MissionState }) {
   const [open, setOpen] = useState(false);
   const reason = disabledReason(mission);
-  const remaining = mission.units.filter((u) => u.activation === 'available').length;
-  const inProgress = mission.units.filter((u) => u.activation === 'in_progress').length;
+  // Le décompte ne porte que sur les unités du joueur : jamais d'information sur les unités hostiles.
+  const friends = engine.observeFriend(mission).units;
+  const remaining = friends.filter((u) => u.activation === 'available').length;
+  const inProgress = friends.filter((u) => u.activation === 'in_progress').length;
 
   return (
     <>

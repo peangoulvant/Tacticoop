@@ -1,7 +1,7 @@
 import type { ObservedContact } from './contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
-import type { Constraint } from '../missions/setup.service';
+import type { Constraint, MissionKind } from '../missions/setup.service';
 import type { CarrierNavigation, MissionOutcome } from '../units/carrier-orders.service';
 import type { Unit } from '../units/unit.model';
 
@@ -32,10 +32,17 @@ export interface FriendObservation {
 /**
  * Ce que l'IA ennemie est autorisée à connaître pour décider (SF-06 §2, AB-35) : ses unités et ses
  * propres contacts, jamais les positions réelles non détectées du camp ami. Symétrique de
- * `FriendObservation`. Pas encore consommée : l'IA ne joue pas encore.
+ * `FriendObservation`. Consommée par `engine/ai/`.
  */
 export interface HostileObservation {
   map: GameMap;
+  /** Sa mission est connue de l'IA (AB-37). */
+  missionKind: MissionKind;
+  /**
+   * Point B, connu de l'IA en escorte seulement (AB-37) ; `null` en lutte navale. Le point de
+   * départ allié n'y figure jamais.
+   */
+  goal: Hex | null;
   cycle: number;
   outcome: MissionOutcome | null;
   /** Unités connues de l'IA : les siennes ; un navire allié identifié n'est jamais une unité. */
