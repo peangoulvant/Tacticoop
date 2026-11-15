@@ -22,6 +22,7 @@ Appliquer les principes **SOLID** de manière pragmatique :
 - JSDoc ciblé pour les interfaces publiques et les comportements délicats.
 - Pas de limite arbitraire de lignes par fonction/fichier, ni d'outil de qualimétrie lourd imposé à la V1.
 - Ne pas sur-découper : le coût de navigation entre fichiers fait aussi partie de la maintenabilité.
+- **Diagrammes** : une PR qui change la structure ou le comportement décrit par un diagramme de `docs/diagrams/` le met à jour dans la même PR (quand, comment et style : [DIAGRAMMES.md](DIAGRAMMES.md)).
 
 ## Conventions de nommage et d'import
 
