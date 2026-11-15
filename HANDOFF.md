@@ -61,6 +61,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - Panneaux : la carte et les forces alliées sont de taille fixe ; seuls le panneau d'unité et le journal se redimensionnent entre eux.
 - Préparation de mission : stepper vertical MUI (Mission, Briefing, Contraintes, Force navale, Récapitulatif), récapitulatif mis en valeur.
 - Journal de bord : la barre de défilement reste toujours en bas, sur le dernier message. Panneau d'unité : aucun texte annonçant de futures actions spéciales.
+- Barres de défilement fines (8 px, curseur de 4 px arrondi, bleu du panneau, plus clair au survol), définies une fois pour toute l'application dans `app/theme.config.ts` (`scrollbarStyles`, via `MuiCssBaseline`). Vérification visuelle seulement : jsdom ne dessine pas les barres, et Chromium sans interface les masque par défaut (lancer avec `ignoreDefaultArgs: ['--hide-scrollbars']` pour une capture).
 - Silhouette du bâtiment sous son nom dans le panneau d'unité ; icônes d'équipement (missile, torpille, hélicoptère) assez grandes ; pas de texte de coût dans ce panneau.
 
 - Déplacement : destinations accessibles mises en évidence, trajet prévisualisé en pointillés (vert valide, rouge refusé), confirmation ou annulation dans une barre sur la carte ; « Terminer le cycle » et « Nouvelle partie » demandent confirmation.
