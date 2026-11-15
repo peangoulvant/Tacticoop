@@ -1,55 +1,45 @@
 # 2. Le moteur (`src/engine/`)
 
-Les modules du moteur et qui appelle qui. Un module = un dossier.
+Interaction générale entre les modules du moteur.
 
 ```mermaid
 ---
 config:
   layout: elk
+  look: classic
+  theme: default
 ---
 flowchart TB
-    api(["`**index.ts**<br>*API publique*`"]):::ext
-
-    subgraph regles["`**Règles du jeu**`"]
-        core["`**core/**<br>*executeCommand et commandes*`"]:::ui
-        missions["`**missions/**<br>*préparation, lancement, activations, cycles*`"]:::ui
-        units["`**units/**<br>*déplacement, porte-avions, force ennemie, actions spéciales*`"]:::ui
-        detection["`**detection/**<br>*veille, balayage, contacts, vue de chaque camp*`"]:::ui
-        ai["`**ai/**<br>*IA ennemie*`"]:::ui
-    end
-
-    subgraph socle["`**Socle**`"]
-        map["`**map/**<br>*hexagones, carte, génération*`"]:::ui
-        config["`**config/**<br>*GameConfig : toutes les valeurs*`"]:::ui
-    end
-
-    api --> core
-    core -->|"préparer, lancer"| missions
-    core -->|"déplacer, agir"| units
-    core -->|"après une activation alliée"| ai
-    missions -->|"clôture du cycle"| ai
-    missions -->|"veille de fin de cycle"| detection
+ subgraph regles["`**Moteur** *engine*`"]
+        core["`**core/**<br>*Orchestrateur des commandes utilisateurs*`"]
+        missions["`**missions/**<br>*préparation, lancement, activations, cycles*`"]
+        units["`**units/**<br>*déplacement, porte-avions, force ennemie, actions spéciales*`"]
+        detection["`**detection/**<br>*veille, balayage, contacts, vue de chaque camp*`"]
+        ai["`**ai/**<br>*IA ennemie*`"]
+  end
+ subgraph socle["`**Socle**`"]
+        map["`**map/**<br>*hexagones, carte, génération*`"]
+        config["`**config/GameConfig**<br>*toutes les valeurs configurées*`"]
+  end
+    api(["consommateur"]) --> core
+    core --> missions
+    core -- déplacer, agir --> units
+    core -- après chaque activation alliée --> ai
+    missions -- après clôture du cycle --> ai
+    missions -- après activation ou utilisation du balayage --> detection
     missions --> units
-    ai -.->|"mêmes commandes que le joueur"| core
-    ai -->|"lit sa vue"| detection
-    detection --> units
+    ai -. utilise comme le joueur .-> core
+    ai -- après activation ou utilisation du balayage --> detection
+    detection --> units & map
     units --> map
-    detection --> map
-    regles -->|"lisent les valeurs"| config
+    regles -- lisent les valeurs --> config
 
-    style regles stroke:#fffff,fill:transparent,color:#ffffff
-    style socle stroke:#fffff,fill:transparent,color:#ffffff
-
-    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
-    classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
+     core
+     missions
+     units
+     detection
+     ai
+     map
+     config
+     api
 ```
-
-## Lecture
-
-- **Un seul point d'entrée** : `executeCommand(état, commande, config)`. Il envoie vers le gestionnaire de la commande, qui s'appuie sur `units`, `detection` et `missions`.
-- **`missions` gère le temps** : les activations, puis la clôture du cycle (unités ennemies, porte-avions, veille, résultat). Voir [le cycle](04-cycle.md).
-- **`ai` joue avec les mêmes fonctions que le joueur** (`core/unit-commands`) : même règles, mêmes refus. Voir [l'IA](05-ia.md).
-- **`config` porte toutes les valeurs du jeu** (portées, probabilités, délais) : aucune n'est écrite en dur ailleurs.
-- Entre fichiers, il n'y a aucun cycle de dépendances : les flèches dans les deux sens de ce schéma (`core` et `ai`) relient des fichiers différents.
-
-Voir aussi : [Moteur et état](../architecture/MOTEUR-ET-ETAT.md).

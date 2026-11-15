@@ -6,6 +6,8 @@ Les grandes couches de l'application, de l'écran jusqu'au stockage. Le moteur n
 ---
 config:
   layout: elk
+  theme: default
+  look: classic
 ---
 flowchart LR
     joueur(["Joueur"])
@@ -15,7 +17,7 @@ flowchart LR
         features["`**features/**<br>*interfaces client*`"]
         store["`**store/**<br>*gestion des états et brouillons*`"]
         persistence["`**persistence/**<br>format et validation des sauvegardes`"]
-        engine["engine<br>moteur du jeu"]
+        engine["`**engine/**<br>moteur du jeu`"]
         shared["`**shared/**<br>*textes et ressources*`"]
     end
 
@@ -31,16 +33,12 @@ flowchart LR
     persistence --> idb
     engine .-> shared
 
-    app:::ui
-    features:::ui
-    shared:::ui
-    store:::ui
-    persistence:::ui
-    engine:::ui
-    joueur:::ext
-    idb:::ext
-
-    classDef ui fill:#cccccc,stroke:#6b7280,color:#111
-    classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111
-    style navigateur stroke:#fffff,fill:transparent,color:#ffffff
+    app
+    features
+    shared
+    store
+    persistence
+    engine
+    joueur
+    idb
 ```
