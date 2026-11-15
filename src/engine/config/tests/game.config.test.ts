@@ -37,13 +37,13 @@ describe('defaultConfig', () => {
     expect(navalCombat).toMatchObject({
       alliedStartColumnRatio: 0.06,
       hostileZoneWidthRatio: 0.25,
-      minStartDistanceRatio: 0.4,
+      minStartDistanceRatio: 0.45,
     });
     expect(escort).toMatchObject({
       startColumnRatio: 0.06,
       goalColumnRatio: 0.94,
       interceptionZone: { fromRatio: 0.3, toRatio: 0.85 },
-      minDistanceFromStartRatio: 0.4,
+      minDistanceFromStartRatio: 0.45,
       minDistanceFromGoalRatio: 0.25,
     });
   });
@@ -72,16 +72,32 @@ describe('defaultConfig', () => {
   });
 
   it("reprend les portées d'armes (D-05)", () => {
-    expect(defaultConfig.weaponRanges).toEqual({ missile: 8, torpedo: 5 });
+    expect(defaultConfig.weaponRanges).toEqual({ missile: 8, torpedo: 3 });
   });
+
+  /**
+   * Hiérarchie des portées (AB-43) : torpille ≤ veille < balayage < missile. Un missile porte plus
+   * loin que les capteurs du tireur : la cible est désignée par un contact du camp (balayage d'une
+   * autre unité), comme avec un hélicoptère ou une liaison de données.
+   */
+  it.each(['fremm', 'frigate_da', 'frigate_asm', 'submarine'] as const)(
+    'ordonne les portées de %s : torpille ≤ veille < balayage < missile (AB-43)',
+    (shipClass) => {
+      const detection = defaultConfig.ships[shipClass].detection!;
+      const { missile, torpedo } = defaultConfig.weaponRanges;
+      expect(torpedo).toBeLessThanOrEqual(detection.watchRange);
+      expect(detection.watchRange).toBeLessThan(detection.sweepRange);
+      expect(detection.sweepRange).toBeLessThan(missile);
+    },
+  );
 
   it.each(['fremm', 'frigate_da', 'frigate_asm', 'submarine'] as const)(
     'donne à %s les capteurs validés (G-08.4)',
     (shipClass) => {
       expect(defaultConfig.ships[shipClass].detection).toEqual({
-        watchRange: 2,
+        watchRange: 3,
         watchProbability: 0.5,
-        sweepRange: 4,
+        sweepRange: 6,
         sweepProbability: 0.9,
       });
     },

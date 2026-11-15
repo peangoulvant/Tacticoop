@@ -97,8 +97,13 @@ export interface MissionsConfig {
 }
 
 /**
- * Portées d'armes validées en hexagones (D-05). Elles servent pour l'instant au contrôle de
+ * Portées d'armes en hexagones (D-05, AB-43). Elles servent pour l'instant au contrôle de
  * cohérence des distances de départ avec les portées de détection ; le combat les utilisera.
+ *
+ * Échelle de référence : 1 hexagone ≈ 20 km et 1 cycle ≈ 1 heure (un mouvement de 3 hexagones fait
+ * environ 32 nœuds). Missile 8 = 160 km (Exocet MM40 bloc 3, NSM : environ 180 km) ; torpille
+ * 3 = 60 km (torpilles lourdes : environ 50 km). Un missile porte plus loin que les capteurs du
+ * tireur : la cible est désignée par un contact du camp, comme avec un hélicoptère.
  */
 export interface WeaponRangesConfig {
   missile: number;
@@ -191,11 +196,16 @@ const HOSTILE_FORCE: HostileForceSpec = {
   frigateClassWeights: { fremm: 1, frigate_da: 1, frigate_asm: 1 },
 };
 
-/** Portées et probabilités initiales de la frégate et du sous-marin, identiques (G-08.4). */
+/**
+ * Portées et probabilités initiales de la frégate et du sous-marin, identiques (G-08.4, AB-43).
+ * Échelle de référence : 1 hexagone ≈ 20 km. Veille 3 = 60 km (horizon radar de 40-50 km, plus
+ * l'écoute des émissions ennemies) ; balayage 6 = 120 km (radar actif et hélicoptère). Hiérarchie
+ * : torpille ≤ veille < balayage < missile, vérifiée par `game.config.test.ts`.
+ */
 const DETECTOR: DetectorSpec = {
-  watchRange: 2,
+  watchRange: 3,
   watchProbability: 0.5,
-  sweepRange: 4,
+  sweepRange: 6,
   sweepProbability: 0.9,
 };
 
@@ -220,19 +230,19 @@ export const defaultConfig: GameConfig = {
     navalCombat: {
       alliedStartColumnRatio: 0.06,
       hostileZoneWidthRatio: 0.25,
-      minStartDistanceRatio: 0.4,
+      minStartDistanceRatio: 0.45,
       hostile: HOSTILE_FORCE,
     },
     escort: {
       startColumnRatio: 0.06,
       goalColumnRatio: 0.94,
       interceptionZone: { fromRatio: 0.3, toRatio: 0.85 },
-      minDistanceFromStartRatio: 0.4,
+      minDistanceFromStartRatio: 0.45,
       minDistanceFromGoalRatio: 0.25,
       hostile: HOSTILE_FORCE,
     },
   },
-  weaponRanges: { missile: 8, torpedo: 5 },
+  weaponRanges: { missile: 8, torpedo: 3 },
   detection: {
     zoneSize: 7,
     zoneMaxAttempts: 200,

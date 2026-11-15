@@ -21,8 +21,12 @@ import { App } from '../App';
  */
 
 const FRIGATE = { col: 6, row: 6 };
-const HOSTILE_IN_RANGE = { col: 9, row: 6 }; // à 3 hexagones : dans la portée de balayage (4)
+const HOSTILE_IN_RANGE = { col: 9, row: 6 }; // à 3 hexagones : dans la portée de balayage
 const HOSTILE_FAR = { col: 16, row: 6 }; // à 10 hexagones : hors de portée
+
+/** Portée de balayage de la frégate DA, lue dans la configuration, et son texte dans la barre de brouillon. */
+const SWEEP_RANGE = engine.defaultConfig.ships.frigate_da.detection!.sweepRange;
+const DRAFT_TEXT = new RegExp(`balayage, portée ${SWEEP_RANGE} hexagones`);
 
 /** Mission lancée par le moteur, comme l'application : une frégate DA et un sous-marin alliés. */
 function launchedMission(): engine.MissionState {
@@ -149,10 +153,10 @@ describe('balayage', () => {
     const user = await startAndSelectFrigate(mission(HOSTILE_IN_RANGE, 1));
 
     await user.click(screen.getByRole('button', { name: 'Balayage' }));
-    expect(screen.getByText(/balayage, portée 4 hexagones/)).toBeInTheDocument();
+    expect(screen.getByText(DRAFT_TEXT)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Annuler' }));
-    expect(screen.queryByText(/balayage, portée 4 hexagones/)).not.toBeInTheDocument();
+    expect(screen.queryByText(DRAFT_TEXT)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Balayage' })).toBeEnabled();
     expect(screen.queryByText(/Balayage \(/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Frégate DA, Disponible/ })).toBeInTheDocument();
@@ -183,7 +187,7 @@ describe('balayage', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent(toast);
     expect(screen.getByText(journal)).toBeInTheDocument();
-    expect(screen.queryByText(/balayage, portée 4 hexagones/)).not.toBeInTheDocument();
+    expect(screen.queryByText(DRAFT_TEXT)).not.toBeInTheDocument();
     // Action consommée même sans résultat : bouton désactivé avec son motif.
     expect(screen.getByRole('button', { name: 'Balayage' })).toBeDisabled();
     expect(
