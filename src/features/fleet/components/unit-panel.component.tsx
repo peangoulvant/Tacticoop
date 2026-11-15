@@ -60,12 +60,7 @@ export function UnitPanel({ mission }: { mission: engine.MissionState }) {
           {unit.shipClass === 'carrier' ? (
             <CarrierPanel mission={mission} />
           ) : (
-            <>
-              <UnitCommands mission={mission} unit={unit} />
-              <Typography variant="caption" color="text.secondary">
-                Les autres actions spéciales seront activées avec leurs règles d’exécution.
-              </Typography>
-            </>
+            <UnitCommands mission={mission} unit={unit} />
           )}
         </Stack>
       ) : (

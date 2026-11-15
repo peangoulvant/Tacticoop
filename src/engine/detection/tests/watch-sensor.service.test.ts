@@ -53,6 +53,10 @@ function suspect(id: string, cycle: number, zone: Hex[]): Contact {
 }
 
 const AT = { col: 7, row: 7 };
+
+/** Portée de veille d'une frégate et sa valeur avec « Capteurs dégradés » (lues dans la configuration). */
+const WATCH = defaultConfig.ships.frigate_asm.detection!.watchRange;
+const DEGRADED_WATCH = Math.floor(WATCH * defaultConfig.constraints.sensorsFactor);
 function friend(shipClass: ShipClass = 'frigate_da', position: Hex = AT): Unit {
   return unit('f1', 'friend', shipClass, position);
 }
@@ -71,14 +75,14 @@ function detectionRate(build: (seed: number) => MissionState, runs = 3000): numb
 }
 
 describe('veille : éligibilité et probabilité (G-08.2, G-08.4)', () => {
-  it('détecte à environ 50 % une cible à portée (distance 2)', () => {
+  it('détecte à environ 50 % une cible à portée', () => {
     const rate = detectionRate((seed) => mission([friend(), hostile()], { seed }));
     expect(rate).toBeGreaterThan(0.45);
     expect(rate).toBeLessThan(0.55);
   });
 
-  it('ne détecte jamais une cible hors de portée (distance 3)', () => {
-    const far = hostile('frigate_asm', { col: 10, row: 7 });
+  it('ne détecte jamais une cible juste au-delà de la portée', () => {
+    const far = hostile('frigate_asm', { col: AT.col + WATCH + 1, row: 7 });
     expect(detectionRate((seed) => mission([friend(), far], { seed }), 500)).toBe(0);
   });
 
@@ -165,9 +169,11 @@ describe('veille : bruit du balayage (AB-33)', () => {
 });
 
 describe('veille : capteurs dégradés (SF-01 §4)', () => {
-  it('réduit la portée passive à 1 pour les alliés : une cible à 2 hexagones n’est plus détectée', () => {
+  it('réduit la portée de veille des alliés : une cible à la portée normale n’est plus détectée', () => {
+    expect(DEGRADED_WATCH).toBeLessThan(WATCH);
+    const atNormalRange = hostile('frigate_asm', { col: AT.col + WATCH, row: 7 });
     const build = (seed: number) =>
-      mission([friend(), hostile()], { seed, constraints: ['degraded_sensors'] });
+      mission([friend(), atNormalRange], { seed, constraints: ['degraded_sensors'] });
     expect(detectionRate(build, 500)).toBe(0);
   });
 
@@ -339,7 +345,7 @@ function hostileDetectionRate(build: (seed: number) => MissionState, runs = 3000
 }
 
 describe('veille du camp hostile : mêmes règles que le joueur (AB-35)', () => {
-  /** Détecteur hostile en `AT`, unité alliée à 2 hexagones (dans la portée de veille). */
+  /** Détecteur hostile en `AT`, unité alliée à 2 hexagones (dans la portée de veille, même dégradée). */
   const target = (shipClass: ShipClass = 'frigate_da', patch: Partial<Unit> = {}): Unit => ({
     ...unit('f1', 'friend', shipClass, { col: 9, row: 7 }),
     ...patch,
@@ -391,10 +397,11 @@ describe('veille du camp hostile : mêmes règles que le joueur (AB-35)', () => 
   });
 
   it('ne subit pas « Capteurs dégradés », propre au joueur (AB-36)', () => {
+    // Cible à la portée normale, hors de la portée dégradée : elle reste détectable à 50 %.
+    const atNormalRange = target('frigate_da', { position: { col: AT.col + WATCH, row: 7 } });
     const rate = hostileDetectionRate((seed) =>
-      mission([watcher(), target()], { seed, constraints: ['degraded_sensors'] }),
+      mission([watcher(), atNormalRange], { seed, constraints: ['degraded_sensors'] }),
     );
-    // Portée de veille inchangée (2) : la cible à 2 hexagones reste détectable à 50 %.
     expect(rate).toBeGreaterThan(0.45);
     expect(rate).toBeLessThan(0.55);
   });

@@ -13,6 +13,16 @@ import { resolveWatch } from '../watch-sensor.service';
 const SIZE = 15;
 const AT: Hex = { col: 7, row: 7 };
 
+/** Portées du balayage et de la veille d'une frégate, avec et sans « Capteurs dégradés » (configuration). */
+const SWEEP = defaultConfig.ships.frigate_asm.detection!.sweepRange;
+const WATCH = defaultConfig.ships.frigate_asm.detection!.watchRange;
+const DEGRADED_SWEEP = Math.floor(SWEEP * defaultConfig.constraints.sensorsFactor);
+
+/** Nombre d'hexagones à une distance de 1 à `range` d'un hexagone : 6 + 12 + 18 + … */
+function cellsWithin(range: number): number {
+  return 3 * range * (range + 1);
+}
+
 function unit(id: string, side: Side, shipClass: ShipClass, position: Hex): Unit {
   return createUnit(id, side, shipClass, position, defaultConfig, {
     ammoFactor: 1,
@@ -92,23 +102,27 @@ describe('balayage : tirage et portée (AB-25)', () => {
     expect(rate).toBeLessThan(0.93);
   });
 
-  it('porte à 4 hexagones sans contrainte, jamais au-delà', () => {
-    const at4 = hostile('h1', 'frigate_asm', { col: 11, row: 7 });
-    const at5 = hostile('h1', 'frigate_asm', { col: 12, row: 7 });
-    expect(successRate((seed) => mission([searcher(), at4], { seed }), 500)).toBeGreaterThan(0.8);
-    expect(successRate((seed) => mission([searcher(), at5], { seed }), 500)).toBe(0);
+  it('porte jusqu’à sa portée sans contrainte, jamais au-delà', () => {
+    const atRange = hostile('h1', 'frigate_asm', { col: AT.col + SWEEP, row: 7 });
+    const beyond = hostile('h1', 'frigate_asm', { col: AT.col + SWEEP + 1, row: 7 });
+    expect(successRate((seed) => mission([searcher(), atRange], { seed }), 500)).toBeGreaterThan(
+      0.8,
+    );
+    expect(successRate((seed) => mission([searcher(), beyond], { seed }), 500)).toBe(0);
   });
 
-  it('avec « Capteurs dégradés », la portée tombe à 3 (arrondi inférieur)', () => {
+  it('avec « Capteurs dégradés », la portée est réduite de 20 % (arrondi inférieur)', () => {
     const constraints: Constraint[] = ['degraded_sensors'];
-    const at3 = hostile('h1', 'frigate_asm', { col: 10, row: 7 });
-    const at4 = hostile('h1', 'frigate_asm', { col: 11, row: 7 });
+    const atRange = hostile('h1', 'frigate_asm', { col: AT.col + DEGRADED_SWEEP, row: 7 });
+    const beyond = hostile('h1', 'frigate_asm', { col: AT.col + DEGRADED_SWEEP + 1, row: 7 });
     expect(
-      successRate((seed) => mission([searcher(), at3], { seed, constraints }), 500),
+      successRate((seed) => mission([searcher(), atRange], { seed, constraints }), 500),
     ).toBeGreaterThan(0.8);
-    expect(successRate((seed) => mission([searcher(), at4], { seed, constraints }), 500)).toBe(0);
-    expect(effectiveSweepRange(searcher(), constraints, defaultConfig)).toBe(3);
-    expect(effectiveSweepRange(searcher(), [], defaultConfig)).toBe(4);
+    expect(successRate((seed) => mission([searcher(), beyond], { seed, constraints }), 500)).toBe(
+      0,
+    );
+    expect(effectiveSweepRange(searcher(), constraints, defaultConfig)).toBe(DEGRADED_SWEEP);
+    expect(effectiveSweepRange(searcher(), [], defaultConfig)).toBe(SWEEP);
   });
 
   it('ne donne aucun bonus côtier : un sous-marin en mer côtière reste à 90 %', () => {
@@ -272,7 +286,7 @@ describe('balayage : contacts identifiés (AB-25, AB-26)', () => {
       expect(kinds).toContain('identified');
       if (kinds.includes('suspect')) zones++;
     }
-    // portée passive 2, probabilité 60 %
+    // veille : probabilité de base 50 %, plus 20 points pour une cible qui a balayé
     expect(zones / 300).toBeGreaterThan(0.5);
     expect(zones / 300).toBeLessThan(0.7);
   });
@@ -280,7 +294,9 @@ describe('balayage : contacts identifiés (AB-25, AB-26)', () => {
 
 describe('balayage : durée de vie et état « ancien » (AB-27)', () => {
   it('suit la règle des zones : visible au cycle et au suivant, « ancien » au suivant, retiré ensuite', () => {
-    const searched = resolveSweep(mission([searcher(), hostile()]), searcher(), SURE).state;
+    // Juste au-delà de la veille : seul le balayage le voit, la veille de fin de cycle ne crée rien.
+    const beyondWatch = hostile('h1', 'frigate_asm', { col: AT.col + WATCH + 1, row: 7 });
+    const searched = resolveSweep(mission([searcher(), beyondWatch]), searcher(), SURE).state;
     expect(observeFriend(searched).contacts).toMatchObject([{ id: 'C-1', stale: false }]);
     const endOfCycle1 = resolveWatch(searched, defaultConfig).state;
     const cycle2 = { ...endOfCycle1, cycle: 2 };
@@ -309,10 +325,10 @@ describe('balayage : durée de vie et état « ancien » (AB-27)', () => {
 });
 
 describe('cases à portée (brouillon de recherche)', () => {
-  it('renvoie les cases à distance 1 à 4, la case de l’unité exclue', () => {
+  it('renvoie les cases à distance 1 jusqu’à la portée, la case de l’unité exclue', () => {
     const observation = observeFriend(mission([searcher()]));
     const area = sweepArea(observation, searcher(), defaultConfig);
-    expect(area).toHaveLength(60);
+    expect(area).toHaveLength(cellsWithin(SWEEP));
     expect(area.some((h) => h.col === AT.col && h.row === AT.row)).toBe(false);
     expect(area.every((h) => h.col >= 0 && h.col < SIZE && h.row >= 0 && h.row < SIZE)).toBe(true);
   });
@@ -324,8 +340,8 @@ describe('cases à portée (brouillon de recherche)', () => {
       searcher(),
       defaultConfig,
     );
-    expect(full).toHaveLength(60); // 6 + 12 + 18 + 24 hexagones aux distances 1 à 4
-    expect(degraded).toHaveLength(36); // 6 + 12 + 18
+    expect(full).toHaveLength(cellsWithin(SWEEP));
+    expect(degraded).toHaveLength(cellsWithin(DEGRADED_SWEEP));
   });
 });
 
@@ -364,18 +380,22 @@ describe('balayage du camp hostile : mêmes règles que le joueur (AB-35)', () =
   });
 
   it('respecte la portée et ne cherche jamais son propre camp', () => {
-    const far = ally({ col: 13, row: 7 }); // distance 6 : hors de portée (4)
+    const far = ally({ col: AT.col + SWEEP + 1, row: 7 }); // juste hors de portée
     const sister = unit('h2', 'hostile', 'frigate_asm', { col: 8, row: 7 });
     const result = resolveSweep(mission([aiSearcher(), far, sister]), aiSearcher(), SURE);
     expect(result.state.hostileContacts).toEqual([]);
   });
 
-  it('ne subit pas « Capteurs dégradés », propre au joueur : portée 4 conservée (AB-36)', () => {
-    const at4 = ally({ col: 11, row: 7 });
-    const state = mission([aiSearcher(), at4], { constraints: ['degraded_sensors'] });
+  it('ne subit pas « Capteurs dégradés », propre au joueur : portée conservée (AB-36)', () => {
+    // À la portée normale, hors de la portée dégradée.
+    const atNormalRange = ally({ col: AT.col + DEGRADED_SWEEP + 1, row: 7 });
+    const state = mission([aiSearcher(), atNormalRange], { constraints: ['degraded_sensors'] });
     expect(resolveSweep(state, aiSearcher(), SURE).state.hostileContacts).toHaveLength(1);
-    // Le même balayage côté joueur est, lui, réduit à 3.
-    const hostileTarget = unit('h3', 'hostile', 'frigate_asm', { col: 11, row: 7 });
+    // Le même balayage côté joueur est, lui, réduit.
+    const hostileTarget = unit('h3', 'hostile', 'frigate_asm', {
+      col: AT.col + DEGRADED_SWEEP + 1,
+      row: 7,
+    });
     const friendState = mission([searcher(), hostileTarget], { constraints: ['degraded_sensors'] });
     expect(resolveSweep(friendState, searcher(), SURE).state.friendContacts).toEqual([]);
   });

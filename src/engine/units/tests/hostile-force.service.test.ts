@@ -132,14 +132,14 @@ describe('zones de départ', () => {
     const launched = launchMission(setupFor('naval_combat'), defaultConfig, 1);
     const zone = hostileZoneOf('naval_combat', launched, defaultConfig);
     expect([zone.fromCol, zone.toCol]).toEqual([27, WIDTH - 1]);
-    expect(zone.minDistances.map((d) => d.distance)).toEqual([14]);
+    expect(zone.minDistances.map((d) => d.distance)).toEqual([16]);
   });
 
-  it("escorte : partie centrale (colonnes 10 à 29) à l'écart de A (14) et de B (9)", () => {
+  it("escorte : partie centrale (colonnes 10 à 29) à l'écart de A (16) et de B (9)", () => {
     const launched = launchMission(setupFor('escort'), defaultConfig, 1);
     const zone = hostileZoneOf('escort', launched, defaultConfig);
     expect([zone.fromCol, zone.toCol]).toEqual([10, 29]);
-    expect(zone.minDistances.map((d) => d.distance)).toEqual([14, 9]);
+    expect(zone.minDistances.map((d) => d.distance)).toEqual([16, 9]);
   });
 
   it('proportionnelle à la largeur : la bande est suit une carte de 50 de large', () => {
@@ -147,7 +147,7 @@ describe('zones de départ', () => {
     const wide = { ...launched, map: { ...launched.map, width: 50 } };
     const zone = hostileZoneOf('naval_combat', wide, defaultConfig);
     expect([zone.fromCol, zone.toCol]).toEqual([38, 49]);
-    expect(zone.minDistances[0]?.distance).toBe(20);
+    expect(zone.minDistances[0]?.distance).toBe(23);
   });
 });
 
