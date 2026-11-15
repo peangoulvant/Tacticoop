@@ -61,6 +61,7 @@ Node.js 22 et npm.
 - [Game Design G-01 à G-13](docs/game-design/README.md) — règles du jeu et [registre des arbitrages](docs/game-design/DECISIONS.md).
 - [Spécifications fonctionnelles SF-01 à SF-08](docs/functional-specs/README.md) — comportements attendus et décisions ouvertes.
 - [Architecture technique V1](docs/architecture/README.md) — moteur, Zustand, IndexedDB, conventions et qualité.
+- [Diagrammes du code](docs/diagrams/README.md) — schémas Mermaid simples : couches, moteur, cycle, IA, détection, interface, sauvegarde.
 - [Maquette](docs/maquette/README.md) — référence visuelle non normative.
 - [HANDOFF.md](HANDOFF.md) — passation entre sessions de développement ; [CLAUDE.md](CLAUDE.md) et [AGENTS.md](AGENTS.md) — consignes pour Claude Code et les contributeurs.
 
