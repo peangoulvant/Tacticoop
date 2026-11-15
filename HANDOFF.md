@@ -6,7 +6,7 @@ Document de passation entre sessions de développement avec Claude Code. Il gard
 
 1. [CLAUDE.md](CLAUDE.md) et [AGENTS.md](AGENTS.md) : consignes du dépôt.
 2. Ce document.
-3. [docs/architecture/GUIDE-DEVELOPPEUR.md](docs/architecture/GUIDE-DEVELOPPEUR.md) : carte du code, chemin d'une action, recettes d'ajout, glossaire. Les [diagrammes](docs/diagrams/README.md) donnent la vue d'ensemble ; les mettre à jour quand un module, l'ordre d'un cycle ou un type principal change.
+3. [docs/architecture/GUIDE-DEVELOPPEUR.md](docs/architecture/GUIDE-DEVELOPPEUR.md) : carte du code, chemin d'une action, recettes d'ajout, glossaire. Les [diagrammes](docs/architecture/DIAGRAMMES.md) donnent la vue d'ensemble ; les mettre à jour dans la même PR quand la structure qu'ils décrivent change (règle et style dans ce document).
 4. [docs/TRACEABILITY.md](docs/TRACEABILITY.md) : ce qui est implémenté, partiel ou absent, avec les fichiers et tests.
 5. [Architecture](docs/architecture/README.md), [décisions fonctionnelles ouvertes](docs/functional-specs/DECISIONS.md) et [décisions de Game Design](docs/game-design/DECISIONS.md) avant tout changement métier.
 

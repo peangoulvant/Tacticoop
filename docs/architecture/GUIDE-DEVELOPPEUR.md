@@ -2,7 +2,7 @@
 
 Document d'accueil pour un développeur qui découvre le code. Il explique **où est quoi**, **comment une action traverse l'application** et **comment ajouter** une règle sans casser l'architecture. Il ne duplique ni les règles de jeu ([Game Design](../game-design/README.md)), ni les contrats détaillés ([MOTEUR-ET-ETAT.md](MOTEUR-ET-ETAT.md), [PERSISTANCE.md](PERSISTANCE.md)), ni les conventions ([QUALITE-ET-IMPLEMENTATION.md](QUALITE-ET-IMPLEMENTATION.md)).
 
-> Pour une vue d'ensemble en images, voir les [diagrammes du code](../diagrams/README.md).
+> Pour une vue d'ensemble en images, voir les [diagrammes du code](DIAGRAMMES.md).
 
 ## 1. Carte du code
 
