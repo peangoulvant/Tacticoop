@@ -111,6 +111,8 @@ async function startAndSelectFrigate(state: engine.MissionState) {
 describe('commandes et déplacement', () => {
   it('annule un déplacement sans rien consommer, puis le confirme et engage l’activation', async () => {
     const user = await startAndSelectFrigate(mission(HOSTILE_FAR, 1));
+    // Le panneau d'unité n'annonce plus de futures actions spéciales.
+    expect(screen.queryByText(/Les autres actions spéciales/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Déplacement' }));
     expect(screen.getByText(/choisissez une destination/)).toBeInTheDocument();

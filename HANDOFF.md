@@ -60,6 +60,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 - Carte : pleine largeur, tronquée si besoin, déplacée au glisser-déposer, zoomée à la molette. Cases de terrain à 70 % d'opacité pour faire ressortir les unités. **Pas d'icônes de terrain affichées** (les PNG restent dans `src/assets/terrains`).
 - Panneaux : la carte et les forces alliées sont de taille fixe ; seuls le panneau d'unité et le journal se redimensionnent entre eux.
 - Préparation de mission : stepper vertical MUI (Mission, Briefing, Contraintes, Force navale, Récapitulatif), récapitulatif mis en valeur.
+- Journal de bord : la barre de défilement reste toujours en bas, sur le dernier message. Panneau d'unité : aucun texte annonçant de futures actions spéciales.
 - Silhouette du bâtiment sous son nom dans le panneau d'unité ; icônes d'équipement (missile, torpille, hélicoptère) assez grandes ; pas de texte de coût dans ce panneau.
 
 - Déplacement : destinations accessibles mises en évidence, trajet prévisualisé en pointillés (vert valide, rouge refusé), confirmation ou annulation dans une barre sur la carte ; « Terminer le cycle » et « Nouvelle partie » demandent confirmation.
