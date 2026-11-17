@@ -17,7 +17,10 @@ function frigate(): Unit {
 
 /** Configuration avec un délai de récupération donné pour le balayage. */
 function withCooldown(cooldownCycles: number): GameConfig {
-  return { ...defaultConfig, specialActions: { sweep: { cooldownCycles } } };
+  return {
+    ...defaultConfig,
+    specialActions: { ...defaultConfig.specialActions, sweep: { cooldownCycles } },
+  };
 }
 
 describe('délai de récupération des actions spéciales (AB-34)', () => {

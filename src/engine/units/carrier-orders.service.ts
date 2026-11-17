@@ -43,7 +43,7 @@ export interface CarrierNavigation {
 }
 
 /** Résultat binaire de la mission (SF-08) ; la défaite viendra avec le combat. */
-export type MissionOutcome = 'victory';
+export type MissionOutcome = 'victory' | 'defeat';
 
 /** Pourquoi un point de passage est refusé (SF-02 §5) : la demande est sans effet ni quota. */
 export type WaypointRefusal = 'NOT_NAVIGABLE' | 'SAME_HEX' | 'NO_PATH';

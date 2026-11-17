@@ -10,7 +10,9 @@
  * dépendance circulaire.
  */
 import * as labelEngine from '../../shared/engine.label';
-import type { GameConfig } from '../config/game.config';
+import { planShot } from '../combat/shot-plan.service';
+import type { Projectile, ShotTarget } from '../combat/projectile.types';
+import { FIRE_ACTION, type GameConfig, type WeaponKind } from '../config/game.config';
 import { resolveSweep } from '../detection/sweep.service';
 import { observeFriend, observeHostile } from '../detection/observation.service';
 import type { Battlefield } from '../units/unit-movement.service';
@@ -31,8 +33,9 @@ import {
   planMove,
 } from '../units/unit-movement.service';
 import type { Side, Unit } from '../units/unit.model';
+import type { ShotPlanAccepted } from '../combat/shot-plan.service';
 import { accept, reject } from './results.service';
-import type { CommandResult, GameErrorCode, MissionState } from './game.types';
+import type { CommandResult, GameErrorCode, GameEvent, MissionState } from './game.types';
 
 const BLOCKER_CODES: Record<MoveBlocker, GameErrorCode> = {
   NOT_ACTIVABLE: 'UNIT_NOT_ACTIVABLE',
@@ -48,7 +51,10 @@ export function blockerRejection(blocker: MoveBlocker): CommandResult {
 
 /** Refus correspondant à un motif d'impossibilité d'action spéciale (ordre ou propre à l'action). */
 function specialActionRejection(blocker: SpecialActionBlocker): CommandResult {
-  return blocker === 'SPECIAL_ACTION_USED' || blocker === 'ON_COOLDOWN' || blocker === 'NO_SENSORS'
+  return blocker === 'SPECIAL_ACTION_USED' ||
+    blocker === 'ON_COOLDOWN' ||
+    blocker === 'NO_SENSORS' ||
+    blocker === 'NO_AMMO'
     ? reject(blocker, SPECIAL_ACTION_BLOCKER_MESSAGES[blocker])
     : blockerRejection(blocker);
 }
@@ -57,8 +63,8 @@ function specialActionRejection(blocker: SpecialActionBlocker): CommandResult {
  * Ce que le camp acteur connaît du champ de bataille : sa projection, jamais l'état réel.
  * Exemple : pour le joueur, `observeFriend` ; pour l'IA, `observeHostile` (aucun allié caché).
  */
-function knownBy(mission: MissionState, actor: Side): Battlefield {
-  return actor === 'friend' ? observeFriend(mission) : observeHostile(mission);
+function knownBy(mission: MissionState, actor: Side, config: GameConfig): Battlefield {
+  return actor === 'friend' ? observeFriend(mission, config) : observeHostile(mission, config);
 }
 
 /**
@@ -106,7 +112,7 @@ export function moveUnit(
   const blocker = moveBlocker(mission.units, unit);
   if (blocker) return blockerRejection(blocker);
   // Le trajet et les refus ne reposent que sur ce que le camp acteur connaît (SF-02 §7).
-  const plan = planMove(knownBy(mission, actor), unit, destination, config);
+  const plan = planMove(knownBy(mission, actor, config), unit, destination, config);
   if (!plan.ok) {
     return reject('MOVE_REFUSED', MOVE_REFUSAL_MESSAGES[plan.reason], { moveRefusal: plan.reason });
   }
@@ -161,6 +167,96 @@ export function sweep(
     specialActionUsed: true,
   });
   return accept(engaged, swept.events);
+}
+
+/**
+ * Projectile créé par un tir accepté (AB-47) : à la position du tireur, avec le trajet du plan et
+ * le numéro de lancement suivant. Une torpille part avec toute son autonomie.
+ */
+function launchedProjectile(
+  mission: MissionState,
+  unit: Unit,
+  weapon: WeaponKind,
+  plan: ShotPlanAccepted,
+  config: GameConfig,
+): Projectile {
+  const launchNumber = mission.nextLaunchNumber;
+  return {
+    id: `P-${launchNumber}`,
+    launchNumber,
+    weapon,
+    side: unit.side,
+    launcherId: unit.id,
+    launchCycle: mission.cycle,
+    position: unit.position,
+    aimedHex: plan.aimedHex,
+    targetId: plan.targetId,
+    onSuspectZone: plan.onSuspectZone,
+    route: plan.route,
+    tracking: false,
+    heading: null,
+    autonomyLeft: config.combat.weapons[weapon].autonomy,
+    detected: false,
+  };
+}
+
+/** Événement du journal d'un tir du camp ami : l'arme et la cible désignée, jamais l'état réel. */
+function shotFiredEvent(
+  mission: MissionState,
+  unit: Unit,
+  weapon: WeaponKind,
+  target: ShotTarget,
+): GameEvent {
+  return {
+    type: 'SHOT_FIRED',
+    cycle: mission.cycle,
+    unitId: unit.id,
+    shipClass: unit.shipClass,
+    weapon,
+    contactId: target.contactId,
+    ...(target.hex && { hex: target.hex }),
+  };
+}
+
+/**
+ * Tir d'un missile ou d'une torpille (G-07.1, AB-44 à AB-47) : une action spéciale, consommée
+ * même si le tir est manqué plus tard, avec un projectile créé et un stock de moins. Le tir est
+ * résolu plus tard, par la progression des projectiles après la séquence (G-06.6). Un refus ne
+ * consomme rien : ni action, ni stock, ni numéro de lancement. Le tir de l'IA est silencieux : le
+ * journal du joueur ne le voit pas (AB-41).
+ */
+export function fire(
+  mission: MissionState,
+  { unitId, weapon, target }: { unitId: string; weapon: WeaponKind; target: ShotTarget },
+  config: GameConfig,
+  actor: Side = 'friend',
+): CommandResult {
+  const found = findOrderableUnit(mission, unitId, actor);
+  if ('rejection' in found) return found.rejection;
+  const { unit } = found;
+  const kind = FIRE_ACTION[weapon];
+  const blocker = specialActionBlocker(mission.units, unit, kind, mission.cycle, config);
+  if (blocker) return specialActionRejection(blocker);
+  const plan = planShot(mission, unit, weapon, target, config);
+  if (!plan.ok) {
+    return reject('FIRE_REFUSED', labelEngine.fireRefusalMessages[plan.reason], {
+      fireRefusal: plan.reason,
+    });
+  }
+  const projectile = launchedProjectile(mission, unit, weapon, plan, config);
+  const stock = weapon === 'missile' ? { missiles: unit.missiles - 1 } : { torpedoes: unit.torpedoes - 1 };
+  const engaged = updateUnitInMission(mission, unitId, {
+    ...stock,
+    ...recordSpecialAction(unit, kind, mission.cycle),
+    activation: 'in_progress',
+    specialActionUsed: true,
+  });
+  const launched: MissionState = {
+    ...engaged,
+    projectiles: [...engaged.projectiles, projectile],
+    nextLaunchNumber: mission.nextLaunchNumber + 1,
+  };
+  return accept(launched, actor === 'friend' ? [shotFiredEvent(mission, unit, weapon, target)] : []);
 }
 
 /**

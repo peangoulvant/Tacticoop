@@ -120,7 +120,7 @@ describe.each<MissionKind>(['naval_combat', 'escort'])(
     it("ne révèle aucun ennemi au joueur : la projection amie n'en contient aucun", () => {
       for (const launched of missions.slice(0, 20)) {
         const state = { ...launched, status: 'in_progress' as const, setup: setupFor(mission) };
-        const observed = JSON.stringify(observeFriend({ ...state, cycle: 1, outcome: null }));
+        const observed = JSON.stringify(observeFriend({ ...state, cycle: 1, outcome: null, outcomeCause: null }));
         expect(observed).not.toContain('hostile');
       }
     });

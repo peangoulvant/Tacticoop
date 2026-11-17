@@ -94,6 +94,7 @@ const launch: Handler<'LAUNCH_MISSION'> = (setup, { seed }, config) => {
       setup,
       cycle: 1,
       outcome: null,
+      outcomeCause: null,
       ...launchMission(setup, config, seed),
     },
     [{ type: 'MISSION_LAUNCHED', mission: setup.mission, cycle: 1 }],

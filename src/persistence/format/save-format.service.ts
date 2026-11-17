@@ -11,7 +11,7 @@ import { checkMissionState } from './save.validator';
  * activables par l'IA (AB-39). Une autre version, les versions 1 à 5 comprises, est refusée : aucune migration n'existe en V1
  * (AB-08).
  */
-export const SAVE_SCHEMA_VERSION = 6;
+export const SAVE_SCHEMA_VERSION = 7;
 
 /** Pourquoi une sauvegarde est refusée (diagnostic ; aucun message n'est affiché au joueur, voir AB-08). */
 export const SaveErrorCode = {

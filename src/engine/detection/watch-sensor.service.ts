@@ -29,9 +29,21 @@ function watchRangeOf(
 }
 
 /**
+ * Bruit de l'émission (AB-33, AB-49) : une unité qui a balayé ou tiré pendant le cycle est plus
+ * facile à détecter. Une unité n'a qu'une action spéciale par cycle : les deux bonus ne s'additionnent pas.
+ */
+function noiseBonusOf(target: Unit, cycle: number, config: GameConfig): number {
+  if (usedActionDuringCycle(target, 'sweep', cycle)) return config.detection.sweepNoiseWatchBonus;
+  const fired =
+    usedActionDuringCycle(target, 'fire_missile', cycle) ||
+    usedActionDuringCycle(target, 'fire_torpedo', cycle);
+  return fired ? config.detection.fireNoiseWatchBonus : 0;
+}
+
+/**
  * Probabilité d'être détecté par la veille, pour les deux camps :
  * - la base est de 50 %, quelle que soit l'unité ;
- * - unité qui a balayé pendant le cycle : +20 % (AB-33) ;
+ * - unité qui a balayé (AB-33) ou tiré (AB-49) pendant le cycle : +20 % ;
  * - unité de type sous-marin située sur une case de mer côtière : +20 % (AB-22).
  *
  * Les bonus se cumulent, dans la limite de 100 %.
@@ -46,9 +58,7 @@ function watchProbability(
     config.ships[target.shipClass].category === 'submarine' &&
     terrainAt(mission.map, target.position) === 'coastal_sea';
   const coastalBonus = coastalSubmarine ? config.detection.coastalSubmarineWatchBonus : 0;
-  const noiseBonus = usedActionDuringCycle(target, 'sweep', mission.cycle)
-    ? config.detection.sweepNoiseWatchBonus
-    : 0;
+  const noiseBonus = noiseBonusOf(target, mission.cycle, config);
   return Math.min(1, spec.watchProbability + coastalBonus + noiseBonus);
 }
 

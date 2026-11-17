@@ -20,6 +20,20 @@ export const specialActionBlockerMessages = {
     'L’action spéciale de cette unité a déjà été utilisée pendant son activation.',
   ON_COOLDOWN: 'Cette action spéciale est en récupération.',
   NO_SENSORS: 'Cette unité ne porte pas de capteurs.',
+  NO_AMMO: 'Cette unité n’a plus de munitions de cette arme.',
+};
+
+/** Pourquoi un tir est refusé (AB-45, AB-46), sans consommer l'action ni le stock. */
+export const fireRefusalMessages = {
+  UNKNOWN_CONTACT: 'Ce contact n’existe pas ou n’est plus connu.',
+  STALE_CONTACT:
+    'La position de ce contact est ancienne : il faut le balayer à nouveau avant de tirer.',
+  ZONE_HEX_REQUIRED: 'Un tir sur une zone suspecte demande de choisir un hexagone de la zone.',
+  HEX_NOT_IN_ZONE: 'Cet hexagone n’appartient pas à la zone du contact.',
+  SAME_HEX: 'La case visée est la position du tireur.',
+  INCOMPATIBLE_TARGET: 'Un missile ne touche pas un sous-marin.',
+  OUT_OF_RANGE: 'La cible est hors de portée de cette arme.',
+  NO_MARITIME_PATH: 'Aucun chemin maritime ne mène à cette case dans l’autonomie de la torpille.',
 };
 
 /** Pourquoi une destination est refusée (SF-02 §6). */

@@ -111,7 +111,7 @@ describe('texte du journal de chaque événement (D-11)', () => {
     expect(eventLabel({ type: 'CARRIER_MOVED', from, to, cycle: 1 })).toBe(
       'Porte-avions : navigation de (2, 4) vers (3, 4)',
     );
-    expect(eventLabel({ type: 'MISSION_WON', cycle: 4 })).toContain('Mission réussie');
+    expect(eventLabel({ type: 'MISSION_WON', cycle: 4, cause: 'carrier_arrived' })).toContain('Mission réussie');
   });
 
   it('délègue les contacts et le balayage à leurs textes dédiés', () => {

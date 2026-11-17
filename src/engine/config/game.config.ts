@@ -38,10 +38,10 @@ export interface DetectorSpec {
 }
 
 /**
- * Actions spéciales d'une unité (G-07). Seul le balayage existe ; torpille, hélicoptère,
- * réparation, tir et leurre viendront s'ajouter ici, chacune avec son délai de récupération.
+ * Actions spéciales d'une unité (G-07) : balayage et tirs (AB-44). Réparation et leurre
+ * viendront s'ajouter ici, chacune avec son délai de récupération.
  */
-export const SPECIAL_ACTION_KINDS = ['sweep'] as const;
+export const SPECIAL_ACTION_KINDS = ['sweep', 'fire_missile', 'fire_torpedo'] as const;
 export type SpecialActionKind = (typeof SPECIAL_ACTION_KINDS)[number];
 
 /** Paramètres d'une action spéciale. */
@@ -96,18 +96,52 @@ export interface MissionsConfig {
   };
 }
 
+/** Armes de tir (AB-44) : une action spéciale de tir par arme, un stock par arme. */
+export const WEAPON_KINDS = ['missile', 'torpedo'] as const;
+export type WeaponKind = (typeof WEAPON_KINDS)[number];
+
+/** Action spéciale qui tire chaque arme. */
+export const FIRE_ACTION: Record<WeaponKind, SpecialActionKind> = {
+  missile: 'fire_missile',
+  torpedo: 'fire_torpedo',
+};
+
 /**
- * Portées d'armes en hexagones (D-05, AB-43). Elles servent pour l'instant au contrôle de
- * cohérence des distances de départ avec les portées de détection ; le combat les utilisera.
+ * Paramètres d'une arme (D-05, AB-43, AB-47), tous provisoires (équilibrage G-03.1.5).
  *
  * Échelle de référence : 1 hexagone ≈ 20 km et 1 cycle ≈ 1 heure (un mouvement de 3 hexagones fait
  * environ 32 nœuds). Missile 8 = 160 km (Exocet MM40 bloc 3, NSM : environ 180 km) ; torpille
  * 3 = 60 km (torpilles lourdes : environ 50 km). Un missile porte plus loin que les capteurs du
  * tireur : la cible est désignée par un contact du camp, comme avec un hélicoptère.
  */
-export interface WeaponRangesConfig {
-  missile: number;
-  torpedo: number;
+export interface WeaponSpec {
+  /** Portée de tir, en hexagones. */
+  range: number;
+  /** Hexagones parcourus à chaque progression des projectiles (G-09). */
+  progression: number;
+  /** Plage de dégâts d'un impact réussi, bornes comprises (G-09.3.2). Exemple : 30 à 50 PV. */
+  damage: { min: number; max: number };
+  /** Probabilité d'impact sur une unité compatible rencontrée. */
+  impactProbability: number;
+  /** Hexagones que le projectile peut parcourir avant d'être neutralisé ; `null` : jusqu'à la case visée. */
+  autonomy: number | null;
+  /**
+   * Portée d'acquisition de la cible désignée par les capteurs du projectile, en hexagones,
+   * sans tirage (G-09 §2.2) ; 0 pour une arme sans autodirecteur.
+   */
+  acquisitionRange: number;
+}
+
+/** Paramètres de combat (AB-47, AB-49). */
+export interface CombatConfig {
+  weapons: Record<WeaponKind, WeaponSpec>;
+  /** Points de probabilité d'impact perdus par un tir sur une zone suspecte (AB-47). */
+  suspectZoneImpactPenalty: number;
+  /**
+   * Distance, en hexagones, à laquelle un projectile adverse est identifié d'office par toute
+   * unité alliée, porte-avions compris, sans tirage ni capteurs (AB-49).
+   */
+  projectileDetectionRange: number;
 }
 
 /** Paramètres communs de la veille (AB-20, AB-22, AB-33). */
@@ -123,6 +157,8 @@ export interface DetectionConfig {
    * cycle : l'émission active fait du bruit (AB-33). Se cumule avec le bonus côtier.
    */
   sweepNoiseWatchBonus: number;
+  /** Points de probabilité de veille gagnés contre une unité qui a tiré pendant le cycle (AB-49). */
+  fireNoiseWatchBonus: number;
 }
 
 /**
@@ -160,7 +196,7 @@ export interface AiConfig {
 export interface GameConfig {
   map: { width: number; height: number; generation: MapGenerationConfig };
   missions: MissionsConfig;
-  weaponRanges: WeaponRangesConfig;
+  combat: CombatConfig;
   detection: DetectionConfig;
   ai: AiConfig;
   specialActions: Record<SpecialActionKind, SpecialActionSpec>;
@@ -242,15 +278,41 @@ export const defaultConfig: GameConfig = {
       hostile: HOSTILE_FORCE,
     },
   },
-  weaponRanges: { missile: 8, torpedo: 3 },
+  combat: {
+    weapons: {
+      missile: {
+        range: 8,
+        progression: 2,
+        damage: { min: 30, max: 50 },
+        impactProbability: 0.75,
+        autonomy: null,
+        acquisitionRange: 0,
+      },
+      torpedo: {
+        range: 3,
+        progression: 1,
+        damage: { min: 40, max: 60 },
+        impactProbability: 0.7,
+        autonomy: 5,
+        acquisitionRange: 2,
+      },
+    },
+    suspectZoneImpactPenalty: 0.25,
+    projectileDetectionRange: 3,
+  },
   detection: {
     zoneSize: 7,
     zoneMaxAttempts: 200,
     coastalSubmarineWatchBonus: 0.2,
     sweepNoiseWatchBonus: 0.2,
+    fireNoiseWatchBonus: 0.2,
   },
   ai: { navalCombatStationColumnRatio: 0.5 },
-  specialActions: { sweep: { cooldownCycles: 1 } },
+  specialActions: {
+    sweep: { cooldownCycles: 1 },
+    fire_missile: { cooldownCycles: 0 },
+    fire_torpedo: { cooldownCycles: 0 },
+  },
   budget: { normal: 100, limitedMeans: 70 },
   constraints: { maxCount: 2, ammoFactor: 0.7, badWeatherMaxMovement: 2, sensorsFactor: 0.8 },
   ships: {

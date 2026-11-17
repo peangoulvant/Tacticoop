@@ -1,3 +1,5 @@
+import { observedProjectiles } from '../combat/projectile-observation.service';
+import { defaultConfig, type GameConfig } from '../config/game.config';
 import type { MissionState } from '../core/game.types';
 import type { Unit } from '../units/unit.model';
 import type { Contact, ObservedContact } from './contact.types';
@@ -37,7 +39,10 @@ function toObservedContact(contact: Contact, cycle: number): ObservedContact {
 }
 
 /** Projection autorisée du camp ami sur l'état réel : carte, objectifs, et unités connues seulement. */
-export function observeFriend(mission: MissionState): FriendObservation {
+export function observeFriend(
+  mission: MissionState,
+  config: GameConfig = defaultConfig,
+): FriendObservation {
   return {
     map: mission.map,
     start: mission.start,
@@ -48,6 +53,7 @@ export function observeFriend(mission: MissionState): FriendObservation {
     constraints: mission.setup.constraints,
     units: mission.units.filter(isKnownToFriend),
     contacts: mission.friendContacts.map((contact) => toObservedContact(contact, mission.cycle)),
+    projectiles: observedProjectiles(mission, 'friend', config),
   };
 }
 
@@ -55,7 +61,10 @@ export function observeFriend(mission: MissionState): FriendObservation {
  * Projection autorisée du camp hostile (IA) sur l'état réel : carte, ses unités et ses propres
  * contacts, comme `observeFriend` pour le joueur (AB-35). Les unités alliées n'y figurent jamais.
  */
-export function observeHostile(mission: MissionState): HostileObservation {
+export function observeHostile(
+  mission: MissionState,
+  config: GameConfig = defaultConfig,
+): HostileObservation {
   return {
     map: mission.map,
     missionKind: mission.setup.mission,
@@ -65,5 +74,6 @@ export function observeHostile(mission: MissionState): HostileObservation {
     outcome: mission.outcome,
     units: mission.units.filter(isKnownToHostile),
     contacts: mission.hostileContacts.map((contact) => toObservedContact(contact, mission.cycle)),
+    projectiles: observedProjectiles(mission, 'hostile', config),
   };
 }

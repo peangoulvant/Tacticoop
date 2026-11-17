@@ -90,7 +90,11 @@ describe('aller-retour', () => {
 
   it('relit une mission gagnée', () => {
     const { state, events } = playedMission('escort');
-    const won: engine.MissionState = { ...state, outcome: 'victory' };
+    const won: engine.MissionState = {
+      ...state,
+      outcome: 'victory',
+      outcomeCause: 'carrier_arrived',
+    };
     const result = parseSave(serializeSave(won, events, SAVED_AT));
     expect(result.ok && result.save.state.outcome).toBe('victory');
   });
@@ -123,10 +127,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 7;
+      save.schemaVersion = 8;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 7/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 8/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -202,7 +206,7 @@ describe("refus d'un état incohérent", () => {
       /cycle/,
     );
     expectInvalidData(
-      parseTampered('escort', (s) => (s.state.outcome = 'defeat')),
+      parseTampered('escort', (s) => (s.state.outcome = 'draw')),
       /issue/,
     );
   });
@@ -523,7 +527,7 @@ describe('balayage (version 3) et délai de récupération (version 4)', () => {
   it("aller-retour d'une mission où un balayage a eu lieu", () => {
     const { state, events } = searchedMission();
     const result = parseSave(serializeSave(state, events, SAVED_AT));
-    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 6 } });
+    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 7 } });
     expect(result.ok && result.save.state).toEqual(state);
     expect(events.some((e) => e.type === 'SWEEP_PERFORMED')).toBe(true);
     expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);

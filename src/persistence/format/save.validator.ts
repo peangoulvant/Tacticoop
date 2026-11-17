@@ -10,12 +10,13 @@ import {
   type Json,
   type Problem,
 } from './guards.validator';
+import { checkCombat } from './projectile.validator';
 import { checkUnits } from './unit.validator';
 
 /*
  * Validation de l'état d'une mission en cours : choix de préparation, carte, progression, points
  * A et B, navigation du porte-avions, puis les unités (`unit.validator.ts`) et les contacts
- * (`contact.validator.ts`). Le journal est validé à part (`event.validator.ts`).
+ * (`contact.validator.ts`), les projectiles et les pertes (`projectile.validator.ts`). Le journal est validé à part (`event.validator.ts`).
  */
 
 function checkConstraints(constraints: unknown): Problem {
@@ -61,7 +62,11 @@ function checkMap(map: unknown): Problem {
 /** Numéro de cycle et issue de la mission. */
 function checkProgress(state: Json): Problem {
   if (!isPositive(state.cycle)) return 'numéro de cycle invalide';
-  return state.outcome === null || state.outcome === 'victory' ? null : 'issue de mission inconnue';
+  if (state.outcome === null) return state.outcomeCause === null ? null : 'cause de résultat sans résultat';
+  const causes: readonly unknown[] =
+    state.outcome === 'victory' ? engine.VICTORY_CAUSES : engine.DEFEAT_CAUSES;
+  if (state.outcome !== 'victory' && state.outcome !== 'defeat') return 'issue de mission inconnue';
+  return causes.includes(state.outcomeCause) ? null : 'cause de résultat inconnue';
 }
 
 /** Points A et B : B n'existe qu'en escorte (SF-02 §3). */
@@ -104,5 +109,6 @@ export function checkMissionState(state: unknown): Problem {
     () => checkUnits(state, map, escort),
     () => checkCarrierNavigation(state, map, escort),
     () => checkDetection(state, map),
+    () => checkCombat(state, map),
   ]);
 }

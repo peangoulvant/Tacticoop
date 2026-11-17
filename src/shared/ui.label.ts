@@ -90,6 +90,7 @@ export const carrierText = {
     'Utilisez « Clôturer le cycle » : plus aucune activation n’est possible.',
   victoryTitle: 'Mission réussie',
   victoryText: 'Le porte-avions est arrivé à destination.',
+  defeatTitle: 'Mission perdue',
   newGame: 'Nouvelle partie',
 };
 
@@ -301,8 +302,65 @@ const eventDescribers: { [T in engine.GameEvent['type']]: (event: EventOf<T>) =>
     `Porte-avions : navigation de ${hexLabel(event.from)} vers ${hexLabel(event.to)}`,
   CONTACT_DETECTED: contactEventLabel,
   SWEEP_PERFORMED: sweepEventLabel,
-  MISSION_WON: () => 'Mission réussie : le porte-avions est arrivé à destination',
+  SHOT_FIRED: shotFiredLabel,
+  PROJECTILE_DETECTED: (event) =>
+    `Projectile détecté : ${weaponLabel[event.weapon]} en ${hexLabel(event.position)}`,
+  PROJECTILE_IMPACT: impactLabel,
+  PROJECTILE_NEUTRALISED: (event) => `Un ${weaponLabel[event.weapon]} est neutralisé`,
+  MISSION_WON: (event) => `Mission réussie : ${victoryCauseLabel[event.cause]}`,
+  MISSION_LOST: (event) => `Mission perdue : ${defeatCauseLabel[event.cause]}`,
 };
+
+/*****************************
+ *
+ * PARTIE COMBAT : tirs, projectiles, résultat de mission
+ *
+ *****************************/
+
+/** Arme tirée, au masculin ou au féminin selon l'usage du journal. */
+const weaponLabel: Record<engine.WeaponKind, string> = {
+  missile: 'missile',
+  torpedo: 'torpille',
+};
+
+/** Cause d'une victoire, affichée avec le résultat (G-13.2 Q2). */
+export const victoryCauseLabel: Record<engine.VictoryCause, string> = {
+  carrier_arrived: 'Le porte-avions est arrivé à destination.',
+  hostile_fleet_destroyed: 'La flotte ennemie est détruite.',
+};
+
+/** Cause d'une défaite, affichée avec le résultat (G-13.2 Q2). */
+export const defeatCauseLabel: Record<engine.DefeatCause, string> = {
+  all_units_destroyed: 'Toutes vos unités sont détruites.',
+  carrier_destroyed: 'Le porte-avions est détruit.',
+  all_escorts_destroyed: 'Tous les navires d’escorte sont détruits.',
+};
+
+/** Cause du résultat d'une mission terminée, telle qu'affichée sur le bandeau (G-13.2 Q2). */
+export function resultCauseText(mission: engine.MissionState): string {
+  const cause = mission.outcomeCause;
+  if (!cause) return '';
+  return mission.outcome === 'victory'
+    ? victoryCauseLabel[cause as engine.VictoryCause]
+    : defeatCauseLabel[cause as engine.DefeatCause];
+}
+
+/** Tir du camp ami : « Frégate DA : tir de torpille sur le contact C-2, zone en (4, 3) ». */
+function shotFiredLabel(event: EventOf<'SHOT_FIRED'>): string {
+  const zone = event.hex ? `, hexagone choisi ${hexLabel(event.hex)}` : '';
+  return `${shipLabelOf(event.shipClass)} : tir de ${weaponLabel[event.weapon]} sur le contact ${event.contactId}${zone}`;
+}
+
+/** Impact : l'unité alliée visée avec l'arme, ou un navire hostile sans autre détail (AB-49). */
+function impactLabel(event: EventOf<'PROJECTILE_IMPACT'>): string {
+  const weapon = weaponLabel[event.weapon];
+  if (event.victim.side === 'hostile') {
+    return `Un navire hostile est ${event.result === 'destroyed' ? 'détruit' : 'touché'} (${weapon})`;
+  }
+  const ship = shipLabelOf(event.victim.shipClass);
+  if (event.result === 'missed') return `${ship} : un tir de ${weapon} a échoué`;
+  return `${ship} : impact de ${weapon}${event.result === 'destroyed' ? ', navire détruit' : ''}`;
+}
 
 /** Texte du journal pour n'importe quel événement du moteur. */
 export function eventLabel(event: engine.GameEvent): string {

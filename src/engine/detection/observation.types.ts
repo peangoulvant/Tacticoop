@@ -1,3 +1,4 @@
+import type { ObservedProjectile } from '../combat/projectile.types';
 import type { ObservedContact } from './contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
@@ -27,6 +28,8 @@ export interface FriendObservation {
    * balayage, jamais une unité (AB-23, AB-30). Sans la cible interne (AB-26).
    */
   contacts: ObservedContact[];
+  /** Projectiles connus : les siens, et ceux des hostiles identifiés d'office (AB-49). */
+  projectiles: ObservedProjectile[];
 }
 
 /**
@@ -49,4 +52,6 @@ export interface HostileObservation {
   units: Unit[];
   /** Contacts de l'IA (zones de veille, navires identifiés), sans la cible interne (AB-26). */
   contacts: ObservedContact[];
+  /** Projectiles connus de l'IA, avec la même règle d'identification que le joueur (AB-35, AB-49). */
+  projectiles: ObservedProjectile[];
 }
