@@ -244,10 +244,12 @@ export function fire(
     });
   }
   const projectile = launchedProjectile(mission, unit, weapon, plan, config);
-  const stock = weapon === 'missile' ? { missiles: unit.missiles - 1 } : { torpedoes: unit.torpedoes - 1 };
+  const stock =
+    weapon === 'missile' ? { missiles: unit.missiles - 1 } : { torpedoes: unit.torpedoes - 1 };
+  // `recordSpecialAction` rend une copie complète de l'unité : le stock s'écrit donc après elle.
   const engaged = updateUnitInMission(mission, unitId, {
-    ...stock,
     ...recordSpecialAction(unit, kind, mission.cycle),
+    ...stock,
     activation: 'in_progress',
     specialActionUsed: true,
   });
@@ -256,7 +258,10 @@ export function fire(
     projectiles: [...engaged.projectiles, projectile],
     nextLaunchNumber: mission.nextLaunchNumber + 1,
   };
-  return accept(launched, actor === 'friend' ? [shotFiredEvent(mission, unit, weapon, target)] : []);
+  return accept(
+    launched,
+    actor === 'friend' ? [shotFiredEvent(mission, unit, weapon, target)] : [],
+  );
 }
 
 /**

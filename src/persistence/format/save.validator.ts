@@ -62,7 +62,8 @@ function checkMap(map: unknown): Problem {
 /** Numéro de cycle et issue de la mission. */
 function checkProgress(state: Json): Problem {
   if (!isPositive(state.cycle)) return 'numéro de cycle invalide';
-  if (state.outcome === null) return state.outcomeCause === null ? null : 'cause de résultat sans résultat';
+  if (state.outcome === null)
+    return state.outcomeCause === null ? null : 'cause de résultat sans résultat';
   const causes: readonly unknown[] =
     state.outcome === 'victory' ? engine.VICTORY_CAUSES : engine.DEFEAT_CAUSES;
   if (state.outcome !== 'victory' && state.outcome !== 'defeat') return 'issue de mission inconnue';

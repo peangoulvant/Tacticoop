@@ -12,7 +12,7 @@ src/
     map/                 # Calculs hexagonaux et déplacements
     units/               # Modèle et comportement des unités : déplacement, porte-avions (ordres et navigation), force hostile au lancement
     detection/           # Contacts et observations filtrées
-    combat/              # Résolution des combats
+    combat/              # Tirs, projectiles (trajectoires, progression, impact, destruction), visibilité des projectiles
     ai/                  # Décisions du camp Hostile
     missions/            # Coordination des missions et des phases : préparation, lancement, activations, cycles
     config/              # Paramètres de jeu

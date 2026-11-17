@@ -1,11 +1,5 @@
 import { exploreFrom, inBounds, pathTo, terrainAt, type GameMap } from '../map/game-map.service';
-import {
-  fromAxial,
-  hexLine,
-  toAxial,
-  type Axial,
-  type Hex,
-} from '../map/hex.service';
+import { fromAxial, hexLine, toAxial, type Axial, type Hex } from '../map/hex.service';
 import { isWater } from '../map/terrain.model';
 
 /*

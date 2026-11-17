@@ -306,7 +306,7 @@ const eventDescribers: { [T in engine.GameEvent['type']]: (event: EventOf<T>) =>
   PROJECTILE_DETECTED: (event) =>
     `Projectile détecté : ${weaponLabel[event.weapon]} en ${hexLabel(event.position)}`,
   PROJECTILE_IMPACT: impactLabel,
-  PROJECTILE_NEUTRALISED: (event) => `Un ${weaponLabel[event.weapon]} est neutralisé`,
+  PROJECTILE_NEUTRALISED: (event) => neutralisedLabel[event.weapon],
   MISSION_WON: (event) => `Mission réussie : ${victoryCauseLabel[event.cause]}`,
   MISSION_LOST: (event) => `Mission perdue : ${defeatCauseLabel[event.cause]}`,
 };
@@ -321,6 +321,12 @@ const eventDescribers: { [T in engine.GameEvent['type']]: (event: EventOf<T>) =>
 const weaponLabel: Record<engine.WeaponKind, string> = {
   missile: 'missile',
   torpedo: 'torpille',
+};
+
+/** Projectile neutralisé sans impact, accordé avec l'arme. */
+const neutralisedLabel: Record<engine.WeaponKind, string> = {
+  missile: 'Un missile est neutralisé',
+  torpedo: 'Une torpille est neutralisée',
 };
 
 /** Cause d'une victoire, affichée avec le résultat (G-13.2 Q2). */

@@ -57,7 +57,11 @@ function resolveTarget(mission: MissionState, unit: Unit, target: ShotTarget): R
  */
 function isCompatibleTarget(weapon: WeaponKind, resolved: ResolvedTarget & { ok: true }): boolean {
   const { contact } = resolved;
-  return !(weapon === 'missile' && contact.kind === 'identified' && contact.targetType === 'submarine');
+  return !(
+    weapon === 'missile' &&
+    contact.kind === 'identified' &&
+    contact.targetType === 'submarine'
+  );
 }
 
 /** Trajet de l'arme jusqu'à la case visée, ou `null` (torpille sans chemin maritime ou trop long). */

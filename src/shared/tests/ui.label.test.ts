@@ -111,7 +111,74 @@ describe('texte du journal de chaque événement (D-11)', () => {
     expect(eventLabel({ type: 'CARRIER_MOVED', from, to, cycle: 1 })).toBe(
       'Porte-avions : navigation de (2, 4) vers (3, 4)',
     );
-    expect(eventLabel({ type: 'MISSION_WON', cycle: 4, cause: 'carrier_arrived' })).toContain('Mission réussie');
+    expect(eventLabel({ type: 'MISSION_WON', cycle: 4, cause: 'carrier_arrived' })).toContain(
+      'Mission réussie',
+    );
+  });
+
+  it('décrit les tirs et les projectiles sans révéler de détail caché (AB-49)', () => {
+    expect(
+      eventLabel({
+        type: 'SHOT_FIRED',
+        cycle: 1,
+        unitId: 'a',
+        shipClass: 'frigate_da',
+        weapon: 'torpedo',
+        contactId: 'C-2',
+        hex: from,
+      }),
+    ).toBe('Frégate DA : tir de torpille sur le contact C-2, hexagone choisi (2, 4)');
+    expect(
+      eventLabel({
+        type: 'PROJECTILE_DETECTED',
+        cycle: 1,
+        projectileId: 'P-2',
+        weapon: 'missile',
+        position: from,
+      }),
+    ).toBe('Projectile détecté : missile en (2, 4)');
+    expect(
+      eventLabel({
+        type: 'PROJECTILE_NEUTRALISED',
+        cycle: 1,
+        projectileId: 'P-2',
+        weapon: 'torpedo',
+      }),
+    ).toBe('Une torpille est neutralisée');
+  });
+
+  it('décrit un impact : unité alliée avec l’arme, ou navire hostile sans autre détail', () => {
+    const base = {
+      type: 'PROJECTILE_IMPACT',
+      cycle: 1,
+      projectileId: 'P-1',
+      weapon: 'missile',
+    } as const;
+    const friend = { side: 'friend', unitId: 'a', shipClass: 'fremm' } as const;
+    expect(eventLabel({ ...base, result: 'hit', victim: friend })).toBe(
+      'FREMM multimission : impact de missile',
+    );
+    expect(eventLabel({ ...base, result: 'destroyed', victim: friend })).toBe(
+      'FREMM multimission : impact de missile, navire détruit',
+    );
+    expect(eventLabel({ ...base, result: 'missed', victim: friend })).toBe(
+      'FREMM multimission : un tir de missile a échoué',
+    );
+    expect(eventLabel({ ...base, result: 'hit', victim: { side: 'hostile' } })).toBe(
+      'Un navire hostile est touché (missile)',
+    );
+    expect(eventLabel({ ...base, result: 'destroyed', victim: { side: 'hostile' } })).toBe(
+      'Un navire hostile est détruit (missile)',
+    );
+  });
+
+  it('annonce la fin de mission avec sa cause', () => {
+    expect(eventLabel({ type: 'MISSION_WON', cycle: 2, cause: 'hostile_fleet_destroyed' })).toBe(
+      'Mission réussie : La flotte ennemie est détruite.',
+    );
+    expect(eventLabel({ type: 'MISSION_LOST', cycle: 2, cause: 'carrier_destroyed' })).toBe(
+      'Mission perdue : Le porte-avions est détruit.',
+    );
   });
 
   it('délègue les contacts et le balayage à leurs textes dédiés', () => {

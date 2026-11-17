@@ -172,6 +172,42 @@ describe('veille : bruit du balayage (AB-33)', () => {
   });
 });
 
+describe('veille : bruit du tir (AB-49)', () => {
+  /** Navire hostile qui a tiré au cycle donné avec l'arme donnée. */
+  function shooter(action: 'fire_missile' | 'fire_torpedo', firedAt: number): Unit {
+    return { ...hostile('frigate_asm'), lastSpecialActionCycle: { [action]: firedAt } };
+  }
+
+  it.each(['fire_missile', 'fire_torpedo'] as const)(
+    'relève de 50 à 70 %% la détection d’une frégate qui a tiré (%s) pendant le cycle',
+    (action) => {
+      const rate = detectionRate((seed) => mission([friend(), shooter(action, 1)], { seed }));
+      expect(rate).toBeGreaterThan(0.65);
+      expect(rate).toBeLessThan(0.75);
+    },
+  );
+
+  it('ne relève pas la détection d’un tir fait un cycle plus tôt', () => {
+    const rate = detectionRate((seed) =>
+      mission([friend(), shooter('fire_missile', 1)], { seed, cycle: 2 }),
+    );
+    expect(rate).toBeGreaterThan(0.45);
+    expect(rate).toBeLessThan(0.55);
+  });
+
+  it('se cumule avec le bonus côtier du sous-marin : 50 + 20 + 20 = 90 %', () => {
+    const submarine: Unit = {
+      ...hostile('submarine'),
+      lastSpecialActionCycle: { fire_torpedo: 1 },
+    };
+    const rate = detectionRate((seed) =>
+      mission([friend(), submarine], { seed, terrain: 'coastal_sea' }),
+    );
+    expect(rate).toBeGreaterThan(0.85);
+    expect(rate).toBeLessThan(0.95);
+  });
+});
+
 describe('veille : capteurs dégradés (SF-01 §4)', () => {
   it('réduit la portée de veille des alliés : une cible à la portée normale n’est plus détectée', () => {
     expect(DEGRADED_WATCH).toBeLessThan(WATCH);

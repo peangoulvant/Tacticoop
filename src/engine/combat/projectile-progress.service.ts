@@ -6,12 +6,7 @@ import { hexDistance, type Hex } from '../map/hex.service';
 import type { Unit } from '../units/unit.model';
 import { attemptImpact, isCompatible, unitAt, type ImpactResult } from './impact.service';
 import type { Projectile } from './projectile.types';
-import {
-  headingOf,
-  isWaterHex,
-  stepAlong,
-  torpedoTrajectory,
-} from './trajectory.service';
+import { headingOf, isWaterHex, stepAlong, torpedoTrajectory } from './trajectory.service';
 
 /*
  * Progression des projectiles (G-09 §1, G-09.10, AB-47, AB-48). Après chaque séquence complète
@@ -101,7 +96,12 @@ function isSpent(projectile: Projectile): boolean {
 }
 
 /** Une unité de `side` est à `range` hexagones au plus du projectile. */
-function isNearUnitOf(state: MissionState, projectile: Projectile, side: Unit['side'], range: number) {
+function isNearUnitOf(
+  state: MissionState,
+  projectile: Projectile,
+  side: Unit['side'],
+  range: number,
+) {
   return state.units.some(
     (u) => u.side === side && hexDistance(u.position, projectile.position) <= range,
   );
@@ -157,9 +157,7 @@ function impactEvents(
     result,
   };
   if (unit.side === 'friend') {
-    return [
-      { ...base, victim: { side: 'friend', unitId: unit.id, shipClass: unit.shipClass } },
-    ];
+    return [{ ...base, victim: { side: 'friend', unitId: unit.id, shipClass: unit.shipClass } }];
   }
   return projectile.side === 'friend' && result !== 'missed'
     ? [{ ...base, victim: { side: 'hostile' } }]

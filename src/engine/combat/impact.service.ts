@@ -22,7 +22,10 @@ export function isCompatible(weapon: WeaponKind, unit: Unit, config: GameConfig)
 /** Probabilité d'impact : celle de l'arme, moins la pénalité d'un tir sur zone suspecte (AB-47). */
 export function impactProbability(projectile: Projectile, config: GameConfig): number {
   const base = config.combat.weapons[projectile.weapon].impactProbability;
-  return Math.max(0, base - (projectile.onSuspectZone ? config.combat.suspectZoneImpactPenalty : 0));
+  return Math.max(
+    0,
+    base - (projectile.onSuspectZone ? config.combat.suspectZoneImpactPenalty : 0),
+  );
 }
 
 /** Dégâts tirés uniformément dans la plage de l'arme, bornes comprises. Exemple : 30 à 50 PV. */

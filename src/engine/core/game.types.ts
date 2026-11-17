@@ -142,7 +142,13 @@ export type GameEvent =
       hex?: Hex;
     }
   /** Projectile adverse identifié d'office près d'une unité alliée : arme et position (AB-49). */
-  | { type: 'PROJECTILE_DETECTED'; cycle: number; projectileId: string; weapon: WeaponKind; position: Hex }
+  | {
+      type: 'PROJECTILE_DETECTED';
+      cycle: number;
+      projectileId: string;
+      weapon: WeaponKind;
+      position: Hex;
+    }
   /**
    * Impact d'un projectile. Côté ami : l'unité touchée et l'arme, jamais le tireur. Un navire
    * hostile touché n'est identifié ni par type ni par classe ; un impact raté sur lui n'est pas
