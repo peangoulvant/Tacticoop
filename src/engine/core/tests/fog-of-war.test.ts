@@ -28,10 +28,14 @@ function mission(hostileAt: Hex): MissionState {
     cycle: 1,
     carrierNavigation: null,
     outcome: null,
+    outcomeCause: null,
     friendContacts: [],
     nextContactNumber: 1,
     hostileContacts: [],
     nextHostileContactNumber: 1,
+    projectiles: [],
+    nextLaunchNumber: 1,
+    losses: [],
     rngState: 1,
     units: [
       make('a', 'friend', 'fremm', { col: 2, row: 4 }),
@@ -145,6 +149,8 @@ describe('ce que l’IA détecte reste caché au joueur (AB-35, SF-06 §2)', () 
         rngState: seed,
         units: [
           make('carrier', 'friend', 'carrier', { col: 2, row: 4 }),
+          // Un navire d'escorte loin de tout : sans lui, la défaite est déclarée (AB-03.2).
+          make('escort', 'friend', 'frigate_da', { col: 0, row: 8 }),
           // Immobile et en récupération de balayage : seule la veille agit (50 %).
           {
             ...make('hostile-1', 'hostile', 'frigate_da', { col: 4, row: 4 }),

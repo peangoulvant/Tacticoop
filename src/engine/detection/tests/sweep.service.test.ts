@@ -52,10 +52,14 @@ function mission(
     cycle,
     carrierNavigation: null,
     outcome: null,
+    outcomeCause: null,
     friendContacts: contacts,
     nextContactNumber: contacts.length + 1,
     hostileContacts: [],
     nextHostileContactNumber: 1,
+    projectiles: [],
+    nextLaunchNumber: 1,
+    losses: [],
     rngState: createRng(seed).state(),
   };
 }

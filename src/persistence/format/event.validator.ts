@@ -70,6 +70,38 @@ function isSweep(event: Json): boolean {
   );
 }
 
+/** Arme d'un événement de tir, case ou identifiant de projectile. */
+function isProjectileEvent(e: Json): boolean {
+  return (
+    isPositive(e.cycle) &&
+    typeof e.projectileId === 'string' &&
+    /^P-[1-9]\d*$/.test(e.projectileId) &&
+    isOneOf(engine.WEAPON_KINDS, e.weapon)
+  );
+}
+
+/** Victime d'un impact : une unité alliée, ou un navire hostile sans autre détail (AB-49). */
+function isVictim(victim: unknown): boolean {
+  if (!isRecord(victim)) return false;
+  if (victim.side === 'hostile') return Object.keys(victim).length === 1;
+  return (
+    victim.side === 'friend' && typeof victim.unitId === 'string' && isShipClass(victim.shipClass)
+  );
+}
+
+/** Tir du camp ami : tireur, arme, contact désigné et, pour une zone, l'hexagone choisi (AB-46). */
+function isShot(e: Json): boolean {
+  return (
+    isPositive(e.cycle) &&
+    typeof e.unitId === 'string' &&
+    isShipClass(e.shipClass) &&
+    isOneOf(engine.WEAPON_KINDS, e.weapon) &&
+    typeof e.contactId === 'string' &&
+    engine.CONTACT_ID_PATTERN.test(e.contactId) &&
+    (e.hex === undefined || isHex(e.hex))
+  );
+}
+
 const EVENT_CHECKS: Record<engine.GameEvent['type'], (event: Json) => boolean> = {
   MISSION_LAUNCHED: (e) => isOneOf(engine.MISSIONS, e.mission) && isPositive(e.cycle),
   UNIT_MOVED: (e) => isMove(e) && isPositive(e.cycle) && isAbsentOrTrue(e.interrupted),
@@ -82,7 +114,15 @@ const EVENT_CHECKS: Record<engine.GameEvent['type'], (event: Json) => boolean> =
     isPositive(e.cycle) &&
     isZone(e.zone),
   SWEEP_PERFORMED: isSweep,
-  MISSION_WON: (e) => isPositive(e.cycle),
+  SHOT_FIRED: isShot,
+  PROJECTILE_DETECTED: (e) => isProjectileEvent(e) && isHex(e.position),
+  PROJECTILE_IMPACT: (e) =>
+    isProjectileEvent(e) &&
+    isOneOf(['hit', 'missed', 'destroyed'] as const, e.result) &&
+    isVictim(e.victim),
+  PROJECTILE_NEUTRALISED: isProjectileEvent,
+  MISSION_WON: (e) => isPositive(e.cycle) && isOneOf(engine.VICTORY_CAUSES, e.cause),
+  MISSION_LOST: (e) => isPositive(e.cycle) && isOneOf(engine.DEFEAT_CAUSES, e.cause),
 };
 
 const EVENT_TYPES = Object.keys(EVENT_CHECKS) as engine.GameEvent['type'][];

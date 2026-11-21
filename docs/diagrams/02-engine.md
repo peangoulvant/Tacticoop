@@ -14,6 +14,7 @@ flowchart TB
         core["`**core/**<br>*Orchestrateur des commandes utilisateurs*`"]
         missions["`**missions/**<br>*préparation, lancement, activations, cycles*`"]
         units["`**units/**<br>*déplacement, porte-avions, force ennemie, actions spéciales*`"]
+        combat["`**combat/**<br>*tirs, projectiles, impacts, destruction*`"]
         detection["`**detection/**<br>*veille, balayage, contacts, vue de chaque camp*`"]
         ai["`**ai/**<br>*IA ennemie*`"]
   end
@@ -24,6 +25,9 @@ flowchart TB
     api(["consommateur"]) --> core
     core --> missions
     core -- déplacer, agir --> units
+    core -- tirer --> combat
+    missions -- après chaque séquence --> combat
+    missions -- fin de mission --> units
     core -- après chaque activation alliée --> ai
     missions -- après clôture du cycle --> ai
     missions -- après activation ou utilisation du balayage --> detection
@@ -31,12 +35,15 @@ flowchart TB
     ai -. utilise comme le joueur .-> core
     ai -- après activation ou utilisation du balayage --> detection
     detection --> units & map
+    combat -- retire les unités détruites --> detection
+    combat --> units & map
     units --> map
     regles -- lisent les valeurs --> config
 
      core
      missions
      units
+     combat
      detection
      ai
      map

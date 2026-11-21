@@ -71,8 +71,44 @@ describe('defaultConfig', () => {
     expect(bypassRowRatios.every((ratio) => ratio > 0 && ratio < 1)).toBe(true);
   });
 
-  it("reprend les portées d'armes (D-05)", () => {
-    expect(defaultConfig.weaponRanges).toEqual({ missile: 8, torpedo: 3 });
+  it("reprend les paramètres d'armes du lot 1 (D-05, AB-47)", () => {
+    const { weapons, suspectZoneImpactPenalty, projectileDetectionRange } = defaultConfig.combat;
+    expect(weapons.missile).toEqual({
+      range: 8,
+      progression: 2,
+      damage: { min: 30, max: 50 },
+      impactProbability: 0.75,
+      autonomy: null,
+      acquisitionRange: 0,
+    });
+    expect(weapons.torpedo).toEqual({
+      range: 3,
+      progression: 1,
+      damage: { min: 40, max: 60 },
+      impactProbability: 0.7,
+      autonomy: 5,
+      acquisitionRange: 2,
+    });
+    expect(suspectZoneImpactPenalty).toBe(0.25);
+    expect(projectileDetectionRange).toBe(3);
+  });
+
+  it.each(['missile', 'torpedo'] as const)(
+    'garde les dégâts et les probabilités de %s cohérents (AB-47)',
+    (weapon) => {
+      const spec = defaultConfig.combat.weapons[weapon];
+      expect(spec.damage.min).toBeLessThanOrEqual(spec.damage.max);
+      expect(spec.impactProbability).toBeGreaterThan(defaultConfig.combat.suspectZoneImpactPenalty);
+      expect(spec.progression).toBeGreaterThan(0);
+      // La moyenne de la plage reste la valeur de D-05 (40 et 50 PV).
+      expect((spec.damage.min + spec.damage.max) / 2).toBe(weapon === 'missile' ? 40 : 50);
+    },
+  );
+
+  it("laisse à l'autodirecteur de la torpille une portée inférieure à sa portée de tir (AB-47)", () => {
+    const { torpedo } = defaultConfig.combat.weapons;
+    expect(torpedo.acquisitionRange).toBeLessThan(torpedo.range);
+    expect(torpedo.autonomy).toBeGreaterThanOrEqual(torpedo.range);
   });
 
   /**
@@ -84,7 +120,10 @@ describe('defaultConfig', () => {
     'ordonne les portées de %s : torpille ≤ veille < balayage < missile (AB-43)',
     (shipClass) => {
       const detection = defaultConfig.ships[shipClass].detection!;
-      const { missile, torpedo } = defaultConfig.weaponRanges;
+      const { missile, torpedo } = {
+        missile: defaultConfig.combat.weapons.missile.range,
+        torpedo: defaultConfig.combat.weapons.torpedo.range,
+      };
       expect(torpedo).toBeLessThanOrEqual(detection.watchRange);
       expect(detection.watchRange).toBeLessThan(detection.sweepRange);
       expect(detection.sweepRange).toBeLessThan(missile);
@@ -108,7 +147,11 @@ describe('defaultConfig', () => {
   });
 
   it('définit un délai de récupération du balayage d’un cycle (AB-34)', () => {
-    expect(defaultConfig.specialActions).toEqual({ sweep: { cooldownCycles: 1 } });
+    expect(defaultConfig.specialActions).toEqual({
+      sweep: { cooldownCycles: 1 },
+      fire_missile: { cooldownCycles: 0 },
+      fire_torpedo: { cooldownCycles: 0 },
+    });
   });
 
   it('définit la veille arbitrée (AB-20, AB-22, SF-01 §4)', () => {
@@ -117,6 +160,7 @@ describe('defaultConfig', () => {
       zoneMaxAttempts: 200,
       coastalSubmarineWatchBonus: 0.2,
       sweepNoiseWatchBonus: 0.2,
+      fireNoiseWatchBonus: 0.2,
     });
     expect(defaultConfig.constraints.sensorsFactor).toBe(0.8);
   });
@@ -133,10 +177,10 @@ describe('defaultConfig', () => {
   it.each([35, 50])(
     'garde les distances minimales de départ au-delà des portées, sur une carte de %i',
     (width) => {
-      const { weaponRanges, missions, ships } = defaultConfig;
+      const { combat, missions, ships } = defaultConfig;
       const sweepRanges = Object.values(ships).map((spec) => spec.detection?.sweepRange ?? 0);
       const reach =
-        Math.max(weaponRanges.missile, weaponRanges.torpedo, ...sweepRanges) +
+        Math.max(combat.weapons.missile.range, combat.weapons.torpedo.range, ...sweepRanges) +
         Math.max(...sweepRanges);
       const distance = (ratio: number) => Math.round(width * ratio);
       expect(distance(missions.navalCombat.minStartDistanceRatio)).toBeGreaterThan(reach);

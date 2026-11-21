@@ -61,9 +61,15 @@ function checkContact(contact: unknown, map: engine.GameMap, cycle: number): Pro
 function checkContactSources(
   contacts: readonly Json[],
   units: readonly engine.Unit[],
+  losses: readonly engine.Loss[],
   targetSide: engine.Side,
 ): Problem {
-  const targets = new Set(units.filter((u) => u.side === targetSide).map((u) => u.id));
+  // Une cible détruite depuis garde ses contacts et ses zones de veille jusqu'à leur expiration.
+  const targets = new Set(
+    [...units, ...losses.map((l) => ({ id: l.unitId, side: l.side }))]
+      .filter((u) => u.side === targetSide)
+      .map((u) => u.id),
+  );
   if (!contacts.every((c) => typeof c.source === 'string' && targets.has(c.source))) {
     return 'cible de contact inconnue';
   }
@@ -96,7 +102,12 @@ function checkSideContacts(
   if (first) return first;
   const ids = new Set(contacts.map((c: Json) => c.id));
   if (ids.size !== contacts.length) return 'identifiants de contact en double';
-  return checkContactSources(contacts as Json[], state.units as engine.Unit[], targetSide);
+  return checkContactSources(
+    contacts as Json[],
+    state.units as engine.Unit[],
+    Array.isArray(state.losses) ? (state.losses as engine.Loss[]) : [],
+    targetSide,
+  );
 }
 
 /** Compteurs, état du générateur, contacts du camp ami puis contacts du camp hostile (AB-35). */

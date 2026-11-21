@@ -14,6 +14,7 @@ src/
 │  ├─ map/          hexagones, carte, génération du relief
 │  ├─ units/        unités, déplacement, porte-avions, force ennemie, actions spéciales
 │  ├─ detection/    veille, balayage, contacts, projections des camps (observeFriend, observeHostile)
+│  ├─ combat/       tirs, projectiles (trajectoires, progression, impact), visibilité des projectiles
 │  ├─ ai/           IA ennemie : objectif, déplacement, choix de l'unité, balayage, tour (nom.ai.service.ts)
 │  └─ missions/     préparation, lancement, activations, cycles
 ├─ persistence/   Sauvegarde : format JSON versionné, validation, stockage IndexedDB
@@ -55,9 +56,9 @@ Si le moteur refuse (`ok: false`), l'état ne change pas et l'interface affiche 
 1. Ajouter son type à `GameEvent`. Le compilateur signale alors deux oublis : son texte (`eventDescribers`, `shared/ui.label.ts`) et sa validation (`persistence/format/event.validator.ts`).
 2. Ne mettre dans l'événement que ce que le joueur a le droit de savoir.
 
-### Ajouter une action spéciale (torpille, hélicoptère, leurre…)
+### Ajouter une action spéciale (réparation, leurre…)
 1. Ajouter sa valeur à `SPECIAL_ACTION_KINDS` et son `cooldownCycles` à `GameConfig.specialActions`.
-2. Réutiliser `specialActionBlocker` (préconditions) et `recordSpecialAction` (délai de récupération) : le mécanisme est commun.
+2. Réutiliser `specialActionBlocker` (préconditions ; le matériel exigé se règle dans `equipmentBlocker`) et `recordSpecialAction` (délai de récupération) : le mécanisme est commun. Modèle : `fire()` dans `core/unit-commands.service.ts` (tir, partagé avec l'IA). Attention : `recordSpecialAction` renvoie une copie complète de l'unité, tout champ modifié (un stock) s'écrit **après** elle.
 3. Ajouter son store de brouillon, puis l'ajouter à `store/cancel-drafts.service.ts` (seul endroit qui connaît la liste).
 
 ### Ajouter une valeur au jeu
@@ -82,6 +83,8 @@ La déclarer dans l'interface de `GameConfig`, lui donner sa valeur dans `defaul
 | Activation | Les ordres d'une unité pendant un cycle : « disponible », « en cours » (un ordre exécuté), « activée ». Une seule unité est « en cours » à la fois (SF-03.8). |
 | Veille | Détection **automatique** de fin de cycle : un tirage par paire détecteur–cible à portée, qui donne un *contact suspect* (une zone). Probabilité de base 50 %. |
 | Balayage | Détection **voulue** par le joueur (action spéciale) : un tirage à 90 % par navire hostile à portée, qui donne un *contact identifié* (type et position exacte). Fait du bruit : +20 points de veille contre l'unité, ce cycle. Récupération d'un cycle. |
+| Projectile | Missile ou torpille en vol (`MissionState.projectiles`). Résolu par `progressProjectiles` après chaque séquence, dans l'ordre du numéro de lancement. Un projectile adverse est identifié d'office à 3 hexagones d'une unité alliée (`projectileDetectionRange`), jamais sa cible désignée. |
+| Tir | Action spéciale `FIRE` : une arme, un contact du camp (identifié du cycle courant, ou hexagone d'une zone suspecte). Le stock baisse au lancement ; l'impact est résolu plus tard par la progression. |
 | Contact suspect | Zone approximative de 7 hexagones au plus ; elle ne désigne pas la case réelle. |
 | Contact identifié | Navire repéré avec son type (frégate ou sous-marin, jamais la classe) et sa position exacte à l'instant du balayage ; « ancien » s'il date d'un cycle précédent. |
 | Projection amie / hostile | `observeFriend(mission)` : ce que le joueur a le droit de savoir ; `observeHostile(mission)` : ce que l'IA a le droit de savoir (ses unités et ses propres contacts). Chaque camp a ses contacts (`friendContacts`, `hostileContacts`). |

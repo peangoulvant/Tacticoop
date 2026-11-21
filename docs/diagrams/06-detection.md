@@ -1,7 +1,7 @@
 # 6. La détection et le brouillard de guerre (`src/engine/detection/`)
 
 Comment chaque camp apprend où sont les navires adverses. Les deux camps suivent exactement les mêmes règles.  
-Fichiers : `watch-sensor`, `sweep`, `side-contacts`, `observation`. Portées et probabilités : `config/game.config.ts`.  
+Fichiers : `watch-sensor`, `sweep`, `side-contacts`, `observation` ; projectiles : `combat/projectile-observation`. Portées et probabilités : `config/game.config.ts`.  
 
 ```mermaid
 ---
@@ -25,6 +25,8 @@ flowchart TB
     vueAmie["`**observeFriend**<br>*ce que le joueur sait*`"]:::ui
     vueHostile["`**observeHostile**<br>*ce que l'IA sait*`"]:::ui
 
+    projectiles["`**Projectiles**<br>*les siens toujours ; ceux de l'adversaire dès qu'ils passent à 3 hexagones d'une unité, sans tirage*`"]:::ui
+
     ecran(["`**Interface du joueur**`"]):::ext
     ia(["`**IA ennemie**`"]):::ext
 
@@ -35,6 +37,8 @@ flowchart TB
     suspect -->|"repéré par une unité hostile"| hostiles
     identifie -->|"repéré par une unité alliée"| amis
     identifie -->|"repéré par une unité hostile"| hostiles
+    reel --> projectiles
+    projectiles --> vueAmie & vueHostile
     amis --> vueAmie --> ecran
     hostiles --> vueHostile --> ia
 ```

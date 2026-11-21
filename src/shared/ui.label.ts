@@ -90,6 +90,7 @@ export const carrierText = {
     'Utilisez « Clôturer le cycle » : plus aucune activation n’est possible.',
   victoryTitle: 'Mission réussie',
   victoryText: 'Le porte-avions est arrivé à destination.',
+  defeatTitle: 'Mission perdue',
   newGame: 'Nouvelle partie',
 };
 
@@ -301,8 +302,81 @@ const eventDescribers: { [T in engine.GameEvent['type']]: (event: EventOf<T>) =>
     `Porte-avions : navigation de ${hexLabel(event.from)} vers ${hexLabel(event.to)}`,
   CONTACT_DETECTED: contactEventLabel,
   SWEEP_PERFORMED: sweepEventLabel,
-  MISSION_WON: () => 'Mission réussie : le porte-avions est arrivé à destination',
+  SHOT_FIRED: shotFiredLabel,
+  PROJECTILE_DETECTED: (event) =>
+    `Projectile détecté : ${weaponLabel[event.weapon]} en ${hexLabel(event.position)}`,
+  PROJECTILE_IMPACT: impactLabel,
+  PROJECTILE_NEUTRALISED: (event) => neutralisedLabel[event.weapon],
+  MISSION_WON: (event) => `Mission réussie : ${victoryCauseLabel[event.cause]}`,
+  MISSION_LOST: (event) => `Mission perdue : ${defeatCauseLabel[event.cause]}`,
 };
+
+/*****************************
+ *
+ * PARTIE COMBAT : tirs, projectiles, résultat de mission
+ *
+ *****************************/
+
+/** Arme tirée, au masculin ou au féminin selon l'usage du journal. */
+const weaponLabel: Record<engine.WeaponKind, string> = {
+  missile: 'missile',
+  torpedo: 'torpille',
+};
+
+/**
+ * Projectile resté sans effet, accordé avec l'arme : tir manqué ou aucune cible rencontrée, que le
+ * joueur ne peut volontairement pas distinguer (brouillard de guerre, AB-49).
+ */
+const neutralisedLabel: Record<engine.WeaponKind, string> = {
+  missile: 'Un missile est resté sans effet',
+  torpedo: 'Une torpille est restée sans effet',
+};
+
+/** Cause d'une victoire, affichée avec le résultat (G-13.2 Q2). */
+export const victoryCauseLabel: Record<engine.VictoryCause, string> = {
+  carrier_arrived: 'Le porte-avions est arrivé à destination.',
+  hostile_fleet_destroyed: 'La flotte ennemie est détruite.',
+};
+
+/** Cause d'une défaite, affichée avec le résultat (G-13.2 Q2). */
+export const defeatCauseLabel: Record<engine.DefeatCause, string> = {
+  all_units_destroyed: 'Toutes vos unités sont détruites.',
+  carrier_destroyed: 'Le porte-avions est détruit.',
+  all_escorts_destroyed: 'Tous les navires d’escorte sont détruits.',
+};
+
+/** Cause du résultat d'une mission terminée, telle qu'affichée sur le bandeau (G-13.2 Q2). */
+export function resultCauseText(mission: engine.MissionState): string {
+  const cause = mission.outcomeCause;
+  if (!cause) return '';
+  return mission.outcome === 'victory'
+    ? victoryCauseLabel[cause as engine.VictoryCause]
+    : defeatCauseLabel[cause as engine.DefeatCause];
+}
+
+/** Tir du camp ami : « Frégate DA : tir de torpille sur le contact C-2, zone en (4, 3) ». */
+function shotFiredLabel(event: EventOf<'SHOT_FIRED'>): string {
+  const zone = event.hex ? `, hexagone choisi ${hexLabel(event.hex)}` : '';
+  return `${shipLabelOf(event.shipClass)} : tir de ${weaponLabel[event.weapon]} sur le contact ${event.contactId}${zone}`;
+}
+
+/** Arme en sujet de phrase, accordée : « Un missile », « Une torpille ». */
+const weaponSubject: Record<engine.WeaponKind, string> = {
+  missile: 'Un missile',
+  torpedo: 'Une torpille',
+};
+
+/**
+ * Impact : l'arme est le sujet, la cible est nommée par sa classe (les identifiants des navires
+ * viendront plus tard), ou « un navire hostile » sans autre détail (AB-49).
+ * Exemple : « Un missile a manqué la cible FREMM multimission ».
+ */
+function impactLabel(event: EventOf<'PROJECTILE_IMPACT'>): string {
+  const subject = weaponSubject[event.weapon];
+  const verb = { hit: 'a touché', missed: 'a manqué', destroyed: 'a détruit' }[event.result];
+  if (event.victim.side === 'hostile') return `${subject} ${verb} un navire hostile`;
+  return `${subject} ${verb} la cible ${shipLabelOf(event.victim.shipClass)}`;
+}
 
 /** Texte du journal pour n'importe quel événement du moteur. */
 export function eventLabel(event: engine.GameEvent): string {

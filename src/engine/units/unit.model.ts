@@ -1,5 +1,5 @@
 import type { GameConfig, ShipClass, SpecialActionKind } from '../config/game.config';
-import type { Hex } from '../map/hex.service';
+import { sameHex, type Hex } from '../map/hex.service';
 import type { NavalCategory } from '../map/terrain.model';
 
 export const SIDES = ['friend', 'hostile'] as const;
@@ -100,4 +100,12 @@ export function createUnit(
     specialActionUsed: false,
     lastSpecialActionCycle: {},
   };
+}
+
+/**
+ * Unité en jeu sur la case donnée, ou `undefined` (une seule unité navale par hexagone, SF-02).
+ * Exemple : `unitAt(units, { col: 4, row: 2 })` rend la frégate qui s'y trouve.
+ */
+export function unitAt(units: readonly Unit[], hex: Hex): Unit | undefined {
+  return units.find((unit) => sameHex(unit.position, hex));
 }

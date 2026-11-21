@@ -1,6 +1,7 @@
 import type { GameConfig, ShipClass } from '../config/game.config';
 import { PURCHASABLE_CLASSES } from '../config/game.config';
 import { createRng, type Rng } from '../core/rng.service';
+import type { Loss, Projectile } from '../combat/projectile.types';
 import type { Contact } from '../detection/contact.types';
 import {
   generateEscortMap,
@@ -25,6 +26,9 @@ export interface LaunchedMission extends ScenarioMap {
   nextContactNumber: number;
   hostileContacts: Contact[];
   nextHostileContactNumber: number;
+  projectiles: Projectile[];
+  nextLaunchNumber: number;
+  losses: Loss[];
   /** État du générateur après les tirages du lancement (AB-24). */
   rngState: number;
 }
@@ -114,6 +118,9 @@ export function launchMission(
     nextContactNumber: 1,
     hostileContacts: [],
     nextHostileContactNumber: 1,
+    projectiles: [],
+    nextLaunchNumber: 1,
+    losses: [],
     rngState: rng.state(),
   };
 }

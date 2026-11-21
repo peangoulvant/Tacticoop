@@ -19,7 +19,22 @@ export type {
   MissionState,
   PreparationState,
 } from './core/game.types';
-export { defaultConfig, PURCHASABLE_CLASSES, SPECIAL_ACTION_KINDS } from './config/game.config';
+export {
+  defaultConfig,
+  PURCHASABLE_CLASSES,
+  SPECIAL_ACTION_KINDS,
+  WEAPON_KINDS,
+} from './config/game.config';
+export type { WeaponKind } from './config/game.config';
+export type {
+  FireRefusal,
+  Loss,
+  ObservedProjectile,
+  Projectile,
+  ShotTarget,
+} from './combat/projectile.types';
+export { DEFEAT_CAUSES, VICTORY_CAUSES } from './missions/outcome.service';
+export type { DefeatCause, VictoryCause } from './missions/outcome.service';
 export type {
   GameConfig,
   PurchasableShipClass,
@@ -49,7 +64,7 @@ export type {
 export type { GameMap } from './map/game-map.service';
 export { terrainAt, indexOf } from './map/game-map.service';
 export type { Hex } from './map/hex.service';
-export { hexDistance, sameHex } from './map/hex.service';
+export { AXIAL_DIRECTIONS, hexDistance, sameHex } from './map/hex.service';
 export { TERRAINS } from './map/terrain.model';
 export type { Terrain } from './map/terrain.model';
 export { ACTIVATION_STATUSES, SIDES } from './units/unit.model';

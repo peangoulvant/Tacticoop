@@ -4,17 +4,21 @@
  *
  *   activations des unités ──► clôture : `closeCycle`
  *                                  1. `resolveCycleEnd`  (porte-avions, veille)
- *                                  2. `determineOutcome` (victoire ?)
+ *                                  2. `determineOutcome` (défaite ou victoire ?)
  *                                  3. fin de mission, ou `startNextCycle`
+ *
+ * Après chaque activation alliée : réaction ennemie, puis `resolveSequenceEnd` (progression des
+ * projectiles et contrôle de fin de mission), avant de rendre la main au joueur (G-06.6).
  */
 
 import type { GameConfig } from '../config/game.config';
-import type { MissionState, Progress } from '../core/game.types';
+import type { GameEvent, MissionState, Progress } from '../core/game.types';
 import { playRemainingHostileActivations } from '../ai/turn.ai.service';
+import { progressProjectiles } from '../combat/projectile-progress.service';
 import { resolveWatch } from '../detection/watch-sensor.service';
 import type { Unit } from '../units/unit.model';
-import { hasCarrierArrived, moveCarrier } from '../units/carrier-movement.service';
-import type { MissionOutcome } from '../units/carrier-orders.service';
+import { moveCarrier } from '../units/carrier-movement.service';
+import { determineOutcome, type MissionResult } from './outcome.service';
 
 /**
  * Une unité alliée peut encore recevoir des ordres ce cycle (« disponible » ou « en cours »). Les
@@ -100,25 +104,33 @@ export function resolveCycleEnd(mission: MissionState, config: GameConfig): Prog
 }
 
 /**
- * Résultat de la mission une fois les phases de fin de cycle résolues, ou `null` si elle continue.
- * Les conditions de défaite prévalent sur la victoire (AB-01, G-13) ; aucune n'existe encore faute
- * de dégâts (AB-03). Victoire : le porte-avions est arrivé en B (G-03.2.9). C'est ici, et nulle
- * part ailleurs, que se décide la fin d'une mission.
+ * Déclare la fin de la mission : le résultat est posé et enregistré au journal avec sa cause
+ * (G-13.2 Q2), et la mission n'ouvre pas de cycle suivant. Les projectiles encore en vol restent
+ * dans l'état mais ne progressent plus : toute commande est refusée après la fin (AB-02).
  */
-export function determineOutcome(mission: MissionState): MissionOutcome | null {
-  return hasCarrierArrived(mission) ? 'victory' : null;
+function declareOutcome(mission: MissionState, result: MissionResult): Progress {
+  const { cycle } = mission;
+  const event: GameEvent =
+    result.outcome === 'victory'
+      ? { type: 'MISSION_WON', cycle, cause: result.cause }
+      : { type: 'MISSION_LOST', cycle, cause: result.cause };
+  return {
+    state: { ...mission, outcome: result.outcome, outcomeCause: result.cause },
+    events: [event],
+  };
 }
 
 /**
- * Déclare la fin de la mission : le résultat est posé et enregistré au journal, et la mission
- * n'ouvre pas de cycle suivant. Les projectiles encore en vol cesseraient alors de progresser
- * (AB-02) ; il n'y en a pas encore.
+ * Fin d'une séquence complète (G-06.6 4 bis, AB-48) : les projectiles présents progressent, puis
+ * les conditions de fin sont vérifiées ; si la mission est terminée, la fin est déclarée aussitôt
+ * (G-13.1 Q2). Sinon le cycle continue : l'appelant décide s'il se clôt.
  */
-function declareOutcome(mission: MissionState, outcome: MissionOutcome): Progress {
-  return {
-    state: { ...mission, outcome },
-    events: [{ type: 'MISSION_WON', cycle: mission.cycle }],
-  };
+export function resolveSequenceEnd(mission: MissionState, config: GameConfig): Progress {
+  const progressed = progressProjectiles(mission, config);
+  const result = determineOutcome(progressed.state);
+  if (!result) return progressed;
+  const declared = declareOutcome(progressed.state, result);
+  return { state: declared.state, events: [...progressed.events, ...declared.events] };
 }
 
 /**
@@ -129,8 +141,8 @@ function declareOutcome(mission: MissionState, outcome: MissionOutcome): Progres
 export function closeCycle(mission: MissionState, config: GameConfig): Progress {
   if (mission.outcome) return { state: mission, events: [] };
   const resolved = resolveCycleEnd(mission, config);
-  const outcome = determineOutcome(resolved.state);
-  const next = outcome ? declareOutcome(resolved.state, outcome) : startNextCycle(resolved.state);
+  const result = determineOutcome(resolved.state);
+  const next = result ? declareOutcome(resolved.state, result) : startNextCycle(resolved.state);
   return { state: next.state, events: [...resolved.events, ...next.events] };
 }
 

@@ -56,10 +56,14 @@ export function missionOf({
     cycle,
     carrierNavigation: null,
     outcome: null,
+    outcomeCause: null,
     friendContacts: [],
     nextContactNumber: 1,
     hostileContacts: [],
     nextHostileContactNumber: 1,
+    projectiles: [],
+    nextLaunchNumber: 1,
+    losses: [],
     rngState: 7,
   };
 }

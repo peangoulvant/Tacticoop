@@ -111,7 +111,73 @@ describe('texte du journal de chaque événement (D-11)', () => {
     expect(eventLabel({ type: 'CARRIER_MOVED', from, to, cycle: 1 })).toBe(
       'Porte-avions : navigation de (2, 4) vers (3, 4)',
     );
-    expect(eventLabel({ type: 'MISSION_WON', cycle: 4 })).toContain('Mission réussie');
+    expect(eventLabel({ type: 'MISSION_WON', cycle: 4, cause: 'carrier_arrived' })).toContain(
+      'Mission réussie',
+    );
+  });
+
+  it('décrit les tirs et les projectiles sans révéler de détail caché (AB-49)', () => {
+    expect(
+      eventLabel({
+        type: 'SHOT_FIRED',
+        cycle: 1,
+        unitId: 'a',
+        shipClass: 'frigate_da',
+        weapon: 'torpedo',
+        contactId: 'C-2',
+        hex: from,
+      }),
+    ).toBe('Frégate DA : tir de torpille sur le contact C-2, hexagone choisi (2, 4)');
+    expect(
+      eventLabel({
+        type: 'PROJECTILE_DETECTED',
+        cycle: 1,
+        projectileId: 'P-2',
+        weapon: 'missile',
+        position: from,
+      }),
+    ).toBe('Projectile détecté : missile en (2, 4)');
+    expect(
+      eventLabel({
+        type: 'PROJECTILE_NEUTRALISED',
+        cycle: 1,
+        projectileId: 'P-2',
+        weapon: 'torpedo',
+      }),
+    ).toBe('Une torpille est restée sans effet');
+  });
+
+  it('décrit un impact : l’arme en sujet, la cible nommée par sa classe, sans détail hostile', () => {
+    const base = { type: 'PROJECTILE_IMPACT', cycle: 1, projectileId: 'P-1' } as const;
+    const friend = { side: 'friend', unitId: 'a', shipClass: 'fremm' } as const;
+    const missile = { ...base, weapon: 'missile' } as const;
+    expect(eventLabel({ ...missile, result: 'hit', victim: friend })).toBe(
+      'Un missile a touché la cible FREMM multimission',
+    );
+    expect(eventLabel({ ...missile, result: 'destroyed', victim: friend })).toBe(
+      'Un missile a détruit la cible FREMM multimission',
+    );
+    expect(eventLabel({ ...missile, result: 'missed', victim: friend })).toBe(
+      'Un missile a manqué la cible FREMM multimission',
+    );
+    expect(eventLabel({ ...base, weapon: 'torpedo', result: 'missed', victim: friend })).toBe(
+      'Une torpille a manqué la cible FREMM multimission',
+    );
+    expect(eventLabel({ ...missile, result: 'hit', victim: { side: 'hostile' } })).toBe(
+      'Un missile a touché un navire hostile',
+    );
+    expect(
+      eventLabel({ ...base, weapon: 'torpedo', result: 'destroyed', victim: { side: 'hostile' } }),
+    ).toBe('Une torpille a détruit un navire hostile');
+  });
+
+  it('annonce la fin de mission avec sa cause', () => {
+    expect(eventLabel({ type: 'MISSION_WON', cycle: 2, cause: 'hostile_fleet_destroyed' })).toBe(
+      'Mission réussie : La flotte ennemie est détruite.',
+    );
+    expect(eventLabel({ type: 'MISSION_LOST', cycle: 2, cause: 'carrier_destroyed' })).toBe(
+      'Mission perdue : Le porte-avions est détruit.',
+    );
   });
 
   it('délègue les contacts et le balayage à leurs textes dédiés', () => {

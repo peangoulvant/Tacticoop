@@ -14,12 +14,13 @@ import {
   closeCycle,
   closeCycleIfDone,
   endActivationsInProgress,
+  resolveSequenceEnd,
   hasActivationInProgress,
   isAwaitingFinalOrder,
 } from '../missions/cycle.service';
 import { reactToFriendActivation } from '../ai/turn.ai.service';
 import { accept, reject } from './results.service';
-import { blockerRejection, finishActivation, moveUnit, sweep } from './unit-commands.service';
+import { blockerRejection, finishActivation, fire, moveUnit, sweep } from './unit-commands.service';
 import type { CommandResult, GameCommand, MissionCommand, MissionState } from './game.types';
 
 /*****************************
@@ -47,15 +48,18 @@ type Handler<T extends MissionCommand['type']> = (
  * Clôture explicite de l'activation, même sans déplacement (SF-03.1, SF-03.2). Une unité ennemie
  * réagit aussitôt, résolue entièrement avant la prochaine décision du joueur (AB-39) ; puis,
  * quand toutes les activations sont achevées, le cycle se clôt et le suivant s'ouvre
- * automatiquement (SF-03.4). La progression des projectiles (G-06.6) n'existe pas encore.
+ * automatiquement (SF-03.4). Entre les deux, les projectiles progressent et la fin de mission est
+ * vérifiée (G-06.6, AB-48).
  */
 const endActivation: Handler<'END_ACTIVATION'> = (mission, command, config) => {
   const finished = finishActivation(mission, command, config);
   if (!finished.ok) return finished;
   // `finishActivation` renvoie toujours une mission en cours.
   const reacted = reactToFriendActivation(finished.state as MissionState, config);
-  const { state, events } = closeCycleIfDone(reacted, config);
-  return accept(state, events);
+  const sequence = resolveSequenceEnd(reacted, config);
+  if (sequence.state.outcome) return accept(sequence.state, sequence.events);
+  const closed = closeCycleIfDone(sequence.state, config);
+  return accept(closed.state, [...sequence.events, ...closed.events]);
 };
 
 /*****************************
@@ -70,9 +74,16 @@ const endActivation: Handler<'END_ACTIVATION'> = (mission, command, config) => {
  * perdent leur activation. Le joueur n'a donc plus à terminer l'activation avant le cycle.
  */
 const endCycleEarly: Handler<'END_CYCLE_EARLY'> = (mission, _command, config) => {
+  const hadActivation = hasActivationInProgress(mission.units);
   const settled = { ...mission, units: endActivationsInProgress(mission.units) };
-  const { state, events } = closeCycle(settled, config);
-  return accept(state, events);
+  // L'activation terminée d'office compte comme une séquence : les projectiles progressent, même
+  // sans réaction ennemie (AB-48). Sans activation en cours, rien ne progresse.
+  const sequence = hadActivation
+    ? resolveSequenceEnd(settled, config)
+    : { state: settled, events: [] };
+  if (sequence.state.outcome) return accept(sequence.state, sequence.events);
+  const closed = closeCycle(sequence.state, config);
+  return accept(closed.state, [...sequence.events, ...closed.events]);
 };
 
 /*****************************
@@ -157,6 +168,7 @@ const handlers: { [T in MissionCommand['type']]: Handler<T> } = {
   MOVE_UNIT: moveUnit,
   END_ACTIVATION: endActivation,
   SWEEP: sweep,
+  FIRE: fire,
   END_CYCLE_EARLY: endCycleEarly,
   ORDER_CARRIER: orderCarrier,
   CLOSE_CYCLE: closeCycleWithoutOrder,

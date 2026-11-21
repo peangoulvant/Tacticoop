@@ -14,7 +14,8 @@
  * accepté produit un état où la FREMM est en (4, 2) et l'événement UNIT_MOVED.
  */
 
-import type { PurchasableShipClass, ShipClass } from '../config/game.config';
+import type { PurchasableShipClass, ShipClass, WeaponKind } from '../config/game.config';
+import type { FireRefusal, Loss, Projectile, ShotTarget } from '../combat/projectile.types';
 import type { Contact, Identification } from '../detection/contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
@@ -31,6 +32,7 @@ import type {
   MissionKind,
   MissionSetup,
 } from '../missions/setup.service';
+import type { DefeatCause, VictoryCause } from '../missions/outcome.service';
 import type { MoveRefusal } from '../units/unit-movement.service';
 import type { Unit } from '../units/unit.model';
 
@@ -54,6 +56,8 @@ export interface MissionState {
   carrierNavigation: CarrierNavigation | null;
   /** Résultat de la mission une fois terminée ; les commandes sont alors refusées. */
   outcome: MissionOutcome | null;
+  /** Cause principale du résultat, affichée avec lui (G-13.2 Q2) ; `null` tant que la mission continue. */
+  outcomeCause: VictoryCause | DefeatCause | null;
   /** Contacts du camp ami : zones de la veille et navires identifiés (SF-04, AB-18, AB-25). */
   friendContacts: Contact[];
   /** Numéro du prochain contact du camp ami : les identifiants ne sont jamais réutilisés (AB-21). */
@@ -65,6 +69,12 @@ export interface MissionState {
   hostileContacts: Contact[];
   /** Numéro du prochain contact du camp hostile (numérotation propre à chaque camp). */
   nextHostileContactNumber: number;
+  /** Projectiles en vol des deux camps, jamais exposés tels quels (AB-47, AB-49). */
+  projectiles: Projectile[];
+  /** Numéro du prochain lancement : l'ordre fixe des projectiles (AB-48). */
+  nextLaunchNumber: number;
+  /** Navires détruits des deux camps, dans l'ordre des destructions (G-13.3). */
+  losses: Loss[];
   /** État du générateur de hasard, conservé pour que la reprise poursuive la même suite (AB-24). */
   rngState: number;
 }
@@ -88,6 +98,7 @@ export type MissionCommand =
   | { type: 'END_CYCLE_EARLY' }
   | { type: 'ORDER_CARRIER'; order: CarrierOrder }
   | { type: 'SWEEP'; unitId: string }
+  | { type: 'FIRE'; unitId: string; weapon: WeaponKind; target: ShotTarget }
   | { type: 'CLOSE_CYCLE' };
 
 export type GameCommand = PreparationCommand | MissionCommand;
@@ -120,7 +131,44 @@ export type GameEvent =
       shipClass: ShipClass;
       identified: Identification[];
     }
-  | { type: 'MISSION_WON'; cycle: number };
+  /** Tir du camp ami : arme et cible désignée (contact, et hexagone pour une zone suspecte, AB-46). */
+  | {
+      type: 'SHOT_FIRED';
+      cycle: number;
+      unitId: string;
+      shipClass: ShipClass;
+      weapon: WeaponKind;
+      contactId: string;
+      hex?: Hex;
+    }
+  /** Projectile adverse identifié d'office près d'une unité alliée : arme et position (AB-49). */
+  | {
+      type: 'PROJECTILE_DETECTED';
+      cycle: number;
+      projectileId: string;
+      weapon: WeaponKind;
+      position: Hex;
+    }
+  /**
+   * Impact d'un projectile. Côté ami : l'unité touchée et l'arme, jamais le tireur. Un navire
+   * hostile touché n'est identifié ni par type ni par classe ; un impact raté sur lui n'est pas
+   * annoncé (AB-49).
+   */
+  | {
+      type: 'PROJECTILE_IMPACT';
+      cycle: number;
+      projectileId: string;
+      weapon: WeaponKind;
+      result: 'hit' | 'missed' | 'destroyed';
+      victim: { side: 'friend'; unitId: string; shipClass: ShipClass } | { side: 'hostile' };
+    }
+  /**
+   * Projectile resté sans effet (fin de portée, obstacle, case visée atteinte, tir manqué), annoncé
+   * s'il est connu : un tir manqué et une absence de cible ne se distinguent pas (AB-49).
+   */
+  | { type: 'PROJECTILE_NEUTRALISED'; cycle: number; projectileId: string; weapon: WeaponKind }
+  | { type: 'MISSION_WON'; cycle: number; cause: VictoryCause }
+  | { type: 'MISSION_LOST'; cycle: number; cause: DefeatCause };
 
 export type GameErrorCode =
   | 'WRONG_PHASE'
@@ -136,6 +184,8 @@ export type GameErrorCode =
   | 'SPECIAL_ACTION_USED'
   | 'ON_COOLDOWN'
   | 'NO_SENSORS'
+  | 'NO_AMMO'
+  | 'FIRE_REFUSED'
   | 'MOVE_REFUSED'
   | 'NOT_ESCORT_MISSION'
   | 'NAVIGATION_QUOTA_USED'
@@ -151,6 +201,8 @@ export interface GameError {
   blockers?: LaunchBlocker[];
   /** Renseigné pour MOVE_REFUSED : le motif connu du refus. */
   moveRefusal?: MoveRefusal;
+  /** Renseigné pour FIRE_REFUSED : le motif connu du refus. */
+  fireRefusal?: FireRefusal;
   /** Renseigné pour WAYPOINT_REFUSED : le motif connu du refus. */
   waypointRefusal?: WaypointRefusal;
 }

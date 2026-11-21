@@ -3,7 +3,8 @@ import type { MissionState } from '../../core/game.types';
 import { createRng } from '../../core/rng.service';
 import type { Hex } from '../../map/hex.service';
 import { createUnit, type Unit } from '../../units/unit.model';
-import { closeCycle, determineOutcome, resolveCycleEnd } from '../cycle.service';
+import { closeCycle, resolveCycleEnd } from '../cycle.service';
+import { determineOutcome } from '../outcome.service';
 import { initialSetup } from '../setup.service';
 
 const SIZE = 9;
@@ -26,10 +27,14 @@ function escort(carrierAt: Hex): MissionState {
     cycle: 3,
     carrierNavigation: { mode: 'continue', waypoint: null, orderUsed: false },
     outcome: null,
+    outcomeCause: null,
     friendContacts: [],
     nextContactNumber: 1,
     hostileContacts: [],
     nextHostileContactNumber: 1,
+    projectiles: [],
+    nextLaunchNumber: 1,
+    losses: [],
     rngState: 1,
     units: [make('carrier', 'carrier', carrierAt), make('a', 'fremm', { col: 2, row: 2 })],
   };
@@ -46,7 +51,10 @@ describe('résolution des phases de fin de cycle', () => {
 
 describe('détermination du résultat', () => {
   it('donne la victoire quand le porte-avions est en B, sinon rien', () => {
-    expect(determineOutcome(escort({ col: 8, row: 4 }))).toBe('victory');
+    expect(determineOutcome(escort({ col: 8, row: 4 }))).toEqual({
+      outcome: 'victory',
+      cause: 'carrier_arrived',
+    });
     expect(determineOutcome(escort({ col: 7, row: 4 }))).toBeNull();
   });
 
@@ -55,7 +63,11 @@ describe('détermination du résultat', () => {
       ...escort({ col: 8, row: 4 }),
       goal: null,
       carrierNavigation: null,
-      units: [make('a', 'fremm', { col: 2, row: 2 })],
+      setup: { ...initialSetup(), mission: 'naval_combat' },
+      units: [
+        make('a', 'fremm', { col: 2, row: 2 }),
+        { ...make('h', 'fremm', { col: 9, row: 9 }), side: 'hostile' },
+      ],
     };
     expect(determineOutcome(navalCombat)).toBeNull();
   });
@@ -139,7 +151,12 @@ describe('veille en fin de cycle (G-08, chronologie)', () => {
 
   it('enregistre le cycle clos dans le contact et dans l’événement', () => {
     for (let seed = 1; seed <= 100; seed++) {
-      const { state, events } = closeCycle(withHostileInRange(seed), defaultConfig);
+      // Lutte navale : un navire allié et un hostile restent en jeu, la mission continue.
+      const navalCombat: MissionState = {
+        ...withHostileInRange(seed),
+        setup: { ...initialSetup(), mission: 'naval_combat' },
+      };
+      const { state, events } = closeCycle(navalCombat, defaultConfig);
       const detected = events.filter((e) => e.type === 'CONTACT_DETECTED');
       if (detected.length > 0) {
         expect(detected[0]).toMatchObject({ contactId: 'C-1', cycle: 3 });

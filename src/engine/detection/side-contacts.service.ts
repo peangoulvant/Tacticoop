@@ -44,3 +44,17 @@ export function writeContacts(
         nextHostileContactNumber: value.nextNumber,
       };
 }
+
+/**
+ * Efface les contacts identifiés d'un camp qui désignent la cible `targetId`, détruite par ce camp
+ * (AB-49). Les zones de veille de la même cible ne sont pas touchées (point ouvert, PR suivante).
+ */
+export function removeIdentifiedContactsOf(
+  mission: MissionState,
+  side: Side,
+  targetId: string,
+): MissionState {
+  const { contacts, nextNumber } = readContacts(mission, side);
+  const kept = contacts.filter((c) => !(c.kind === 'identified' && c.source === targetId));
+  return writeContacts(mission, side, { contacts: kept, nextNumber });
+}
