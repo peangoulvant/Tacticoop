@@ -1,17 +1,19 @@
 import * as engine from '../../../engine';
 import { palette } from '../../../app/theme.config';
+import * as assets from '../../../shared/assets.config';
 import * as labels from '../../../shared/ui.label';
 import { hexCenter, pathPoints } from '../services/hex-geometry.service';
 
 /*
- * Projectiles sur la carte (AB-49) : les siens, et ceux des hostiles identifiés d'office. Un
- * missile (en vol) est un triangle plein posé en haut de la case ; une torpille (immergée) une
- * capsule translucide à contour pointillé posée en bas : un missile et une torpille peuvent
- * partager une case (AB-47) sans se masquer. Plusieurs projectiles de même arme s'alignent.
+ * Projectiles sur la carte (AB-49) : les siens, et ceux des hostiles identifiés d'office. Chacun
+ * est l'icône de son arme (`weaponIcon`) sur une pastille à la couleur de son camp, tournée dans
+ * le sens de sa marche quand son tracé est connu (les siens). Le missile (en vol) est posé en haut
+ * de la case, la torpille (immergée, pastille pointillée et translucide) en bas : les deux
+ * peuvent partager une case (AB-47) sans se masquer. Plusieurs projectiles de même arme s'alignent.
  */
 
 /** Écart horizontal entre deux projectiles de même arme sur une case, et décalage vertical des armes. */
-const SPREAD = 4.2;
+const SPREAD = 5;
 const LANE = { missile: -3.4, torpedo: 3.4 };
 
 /** Position d'un projectile dans sa case : sa file (missile en haut, torpille en bas) et son rang. */
@@ -32,6 +34,19 @@ function slotOf(
   };
 }
 
+/** Angle (degrés) du prochain pas du projectile, ou 0 (vers la droite) si sa marche n'est pas connue. */
+function headingDegrees(projectile: engine.ObservedProjectile): number {
+  const next = projectile.route[0];
+  if (!next) return 0;
+  const from = hexCenter(projectile.position);
+  const to = hexCenter(next);
+  return (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI;
+}
+
+/** Dimensions de l'icône et de la pastille qui la porte, dans l'espace du viewBox. */
+const ICON = { width: 8, height: { missile: 1.8, torpedo: 1.4 } };
+const BADGE = { width: 10, height: 4.6 };
+
 function ProjectileToken({
   projectile,
   all,
@@ -44,6 +59,8 @@ function ProjectileToken({
   const center = hexCenter(projectile.position);
   const slot = slotOf(projectile, all);
   const color = projectile.side === 'friend' ? palette.projectileAlly : palette.projectileHostile;
+  const submerged = projectile.weapon === 'torpedo';
+  const height = ICON.height[projectile.weapon];
   return (
     <g
       transform={`translate(${(center.x + slot.x).toFixed(2)} ${(center.y + slot.y).toFixed(2)})`}
@@ -53,23 +70,31 @@ function ProjectileToken({
       data-side={projectile.side}
     >
       <title>{labels.projectileCaption(projectile)}</title>
-      {selected && <circle r="3.9" fill="none" stroke="#ffffff" strokeWidth="0.9" />}
-      {projectile.weapon === 'missile' ? (
-        <polygon points="0,-3 2.3,2.4 -2.3,2.4" fill={color} stroke="#0a1a33" strokeWidth="0.6" />
-      ) : (
+      <g
+        transform={`rotate(${headingDegrees(projectile).toFixed(1)})`}
+        opacity={submerged ? 0.8 : 1}
+      >
         <rect
-          x="-3"
-          y="-1.5"
-          width="6"
-          height="3"
-          rx="1.5"
-          fill={color}
-          fillOpacity={0.55}
-          stroke={color}
-          strokeWidth="0.7"
-          strokeDasharray="1.4 0.9"
+          x={-BADGE.width / 2}
+          y={-BADGE.height / 2}
+          width={BADGE.width}
+          height={BADGE.height}
+          rx={BADGE.height / 2}
+          fill="#0a1a33"
+          fillOpacity={0.9}
+          stroke={selected ? '#ffffff' : color}
+          strokeWidth={selected ? 1 : 0.8}
+          strokeDasharray={submerged ? '1.6 1' : undefined}
         />
-      )}
+        <image
+          href={assets.weaponIcon[projectile.weapon]}
+          x={-ICON.width / 2}
+          y={-height / 2}
+          width={ICON.width}
+          height={height}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </g>
     </g>
   );
 }
