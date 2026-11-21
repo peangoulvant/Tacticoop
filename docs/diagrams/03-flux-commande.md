@@ -1,6 +1,6 @@
 # 3. Le chemin d'une action
 
-Ce qui se passe quand le joueur confirme une action, par exemple un déplacement ou un balayage.  
+Ce qui se passe quand le joueur confirme une action, par exemple un déplacement, un balayage ou un tir.  
 Un brouillon (`..Draft..` dans le code) concerne un état d'interface.  
 
 
@@ -20,6 +20,8 @@ sequenceDiagram
 
     J->>UI: choisit une action
     UI->>S: ouvre un brouillon
+    UI->>M: demande l'aperçu (trajet, cibles, avertissements)
+    M-->>UI: aperçu calculé par le moteur
     J->>UI: confirme
     UI->>S: dispatch(commande)
     S->>M: executeCommand

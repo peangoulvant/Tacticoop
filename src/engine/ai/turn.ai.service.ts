@@ -1,6 +1,6 @@
 /*
  * Tour de l'IA (AB-35, AB-39) : une unité ennemie est activée, balaie si la politique le veut, se
- * déplace vers son objectif puis termine son activation, avec les mêmes commandes que le joueur
+ * déplace vers son objectif, tire si elle le peut (AB-50) puis termine son activation, avec les mêmes commandes que le joueur
  * (`unit-commands.service.ts`). Aucune de ses actions ne produit d'événement : le journal du
  * joueur n'en voit rien (AB-41, SF-06 §5). Le hasard est repris et rendu à l'état (AB-24).
  *
@@ -10,8 +10,9 @@
 import type { GameConfig } from '../config/game.config';
 import type { CommandResult, MissionState } from '../core/game.types';
 import { restoreRng } from '../core/rng.service';
-import { finishActivation, moveUnit, sweep } from '../core/unit-commands.service';
+import { finishActivation, fire, moveUnit, sweep } from '../core/unit-commands.service';
 import { observeHostile } from '../detection/observation.service';
+import { chooseShot } from './engagement.ai.service';
 import { intentOf } from './objective.ai.service';
 import { shouldSweep } from './sweep.ai.service';
 import { chooseHostileUnit } from './unit-selection.ai.service';
@@ -57,8 +58,20 @@ function moveTowardIntent(mission: MissionState, unitId: string, config: GameCon
 }
 
 /**
+ * Tire, après son déplacement, sur le contact identifié le plus proche si un tir est permis
+ * (AB-50, `PROPOSÉ`). La portée se mesure depuis la position courante, comme pour le joueur.
+ */
+function fireIfPossible(mission: MissionState, unitId: string, config: GameConfig): MissionState {
+  const unit = observeHostile(mission).units.find((u) => u.id === unitId);
+  const shot = unit && chooseShot(mission, observeHostile(mission), unit, config);
+  return shot
+    ? stateAfter(fire(mission, { unitId, ...shot }, config, 'hostile'), mission)
+    : mission;
+}
+
+/**
  * Réaction ennemie à une activation alliée achevée (AB-39) : une unité disponible, choisie selon
- * AB-38, joue son activation entière ; sans unité disponible, la réaction est passée sans effet
+ * AB-38, joue son activation entière (balayage, déplacement, tir) ; sans unité disponible, la réaction est passée sans effet
  * (`mission` est alors rendue telle quelle).
  */
 export function reactToFriendActivation(mission: MissionState, config: GameConfig): MissionState {
@@ -66,7 +79,8 @@ export function reactToFriendActivation(mission: MissionState, config: GameConfi
   if (!unit) return mission;
   const swept = sweepIfWanted(mission, unit.id, config);
   const moved = moveTowardIntent(swept, unit.id, config);
-  return stateAfter(finishActivation(moved, { unitId: unit.id }, config, 'hostile'), moved);
+  const engaged = fireIfPossible(moved, unit.id, config);
+  return stateAfter(finishActivation(engaged, { unitId: unit.id }, config, 'hostile'), engaged);
 }
 
 /**

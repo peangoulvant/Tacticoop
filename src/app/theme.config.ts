@@ -14,6 +14,11 @@ export const palette = {
   contactTints: ['#d99a0b', '#f0b429', '#c27a0a', '#c8b323'],
   /** Cases à portée d'un balayage en préparation. */
   sweepRange: '#5fd3ff',
+  /** Cases que l'on peut viser pendant la préparation d'un tir. */
+  fireRange: '#ff9f43',
+  /** Projectiles : alliés (bleu clair) et hostiles identifiés (rouge clair). */
+  projectileAlly: '#5fd3ff',
+  projectileHostile: '#ff6b6b',
   good: '#4caf50',
   warn: '#d9b84a',
 };

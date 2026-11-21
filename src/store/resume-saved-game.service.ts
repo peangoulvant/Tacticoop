@@ -1,7 +1,7 @@
 import { cancelAllDrafts } from './cancel-drafts.service';
 import { useGameStore } from './game.store';
 import { useSaveStore } from './save.store';
-import { useSweepResultStore } from './sweep-result.store';
+import { useActionResultStore } from './action-result.store';
 import { useSelectionStore } from './selection.store';
 
 /**
@@ -14,7 +14,7 @@ export function resumeSavedGame(): void {
   useGameStore.getState().restore(found.state, found.events);
   useSaveStore.getState().dismissFound();
   cancelAllDrafts();
-  useSweepResultStore.getState().clear();
+  useActionResultStore.getState().clear();
   useSelectionStore.getState().selectUnit(null);
   useSelectionStore.getState().selectHex(null);
 }

@@ -2,17 +2,25 @@ import { useMemo } from 'react';
 import { Box } from '@mui/material';
 import * as engine from '../../../engine';
 import { useCarrierOrderDraftStore } from '../../../store/carrier-order-draft.store';
+import { useFireDraftStore } from '../../../store/fire-draft.store';
 import { useMoveDraftStore } from '../../../store/move-draft.store';
 import { useSelectionStore } from '../../../store/selection.store';
 import type { CarrierRouteView } from '../../fleet';
-import type { MoveDraft, SweepDraft } from '../../commands';
+import type { FireDraft, MoveDraft, SweepDraft } from '../../commands';
 import { FinishFlag, TerrainLayer, UnitToken } from './map-layers.component';
 import { HexCaption, ZoomControls } from './map-controls.component';
 import { HEX_POINTS, hexCenter, mapViewBox } from '../services/hex-geometry.service';
 import { CarrierRouteOverlay } from './carrier-route-overlay.component';
 import { ContactOverlay } from './contact-overlay.component';
+import { FireOverlay } from './fire-overlay.component';
 import { MoveOverlay } from './move-overlay.component';
+import { ProjectileOverlay, ProjectileRouteOverlay } from './projectile-overlay.component';
 import { SweepOverlay } from './sweep-overlay.component';
+import {
+  currentSelectable,
+  nextSelectable,
+  selectablesAt,
+} from '../services/cell-selection.service';
 import { useMapView } from '../services/use-map-view';
 
 /**
@@ -23,32 +31,50 @@ export function TacticalMap({
   mission,
   move,
   sweep,
+  fire,
   carrierRoute,
 }: {
   mission: engine.MissionState;
   move: MoveDraft | null;
   sweep: SweepDraft | null;
+  fire: FireDraft | null;
   carrierRoute: CarrierRouteView | null;
 }) {
   // La carte n'affiche que ce que le joueur connaît : jamais une unité hostile non détectée.
   const observation = useMemo(() => engine.observeFriend(mission), [mission]);
-  const { map, units, start, goal, contacts } = observation;
-  const { selectedUnitId, selectedHex, selectUnit, selectHex } = useSelectionStore();
+  const { map, units, start, goal, contacts, projectiles } = observation;
+  const {
+    selectedUnitId,
+    selectedProjectileId,
+    selectedHex,
+    selectUnit,
+    selectProjectile,
+    selectHex,
+  } = useSelectionStore();
   const content = mapViewBox(map);
 
   const previewDestination = useMoveDraftStore((s) => s.previewDestination);
   const previewWaypoint = useCarrierOrderDraftStore((s) => s.previewWaypoint);
+  const chooseFireTarget = useFireDraftStore((s) => s.chooseTarget);
 
-  // Une unité cliquée est consultée (sa fiche s'affiche). Une case vide choisit la destination du
-  // déplacement ou le point de passage en préparation ; sans rien en préparation, elle
-  // désélectionne l'unité.
-  const onCellClick = (hex: engine.Hex) => {
-    selectHex(hex);
-    const here = units.find((u) => engine.sameHex(u.position, hex));
-    if (here) selectUnit(here.id);
+  // Pendant un tir, une case visable choisit la cible. Sinon une case occupée choisit l'unité ou le
+  // projectile allié qui s'y trouve (des clics répétés font défiler). Une case vide choisit la
+  // destination du déplacement ou le point de passage en préparation ; sans rien en préparation,
+  // elle désélectionne.
+  const selectAt = (hex: engine.Hex) => {
+    const current = currentSelectable(selectedUnitId, selectedProjectileId);
+    const chosen = nextSelectable(selectablesAt(units, projectiles, hex), current);
+    if (chosen?.kind === 'unit') selectUnit(chosen.id);
+    else if (chosen) selectProjectile(chosen.id);
     else if (move) previewDestination(hex);
     else if (carrierRoute?.picking) previewWaypoint(hex);
     else selectUnit(null);
+  };
+  const onCellClick = (hex: engine.Hex) => {
+    selectHex(hex);
+    const target = fire?.candidates.find((c) => c.hexes.some((h) => engine.sameHex(h, hex)));
+    if (target) chooseFireTarget(target.contactId, target.kind === 'suspect' ? hex : null);
+    else selectAt(hex);
   };
   const { containerRef, viewport, view, zoomBy, resetView, pointerHandlers } = useMapView(
     content.width,
@@ -84,6 +110,7 @@ export function TacticalMap({
               <TerrainLayer map={map} />
               <ContactOverlay contacts={contacts} />
               <SweepOverlay sweep={sweep} />
+              <FireOverlay fire={fire} />
               <MoveOverlay move={move} />
               <CarrierRouteOverlay view={carrierRoute} />
               {selected && (
@@ -95,6 +122,14 @@ export function TacticalMap({
               {units.map((u) => (
                 <UnitToken key={u.id} unit={u} selected={u.id === selectedUnitId} />
               ))}
+              <ProjectileRouteOverlay
+                projectile={projectiles.find((p) => p.id === selectedProjectileId)}
+              />
+              <ProjectileOverlay
+                projectiles={projectiles}
+                units={units}
+                selectedId={selectedProjectileId}
+              />
             </g>
           )}
         </svg>
@@ -105,6 +140,7 @@ export function TacticalMap({
         hex={selectedHex}
         unit={units.find((u) => selectedHex && engine.sameHex(u.position, selectedHex))}
         contacts={contacts}
+        projectiles={projectiles}
       />
     </Box>
   );
