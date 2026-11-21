@@ -1,3 +1,4 @@
+import type * as engine from '../../engine';
 import {
   sweepEventLabel,
   contactCaption,
@@ -5,6 +6,12 @@ import {
   eventLabel,
   sweepDraftLabel,
   sweepResultLabel,
+  fireDraftLabel,
+  fireOptionLabel,
+  fireResultLabel,
+  fireTargetLabel,
+  fireWarningLabel,
+  projectileCaption,
 } from '../ui.label';
 
 const zone = [
@@ -193,5 +200,50 @@ describe('texte du journal de chaque événement (D-11)', () => {
         identified: [],
       }),
     ).toBe('Balayage (Frégate DA) : aucun nouveau contact');
+  });
+});
+
+describe('textes du tir (AB-45)', () => {
+  it('récapitule l’arme, la cible et le stock, au singulier comme au pluriel', () => {
+    expect(fireDraftLabel('Frégate DA', 'missile', 6, 'contact C-1 (frégate)')).toBe(
+      'Frégate DA : missile, contact C-1 (frégate) (6 restants)',
+    );
+    expect(fireDraftLabel('Sous-marin', 'torpedo', 1, 'zone C-2, hexagone (4, 3)')).toBe(
+      'Sous-marin : torpille, zone C-2, hexagone (4, 3) (1 restant)',
+    );
+  });
+
+  it('nomme la cible : contact identifié, zone avec son hexagone, ou invite à choisir', () => {
+    const identified = {
+      kind: 'identified',
+      id: 'C-1',
+      cycle: 1,
+      targetType: 'submarine',
+      position: { col: 4, row: 4 },
+      stale: false,
+    } as const;
+    const suspect = { kind: 'suspect', id: 'C-2', cycle: 1, zone } as const;
+    const candidate: engine.ShotCandidate = { contactId: 'C-1', kind: 'identified', hexes: [] };
+    expect(fireTargetLabel(candidate, identified, null)).toBe('contact C-1 (sous-marin)');
+    expect(fireTargetLabel({ ...candidate, kind: 'suspect' }, suspect, { col: 12, row: 5 })).toBe(
+      'zone C-2, hexagone (12, 5)',
+    );
+    expect(fireTargetLabel(undefined, undefined, null)).toBe('Choisissez une cible');
+    expect(fireOptionLabel(suspect)).toBe('C-2 — zone suspecte');
+  });
+
+  it('avertit des lignes de tir amies, annonce le lancement et légende un projectile', () => {
+    expect(fireWarningLabel.FRIENDLY_ON_ROUTE).toMatch(/croise une unité alliée/);
+    expect(fireWarningLabel.FRIENDLY_ON_AIMED_HEX).toMatch(/occupe la case visée/);
+    expect(fireResultLabel.missile).toBe('Missile lancé');
+    expect(fireResultLabel.torpedo).toBe('Torpille lancée');
+    const shot: engine.ObservedProjectile = {
+      id: 'P-2',
+      weapon: 'torpedo',
+      side: 'hostile',
+      position: { col: 2, row: 4 },
+      route: [],
+    };
+    expect(projectileCaption(shot)).toBe('torpille hostile P-2');
   });
 });

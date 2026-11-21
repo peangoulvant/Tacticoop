@@ -21,6 +21,7 @@ export type {
 } from './core/game.types';
 export {
   defaultConfig,
+  FIRE_ACTION,
   PURCHASABLE_CLASSES,
   SPECIAL_ACTION_KINDS,
   WEAPON_KINDS,
@@ -33,6 +34,13 @@ export type {
   Projectile,
   ShotTarget,
 } from './combat/projectile.types';
+export { SHOT_WARNINGS, previewShot, shotCandidates } from './combat/shot-preview.service';
+export type {
+  ShotCandidate,
+  ShotPreview,
+  ShotPreviewAccepted,
+  ShotWarning,
+} from './combat/shot-preview.service';
 export { DEFEAT_CAUSES, VICTORY_CAUSES } from './missions/outcome.service';
 export type { DefeatCause, VictoryCause } from './missions/outcome.service';
 export type {

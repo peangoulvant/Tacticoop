@@ -222,6 +222,85 @@ export function sweepResultLabel(identified: number): string {
 
 /*****************************
  *
+ * PARTIE TIR
+ *
+ *****************************/
+
+/** Textes des actions « Tirer un missile » et « Tirer une torpille » (AB-44, AB-45). */
+export const fireText = {
+  confirm: 'Confirmer le tir',
+  cancel: 'Annuler',
+  target: 'Cible',
+  chooseTarget: 'Choisissez une cible',
+  noTarget: 'Aucune cible à portée.',
+  unavailable: 'Tir indisponible',
+  chooseHex: 'Choisissez un hexagone de la zone sur la carte.',
+};
+
+/** Libellés des boutons et noms d'arme (« missile », « torpille ») de l'interface de tir. */
+export const fireButtonLabel: Record<engine.WeaponKind, string> = {
+  missile: 'Tirer un missile',
+  torpedo: 'Tirer une torpille',
+};
+
+/** Info-bulle du bouton de tir quand il est actif. */
+export const fireButtonTitle: Record<engine.WeaponKind, string> = {
+  missile: 'Tire un missile sur un contact identifié ou une zone suspecte',
+  torpedo: 'Tire une torpille sur un contact identifié ou une zone suspecte',
+};
+
+/** Avertissements de ligne de tir affichés avant la confirmation (AB-45) : le tir reste possible. */
+export const fireWarningLabel: Record<engine.ShotWarning, string> = {
+  FRIENDLY_ON_AIMED_HEX: 'Attention : une unité alliée occupe la case visée, elle sera touchée.',
+  FRIENDLY_ON_ROUTE:
+    'Attention : la route de la torpille croise une unité alliée, qui peut être touchée.',
+};
+
+/** Cible d'un tir telle que la barre la récapitule : contact identifié, ou zone et hexagone choisi. */
+export function fireTargetLabel(
+  candidate: engine.ShotCandidate | undefined,
+  contact: engine.ObservedContact | undefined,
+  hex: engine.Hex | null,
+): string {
+  if (!candidate || !contact) return fireText.chooseTarget;
+  if (contact.kind === 'identified') {
+    return `contact ${contact.id} (${contactTargetLabel[contact.targetType]})`;
+  }
+  return hex ? `zone ${contact.id}, hexagone ${hexLabel(hex)}` : fireText.chooseHex;
+}
+
+/** Libellé d'une option de la liste des cibles. */
+export function fireOptionLabel(contact: engine.ObservedContact): string {
+  return contact.kind === 'identified'
+    ? `${contact.id} — ${contactTargetLabel[contact.targetType]} identifié`
+    : `${contact.id} — zone suspecte`;
+}
+
+/** Récapitulatif de la barre de confirmation d'un tir (AB-45) : arme, cible ou zone, stock. */
+export function fireDraftLabel(
+  unitLabel: string,
+  weapon: engine.WeaponKind,
+  stock: number,
+  target: string,
+): string {
+  const remaining = stock > 1 ? `${stock} restants` : `${stock} restant`;
+  return `${unitLabel} : ${weaponLabel[weapon]}, ${target} (${remaining})`;
+}
+
+/** Retour explicite d'un tir confirmé, affiché 4 secondes : le résultat viendra au journal. */
+export const fireResultLabel: Record<engine.WeaponKind, string> = {
+  missile: 'Missile lancé',
+  torpedo: 'Torpille lancée',
+};
+
+/** Légende d'un projectile sur la case sélectionnée : « missile allié P-2 ». */
+export function projectileCaption(projectile: engine.ObservedProjectile): string {
+  const camp = projectile.side === 'friend' ? 'allié' : 'hostile';
+  return `${weaponLabel[projectile.weapon]} ${camp} ${projectile.id}`;
+}
+
+/*****************************
+ *
  * PARTIE UNITÉS
  *
  *****************************/

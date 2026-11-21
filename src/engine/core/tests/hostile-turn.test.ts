@@ -185,3 +185,44 @@ describe.each<MissionKind>(['naval_combat', 'escort'])('IA ennemie en partie (%s
     expect(closer).toBeGreaterThan(SEEDS.length * 0.75);
   });
 });
+
+describe("tirs de l'IA en partie (AB-50)", () => {
+  /** Joue jusqu'à `cycles` cycles, les alliés restant en place ; s'arrête à la fin de la mission. */
+  function playUntil(start: MissionState, cycles: number) {
+    let state = start;
+    let launches = 0;
+    let ended = false;
+    for (let i = 0; i < cycles && !ended; i++) {
+      const result = run(state, { type: 'END_CYCLE_EARLY' });
+      if (!result.ok) throw new Error('commande refusée');
+      if (result.state.status !== 'in_progress') {
+        ended = true;
+      } else {
+        state = result.state;
+        launches = state.nextLaunchNumber - 1;
+      }
+    }
+    return { state, launches };
+  }
+
+  it('tire parfois, jamais sur une zone, et ne montre au joueur que ce que le brouillard autorise', () => {
+    let firing = 0;
+    for (const seed of SEEDS) {
+      const { state, launches } = playUntil(launched('naval_combat', seed), 40);
+      if (launches > 0) firing++;
+      expect(state.projectiles.every((p) => p.onSuspectZone === false || p.side === 'friend')).toBe(
+        true,
+      );
+      const seen = observeFriend(state).projectiles;
+      expect(JSON.stringify(seen)).not.toContain('targetId');
+    }
+    expect(firing).toBeGreaterThan(0);
+  });
+
+  it('est reproductible : même graine, mêmes tirs', () => {
+    const first = playUntil(launched('naval_combat', 3), 40);
+    const second = playUntil(launched('naval_combat', 3), 40);
+    expect(second.state.projectiles).toEqual(first.state.projectiles);
+    expect(second.launches).toBe(first.launches);
+  });
+});

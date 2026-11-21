@@ -146,3 +146,27 @@ describe('aucune information cachée dans les projections (AB-49)', () => {
     }
   });
 });
+
+describe('tracé d’une torpille qui suit sa cible (AB-49 4)', () => {
+  it('ne mène jamais à la position réelle de la cible : il reste celui de la case visée', () => {
+    const hiddenTarget = { col: 6, row: 5 };
+    const torpedo = aProjectile({
+      weapon: 'torpedo',
+      position: { col: 4, row: 4 },
+      aimedHex: { col: 7, row: 4 },
+      tracking: true,
+      route: [{ col: 5, row: 5 }, hiddenTarget],
+      autonomyLeft: 3,
+    });
+    const mission = {
+      ...missionOf({
+        map: openSea(12, 9),
+        units: [makeUnit('f', 'friend', 'fremm', { col: 2, row: 4 })],
+      }),
+      projectiles: [torpedo],
+    };
+    const [observed] = observedProjectiles(mission, 'friend', defaultConfig);
+    expect(observed?.route.at(-1)).toEqual({ col: 7, row: 4 });
+    expect(observed?.route).not.toContainEqual(hiddenTarget);
+  });
+});

@@ -33,6 +33,7 @@ flowchart TB
     missions -- après activation ou utilisation du balayage --> detection
     missions --> units
     ai -. utilise comme le joueur .-> core
+    ai -- aperçu du tir --> combat
     ai -- après activation ou utilisation du balayage --> detection
     detection --> units & map
     combat -- retire les unités détruites --> detection

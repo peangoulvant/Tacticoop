@@ -3,16 +3,10 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import * as engine from '../../../engine';
 import * as labelEngine from '../../../shared/engine.label';
 import * as labels from '../../../shared/ui.label';
-import { endActivation, startMoveDraft, startSweepDraft } from '../../commands';
+import { endActivation, startFireDraft, startMoveDraft, startSweepDraft } from '../../commands';
 
-/** Commandes de la maquette encore sans règle d'exécution (actions spéciales : D-04, D-05). */
-const UNAVAILABLE_COMMANDS = [
-  'Lancer hélicoptère',
-  'Tirer missile',
-  'Tirer torpille',
-  'Déployer leurre',
-  'Réparation',
-];
+/** Commandes de la maquette encore sans règle d'exécution (hélicoptères reportés, lots 2 et 3). */
+const UNAVAILABLE_COMMANDS = ['Lancer hélicoptère', 'Déployer leurre', 'Réparation'];
 
 /** Motif d'indisponibilité à afficher sous les boutons (SF-03.9), ou `null`. */
 function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): string | null {
@@ -47,6 +41,67 @@ function sweepOwnReason(mission: engine.MissionState, unit: engine.Unit): string
   const blocker = sweepBlocker(mission, unit);
   if (blocker !== 'SPECIAL_ACTION_USED' && blocker !== 'NO_SENSORS') return null;
   return `${labels.sweepText.unavailable} : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
+}
+
+/** Motif empêchant le tir de `weapon` maintenant, ou `null` s'il est possible (AB-45). */
+function fireBlocker(
+  mission: engine.MissionState,
+  unit: engine.Unit,
+  weapon: engine.WeaponKind,
+): engine.SpecialActionBlocker | null {
+  const observation = engine.observeFriend(mission);
+  return engine.specialActionBlocker(
+    observation.units,
+    unit,
+    engine.FIRE_ACTION[weapon],
+    observation.cycle,
+    engine.defaultConfig,
+  );
+}
+
+/**
+ * Motif propre à un tir affiché sous les boutons : plus de munitions de cette arme, ou `null`.
+ * « Action déjà utilisée » est commun à toutes les actions spéciales et déjà dit par le balayage ;
+ * les motifs d'ordre sont dits par `unavailabilityReason`.
+ */
+function fireOwnReason(
+  mission: engine.MissionState,
+  unit: engine.Unit,
+  weapon: engine.WeaponKind,
+): string | null {
+  if (fireBlocker(mission, unit, weapon) !== 'NO_AMMO') return null;
+  return `${labels.fireButtonLabel[weapon]} : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES.NO_AMMO}`;
+}
+
+/**
+ * Bouton « Tirer un missile » ou « Tirer une torpille » : ouvre le brouillon ; désactivé avec son
+ * motif sinon (AB-45). Le stock se lit dans la fiche de l'unité.
+ */
+function FireButton({
+  mission,
+  unit,
+  weapon,
+}: {
+  mission: engine.MissionState;
+  unit: engine.Unit;
+  weapon: engine.WeaponKind;
+}) {
+  const disabled = mission.outcome !== null || fireBlocker(mission, unit, weapon) !== null;
+  const blocker = fireBlocker(mission, unit, weapon);
+  const reason =
+    blocker === 'SPECIAL_ACTION_USED' || blocker === 'NO_AMMO'
+      ? engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]
+      : unavailabilityReason(mission, unit);
+  return (
+    <Button
+      variant="outlined"
+      disabled={disabled}
+      title={disabled && reason ? reason : labels.fireButtonTitle[weapon]}
+      onClick={() => startFireDraft(unit.id, weapon)}
+    >
+      {labels.fireButtonLabel[weapon]}
+    </Button>
+  );
 }
 
 /**
@@ -107,7 +162,7 @@ function SweepButton({ mission, unit }: { mission: engine.MissionState; unit: en
 }
 
 /**
- * Boutons de commande d'une unité alliée : Déplacement, Balayage, actions pas encore disponibles
+ * Boutons de commande d'une unité alliée : Déplacement, Balayage, tirs, actions pas encore disponibles
  * et « Terminer l'activation ». Chaque bouton est activé ou désactivé selon ce que dit le moteur
  * (`moveBlocker`, `specialActionBlocker`, `orderBlocker`) : ce composant ne reconnaît aucune
  * règle de jeu, il affiche les motifs que le moteur donne (SF-03.9).
@@ -120,7 +175,10 @@ export function UnitCommands({
   unit: engine.Unit;
 }) {
   const reason = unavailabilityReason(mission, unit);
-  const sweepReason = sweepOwnReason(mission, unit);
+  const ownReasons = [
+    sweepOwnReason(mission, unit),
+    ...engine.WEAPON_KINDS.map((weapon) => fireOwnReason(mission, unit, weapon)),
+  ];
   const ended = mission.outcome !== null;
   return (
     <>
@@ -133,6 +191,9 @@ export function UnitCommands({
           Déplacement
         </Button>
         <SweepButton mission={mission} unit={unit} />
+        {engine.WEAPON_KINDS.map((weapon) => (
+          <FireButton key={weapon} mission={mission} unit={unit} weapon={weapon} />
+        ))}
         {UNAVAILABLE_COMMANDS.map((label) => (
           <Button key={label} variant="outlined" disabled title="Non disponible dans cette version">
             {label}
@@ -146,7 +207,7 @@ export function UnitCommands({
           Terminer l’activation
         </Button>
       </Box>
-      {[reason, sweepReason].map(
+      {[reason, ...ownReasons].map(
         (text) =>
           text && (
             <Typography key={text} variant="caption" color="warning.main">
