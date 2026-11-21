@@ -231,10 +231,10 @@ export const fireText = {
   confirm: 'Confirmer le tir',
   cancel: 'Annuler',
   target: 'Cible',
-  chooseTarget: 'Choisissez une cible',
+  targetToChoose: 'cible à choisir',
   noTarget: 'Aucune cible à portée.',
   unavailable: 'Tir indisponible',
-  chooseHex: 'Choisissez un hexagone de la zone sur la carte.',
+  hexToChoose: 'hexagone à choisir sur la carte',
 };
 
 /** Libellés des boutons et noms d'arme (« missile », « torpille ») de l'interface de tir. */
@@ -262,11 +262,13 @@ export function fireTargetLabel(
   contact: engine.ObservedContact | undefined,
   hex: engine.Hex | null,
 ): string {
-  if (!candidate || !contact) return fireText.chooseTarget;
+  if (!candidate || !contact) return fireText.targetToChoose;
   if (contact.kind === 'identified') {
     return `contact ${contact.id} (${contactTargetLabel[contact.targetType]})`;
   }
-  return hex ? `zone ${contact.id}, hexagone ${hexLabel(hex)}` : fireText.chooseHex;
+  return hex
+    ? `zone ${contact.id}, hexagone ${hexLabel(hex)}`
+    : `zone ${contact.id}, ${fireText.hexToChoose}`;
 }
 
 /** Libellé d'une option de la liste des cibles. */

@@ -110,7 +110,7 @@ describe('tir de missile sur un contact identifié', () => {
     const stock = engine.defaultConfig.ships.frigate_da.missiles;
 
     await user.click(screen.getByRole('button', { name: 'Tirer un missile' }));
-    expect(screen.getByText(/Choisissez une cible/)).toBeInTheDocument();
+    expect(screen.getByText(/cible à choisir/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirmer le tir' })).toBeDisabled();
 
     await user.selectOptions(screen.getByLabelText('Cible'), 'C-1');
@@ -203,7 +203,7 @@ describe('tir sur une zone suspecte', () => {
     await user.click(screen.getByRole('button', { name: 'Tirer un missile' }));
     await user.selectOptions(screen.getByLabelText('Cible'), 'C-1');
 
-    expect(screen.getByText(/Choisissez un hexagone de la zone sur la carte/)).toBeInTheDocument();
+    expect(screen.getByText(/hexagone à choisir sur la carte/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirmer le tir' })).toBeDisabled();
 
     // Effet du clic sur la case (8, 6) de la carte (voir la limite de jsdom ci-dessus).

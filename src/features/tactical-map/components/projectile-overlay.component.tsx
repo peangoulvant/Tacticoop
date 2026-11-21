@@ -14,19 +14,22 @@ import { hexCenter, pathPoints } from '../services/hex-geometry.service';
 
 /** Écart horizontal entre deux projectiles de même arme sur une case, et décalage vertical des armes. */
 const SPREAD = 5;
-const LANE = { missile: -3.4, torpedo: 3.4 };
+const LANE = { missile: -4.2, torpedo: 4.4 };
 
 /** Position d'un projectile dans sa case : sa file (missile en haut, torpille en bas) et son rang. */
 function slotOf(
   projectile: engine.ObservedProjectile,
   all: readonly engine.ObservedProjectile[],
+  occupied: boolean,
 ): { x: number; y: number } {
   const sameLane = all.filter(
     (p) => p.weapon === projectile.weapon && engine.sameHex(p.position, projectile.position),
   );
-  const alone = all.every(
-    (p) => p.id === projectile.id || !engine.sameHex(p.position, projectile.position),
-  );
+  // Seul sur une case vide, le projectile est centré ; sur la case d'une unité (un projectile qui
+  // vient d'être lancé est sur son tireur) ou avec un autre projectile, il prend sa file.
+  const alone =
+    !occupied &&
+    all.every((p) => p.id === projectile.id || !engine.sameHex(p.position, projectile.position));
   const rank = sameLane.findIndex((p) => p.id === projectile.id);
   return {
     x: (rank - (sameLane.length - 1) / 2) * SPREAD,
@@ -50,14 +53,16 @@ const BADGE = { width: 10, height: 4.6 };
 function ProjectileToken({
   projectile,
   all,
+  occupied,
   selected,
 }: {
   projectile: engine.ObservedProjectile;
   all: readonly engine.ObservedProjectile[];
+  occupied: boolean;
   selected: boolean;
 }) {
   const center = hexCenter(projectile.position);
-  const slot = slotOf(projectile, all);
+  const slot = slotOf(projectile, all, occupied);
   const color = projectile.side === 'friend' ? palette.projectileAlly : palette.projectileHostile;
   const submerged = projectile.weapon === 'torpedo';
   const height = ICON.height[projectile.weapon];
@@ -102,9 +107,11 @@ function ProjectileToken({
 /** Tous les projectiles connus du joueur, au-dessus des unités ; le projectile sélectionné est cerclé. */
 export function ProjectileOverlay({
   projectiles,
+  units,
   selectedId,
 }: {
   projectiles: readonly engine.ObservedProjectile[];
+  units: readonly engine.Unit[];
   selectedId: string | null;
 }) {
   return (
@@ -114,6 +121,7 @@ export function ProjectileOverlay({
           key={projectile.id}
           projectile={projectile}
           all={projectiles}
+          occupied={units.some((u) => engine.sameHex(u.position, projectile.position))}
           selected={projectile.id === selectedId}
         />
       ))}

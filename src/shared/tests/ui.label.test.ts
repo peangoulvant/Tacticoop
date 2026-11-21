@@ -228,7 +228,7 @@ describe('textes du tir (AB-45)', () => {
     expect(fireTargetLabel({ ...candidate, kind: 'suspect' }, suspect, { col: 12, row: 5 })).toBe(
       'zone C-2, hexagone (12, 5)',
     );
-    expect(fireTargetLabel(undefined, undefined, null)).toBe('Choisissez une cible');
+    expect(fireTargetLabel(undefined, undefined, null)).toBe('cible à choisir');
     expect(fireOptionLabel(suspect)).toBe('C-2 — zone suspecte');
   });
 

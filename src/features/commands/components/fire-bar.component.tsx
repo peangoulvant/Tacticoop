@@ -18,7 +18,7 @@ function TargetSelect({ fire }: { fire: FireDraft }) {
       label={labels.fireText.target}
       value={fire.contactId ?? ''}
       onChange={(event) => chooseTarget(event.target.value, null)}
-      sx={{ minWidth: 200 }}
+      sx={{ minWidth: 280 }}
       slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
     >
       <option value="" disabled>
@@ -58,7 +58,7 @@ export function FireBar({ fire }: { fire: FireDraft | null }) {
   return (
     <MapBar>
       {candidates.length === 0 ? (
-        <Typography variant="body2" color="warning.main">
+        <Typography variant="body2" sx={{ color: 'warning.main' }}>
           {`${label} : ${labels.fireText.noTarget}`}
         </Typography>
       ) : (
@@ -68,7 +68,7 @@ export function FireBar({ fire }: { fire: FireDraft | null }) {
           </Typography>
           <TargetSelect fire={fire} />
           {shotNotices(fire).map((notice) => (
-            <Typography key={notice} variant="body2" color="warning.main">
+            <Typography key={notice} variant="body2" sx={{ color: 'warning.main' }}>
               {notice}
             </Typography>
           ))}
@@ -77,6 +77,7 @@ export function FireBar({ fire }: { fire: FireDraft | null }) {
       <Button
         size="small"
         variant="contained"
+        sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
         disabled={target === null}
         onClick={() => target && confirmFire(unit.id, weapon, target)}
       >

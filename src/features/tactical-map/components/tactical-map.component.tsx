@@ -125,7 +125,11 @@ export function TacticalMap({
               <ProjectileRouteOverlay
                 projectile={projectiles.find((p) => p.id === selectedProjectileId)}
               />
-              <ProjectileOverlay projectiles={projectiles} selectedId={selectedProjectileId} />
+              <ProjectileOverlay
+                projectiles={projectiles}
+                units={units}
+                selectedId={selectedProjectileId}
+              />
             </g>
           )}
         </svg>
