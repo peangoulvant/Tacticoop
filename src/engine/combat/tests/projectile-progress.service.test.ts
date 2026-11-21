@@ -198,6 +198,42 @@ describe('destruction (G-09-C4, AB-49)', () => {
   });
 });
 
+describe('brouillard de guerre : un tir manqué ne révèle aucune cible inconnue (AB-49)', () => {
+  it('missile : un raté sur un navire hostile et une case vide donnent exactement le même résultat', () => {
+    const withTarget = progressProjectiles(mission([hostile('h', 2)], [missileTo(2)]), sureMiss());
+    const empty = progressProjectiles(mission([], [missileTo(2)]), sureMiss());
+    expect(withTarget.events).toEqual(empty.events);
+    expect(withTarget.events.map((e) => e.type)).toEqual(['PROJECTILE_NEUTRALISED']);
+    expect(withTarget.state.projectiles).toEqual(empty.state.projectiles);
+  });
+
+  it('torpille : un raté sur un navire hostile et une mer vide donnent la même suite d’événements', () => {
+    const withTarget = progress(mission([hostile('h', 1)], [torpedoTo(3)]), 5, sureMiss());
+    const empty = progress(mission([], [torpedoTo(3)]), 5, sureMiss());
+    expect(withTarget.events).toEqual(empty.events);
+    expect(withTarget.events.map((e) => e.type)).toEqual(['PROJECTILE_NEUTRALISED']);
+  });
+
+  it('une torpille qui rate une cible inconnue ne laisse aucune trace avant sa fin de course', () => {
+    const start = mission([hostile('h', 1)], [torpedoTo(3)]);
+    const { state, events } = progress(start, 3, sureMiss());
+    expect(events).toEqual([]);
+    expect(state.projectiles).toHaveLength(1);
+  });
+
+  it('un navire hostile touché ou détruit est annoncé, sans type ni classe', () => {
+    const hit = progressProjectiles(mission([hostile('h', 2)], [missileTo(2)]), sureHit(40));
+    expect(hit.events).toEqual([
+      expect.objectContaining({ result: 'hit', victim: { side: 'hostile' } }),
+    ]);
+  });
+
+  it('un tir manqué sur une unité alliée reste annoncé : elle est connue du joueur', () => {
+    const { events } = progressProjectiles(mission([ally('a', 2)], [missileTo(2)]), sureMiss());
+    expect(events).toContainEqual(expect.objectContaining({ result: 'missed' }));
+  });
+});
+
 describe('progression d’une torpille (AB-47)', () => {
   it('avance d’un hexagone par progression', () => {
     const { state } = progressProjectiles(mission([], [torpedoTo(3)]), defaultConfig);

@@ -323,10 +323,13 @@ const weaponLabel: Record<engine.WeaponKind, string> = {
   torpedo: 'torpille',
 };
 
-/** Projectile neutralisé sans impact, accordé avec l'arme. */
+/**
+ * Projectile resté sans effet, accordé avec l'arme : tir manqué ou aucune cible rencontrée, que le
+ * joueur ne peut volontairement pas distinguer (brouillard de guerre, AB-49).
+ */
 const neutralisedLabel: Record<engine.WeaponKind, string> = {
-  missile: 'Un missile est neutralisé',
-  torpedo: 'Une torpille est neutralisée',
+  missile: 'Un missile est resté sans effet',
+  torpedo: 'Une torpille est restée sans effet',
 };
 
 /** Cause d'une victoire, affichée avec le résultat (G-13.2 Q2). */

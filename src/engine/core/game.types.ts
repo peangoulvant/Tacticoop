@@ -162,7 +162,10 @@ export type GameEvent =
       result: 'hit' | 'missed' | 'destroyed';
       victim: { side: 'friend'; unitId: string; shipClass: ShipClass } | { side: 'hostile' };
     }
-  /** Projectile neutralisé sans impact (fin de portée, obstacle, case visée atteinte), annoncé s'il est connu. */
+  /**
+   * Projectile resté sans effet (fin de portée, obstacle, case visée atteinte, tir manqué), annoncé
+   * s'il est connu : un tir manqué et une absence de cible ne se distinguent pas (AB-49).
+   */
   | { type: 'PROJECTILE_NEUTRALISED'; cycle: number; projectileId: string; weapon: WeaponKind }
   | { type: 'MISSION_WON'; cycle: number; cause: VictoryCause }
   | { type: 'MISSION_LOST'; cycle: number; cause: DefeatCause };

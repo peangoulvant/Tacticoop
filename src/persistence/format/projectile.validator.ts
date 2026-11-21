@@ -16,15 +16,12 @@ import {
  * lu dans le stockage n'est jamais fiable avant ces contrôles (PERSISTANCE.md).
  */
 
-/** Cap d'une torpille : un pas entre voisins, en coordonnées axiales, ou `null` avant son premier pas. */
+/** Cap d'une torpille : l'une des six directions vers un voisin (axial), ou `null` avant son premier pas. */
 function isHeading(value: unknown): boolean {
   if (value === null) return true;
   return (
     isRecord(value) &&
-    Number.isInteger(value.q) &&
-    Number.isInteger(value.r) &&
-    Math.abs(value.q as number) <= 1 &&
-    Math.abs(value.r as number) <= 1
+    engine.AXIAL_DIRECTIONS.some((direction) => direction.q === value.q && direction.r === value.r)
   );
 }
 
@@ -50,8 +47,14 @@ function checkProjectileGeometry(p: Json, map: engine.GameMap): Problem {
   return valid ? null : `trajectoire invalide pour ${String(p.id)}`;
 }
 
-/** Cible désignée, drapeaux, cap et autonomie. */
-function checkProjectileState(p: Json): Problem {
+/** Le trajet restant est une chaîne de cases voisines, qui part d'un voisin de la position. */
+function isContinuousRoute(p: Json): boolean {
+  const cells = [p.position, ...(p.route as engine.Hex[])] as engine.Hex[];
+  return cells.every((hex, i) => i === 0 || engine.hexDistance(cells[i - 1]!, hex) === 1);
+}
+
+/** Types des champs communs : cible désignée, drapeaux, cap, autonomie. */
+function checkProjectileFields(p: Json): Problem {
   const target = p.targetId === null || typeof p.targetId === 'string';
   const flags =
     typeof p.onSuspectZone === 'boolean' &&
@@ -61,6 +64,47 @@ function checkProjectileState(p: Json): Problem {
   return target && flags && autonomy && isHeading(p.heading)
     ? null
     : `état invalide pour ${String(p.id)}`;
+}
+
+/**
+ * Invariants d'un missile (AB-47) : ligne droite jusqu'à la case visée, ni cap, ni autonomie, ni
+ * autodirecteur, ni cible désignée. Un missile sans trajet restant a déjà disparu.
+ */
+function isConsistentMissile(p: Json): boolean {
+  const route = p.route as engine.Hex[];
+  const last = route[route.length - 1];
+  return (
+    route.length > 0 &&
+    !!last &&
+    engine.sameHex(last, p.aimedHex as engine.Hex) &&
+    p.heading === null &&
+    p.autonomyLeft === null &&
+    p.tracking === false &&
+    p.targetId === null
+  );
+}
+
+/**
+ * Invariants d'une torpille (AB-47) : une autonomie restante positive (à zéro elle a disparu) et
+ * bornée par celle de l'arme ; sans trajet restant elle a un cap ; un tir sur zone n'a aucune cible
+ * désignée ; l'autodirecteur ne suit qu'une cible désignée et après un premier pas.
+ */
+function isConsistentTorpedo(p: Json): boolean {
+  const { autonomy } = engine.defaultConfig.combat.weapons.torpedo;
+  const left = p.autonomyLeft;
+  const autonomyValid = isPositive(left) && (autonomy === null || (left as number) <= autonomy);
+  const hasPath = (p.route as engine.Hex[]).length > 0 || p.heading !== null;
+  const zoneValid = !p.onSuspectZone || p.targetId === null;
+  const trackingValid = !p.tracking || (p.targetId !== null && p.heading !== null);
+  return autonomyValid && hasPath && zoneValid && trackingValid;
+}
+
+/** Cohérence du projectile avec son arme et continuité de son trajet. */
+function checkProjectileState(p: Json): Problem {
+  const fields = checkProjectileFields(p);
+  if (fields) return fields;
+  const consistent = p.weapon === 'missile' ? isConsistentMissile(p) : isConsistentTorpedo(p);
+  return consistent && isContinuousRoute(p) ? null : `état incohérent pour ${String(p.id)}`;
 }
 
 function checkProjectile(projectile: unknown, map: engine.GameMap): Problem {

@@ -259,3 +259,106 @@ describe('refus d’un combat incohérent', () => {
     );
   });
 });
+
+describe('cap d’une torpille : six directions voisines (AB-47)', () => {
+  it.each([
+    ['un cap nul (0, 0)', { q: 0, r: 0 }],
+    ['un cap diagonal (1, 1)', { q: 1, r: 1 }],
+    ['un cap diagonal (−1, −1)', { q: -1, r: -1 }],
+    ['un cap non entier', { q: 0.5, r: 0 }],
+  ])('refuse %s', (_name, heading) => {
+    expectInvalid(
+      parseTampered((s) => (s.state.projectiles[0].heading = heading)),
+      /état invalide/,
+    );
+  });
+
+  it('accepte chacune des six directions comme cap', () => {
+    for (const direction of engine.AXIAL_DIRECTIONS) {
+      const result = parseTampered((s) => (s.state.projectiles[0].heading = { ...direction }));
+      expect(result.ok).toBe(true);
+    }
+  });
+});
+
+/** Fait du projectile de la sauvegarde un missile valide : ligne droite jusqu'à la case visée. */
+function asMissile(p: Tampered): void {
+  p.weapon = 'missile';
+  p.heading = null;
+  p.autonomyLeft = null;
+  p.tracking = false;
+  p.targetId = null;
+}
+
+describe('invariants des projectiles selon leur arme (AB-47)', () => {
+  it('relit un missile valide', () => {
+    expect(parseTampered((s) => asMissile(s.state.projectiles[0])).ok).toBe(true);
+  });
+
+  it.each([
+    ['un cap', (p: Tampered) => (p.heading = { q: 1, r: 0 })],
+    ['une autonomie', (p: Tampered) => (p.autonomyLeft = 3)],
+    ['un autodirecteur', (p: Tampered) => ((p.tracking = true), (p.targetId = 'x'))],
+    ['une cible désignée', (p: Tampered) => (p.targetId = 'friend-fremm-1')],
+    ['aucun trajet restant', (p: Tampered) => (p.route = [])],
+    [
+      'une ligne qui n’arrive pas à la case visée',
+      (p: Tampered) => (p.aimedHex = { col: 3, row: 3 }),
+    ],
+  ])('refuse un missile avec %s', (_name, mutate) => {
+    expectInvalid(
+      parseTampered((s) => {
+        asMissile(s.state.projectiles[0]);
+        mutate(s.state.projectiles[0]);
+      }),
+      /incohérent/,
+    );
+  });
+
+  it.each([
+    ['sans autonomie (null)', (p: Tampered) => (p.autonomyLeft = null)],
+    ['avec une autonomie épuisée (0)', (p: Tampered) => (p.autonomyLeft = 0)],
+    ['avec plus d’autonomie que l’arme (6)', (p: Tampered) => (p.autonomyLeft = 6)],
+    ['sans trajet ni cap', (p: Tampered) => ((p.route = []), (p.heading = null))],
+    ['sur zone suspecte avec une cible désignée', (p: Tampered) => (p.onSuspectZone = true)],
+    ['qui suit une cible sans cap', (p: Tampered) => ((p.tracking = true), (p.heading = null))],
+    ['qui suit sans cible désignée', (p: Tampered) => ((p.tracking = true), (p.targetId = null))],
+  ])('refuse une torpille %s', (_name, mutate) => {
+    expectInvalid(
+      parseTampered((s) => mutate(s.state.projectiles[0])),
+      /incohérent/,
+    );
+  });
+
+  it.each([
+    ['un trajet qui saute une case', [{ col: 14, row: 10 }]],
+    [
+      'un trajet qui ne part pas d’un voisin de la position',
+      [
+        { col: 13, row: 10 },
+        { col: 14, row: 10 },
+      ],
+    ],
+  ])('refuse %s', (_name, route) => {
+    expectInvalid(
+      parseTampered((s) => (s.state.projectiles[0].route = route)),
+      /incohérent/,
+    );
+  });
+
+  it('accepte une torpille qui suit sa cible désignée après un premier pas', () => {
+    const result = parseTampered((s) => {
+      s.state.projectiles[0].tracking = true;
+      s.state.projectiles[0].heading = { q: 1, r: 0 };
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepte une torpille sans trajet restant qui garde son cap', () => {
+    const result = parseTampered((s) => {
+      s.state.projectiles[0].route = [];
+      s.state.projectiles[0].heading = { q: 1, r: 0 };
+    });
+    expect(result.ok).toBe(true);
+  });
+});

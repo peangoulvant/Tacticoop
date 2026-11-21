@@ -52,7 +52,7 @@ export function hexDistance(a: Hex, b: Hex): number {
 }
 
 /** Les six directions vers un voisin, en coordonnées axiales (est, nord-est, nord-ouest, ouest, sud-ouest, sud-est). */
-const AXIAL_DIRECTIONS: Axial[] = [
+export const AXIAL_DIRECTIONS: readonly Axial[] = [
   { q: 1, r: 0 },
   { q: 1, r: -1 },
   { q: 0, r: -1 },

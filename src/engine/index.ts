@@ -64,7 +64,7 @@ export type {
 export type { GameMap } from './map/game-map.service';
 export { terrainAt, indexOf } from './map/game-map.service';
 export type { Hex } from './map/hex.service';
-export { hexDistance, sameHex } from './map/hex.service';
+export { AXIAL_DIRECTIONS, hexDistance, sameHex } from './map/hex.service';
 export { TERRAINS } from './map/terrain.model';
 export type { Terrain } from './map/terrain.model';
 export { ACTIVATION_STATUSES, SIDES } from './units/unit.model';

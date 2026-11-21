@@ -144,7 +144,7 @@ describe('texte du journal de chaque événement (D-11)', () => {
         projectileId: 'P-2',
         weapon: 'torpedo',
       }),
-    ).toBe('Une torpille est neutralisée');
+    ).toBe('Une torpille est restée sans effet');
   });
 
   it('décrit un impact : l’arme en sujet, la cible nommée par sa classe, sans détail hostile', () => {
