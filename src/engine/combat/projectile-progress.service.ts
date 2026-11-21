@@ -17,7 +17,8 @@ import { headingOf, isWaterHex, stepAlong, torpedoTrajectory } from './trajector
  *   progressProjectiles ──► progressProjectile (un projectile, `progression` pas)
  *                               ├─ nextStep : où va-t-il ? (trajectoire de l'arme)
  *                               ├─ detectionUpdate : l'adversaire l'identifie-t-il ? (AB-49)
- *                               └─ resolveImpactOnArrival : impact éventuel sur l'unité rencontrée
+ *                               └─ resolveImpactOnArrival : impact éventuel (torpille : en chemin ;
+ *                                  missile : à la case visée seulement)
  */
 
 /*****************************
@@ -214,9 +215,11 @@ function applyImpact(
 
 /**
  * Le projectile entre sur une case : s'il y rencontre une unité compatible, un impact est tenté
- * (G-09 §2.2). Une unité incompatible est survolée (un missile au-dessus d'un sous-marin). Un
- * impact réussi met fin à la course (`null`) ; un impact raté laisse la torpille poursuivre, et
- * neutralise le missile (sa course est épuisée, AB-47).
+ * (G-09 §2.2). Un missile vole au-dessus des navires : il survole toute unité sans la toucher et
+ * ne tente son impact qu'à son arrivée sur la case visée ; la torpille, immergée, tente l'impact
+ * sur la première unité compatible de son chemin (AB-47). Un impact réussi met fin à la course
+ * (`null`) ; un impact raté laisse la torpille poursuivre, tandis que le missile, arrivé, est
+ * neutralisé par `isSpent`.
  */
 function resolveImpactOnArrival(
   acc: Progress,
@@ -224,6 +227,7 @@ function resolveImpactOnArrival(
   config: GameConfig,
   rng: Rng,
 ): { acc: Progress; projectile: Projectile | null } {
+  if (projectile.weapon === 'missile' && projectile.route.length > 0) return { acc, projectile };
   const unit = unitAt(acc.state.units, projectile.position);
   if (!unit || !isCompatible(projectile.weapon, unit, config)) return { acc, projectile };
   const impact = attemptImpact(projectile, unit, config, rng);
@@ -231,11 +235,7 @@ function resolveImpactOnArrival(
     state: applyImpact(acc.state, projectile, unit, impact.unit),
     events: [...acc.events, ...impactEvents(acc.state, projectile, unit, impact.result)],
   };
-  if (impact.result !== 'missed') return { acc: next, projectile: null };
-  return {
-    acc: next,
-    projectile: projectile.weapon === 'missile' ? { ...projectile, route: [] } : projectile,
-  };
+  return { acc: next, projectile: impact.result === 'missed' ? projectile : null };
 }
 
 /*****************************

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultConfig } from '../../config/game.config';
 import type { MissionState } from '../../core/game.types';
 import { hexDistance, type Hex } from '../../map/hex.service';
+import { observedProjectiles } from '../projectile-observation.service';
 import { progressProjectiles } from '../projectile-progress.service';
 import type { Projectile } from '../projectile.types';
 import {
@@ -88,12 +89,34 @@ describe('progression d’un missile (AB-47)', () => {
     ]);
   });
 
-  it('touche la première unité compatible rencontrée, alliée comprise (AB-47)', () => {
-    const start = mission([ally('ally', 1), hostile('h', 5)], [missileTo(8)]);
+  it('survole toute unité en chemin, alliée ou hostile, sans la toucher (il vole au-dessus, AB-47)', () => {
+    const start = mission([ally('ally', 1), hostile('h', 2)], [missileTo(8)]);
     const { state, events } = progressProjectiles(start, sureHit(40));
-    expect(unitOf(state, 'ally')!.hp).toBe(60);
+    expect(unitOf(state, 'ally')!.hp).toBe(100);
     expect(unitOf(state, 'h')!.hp).toBe(100);
+    expect(state.projectiles[0]).toMatchObject({ position: { col: 2, row: 4 } });
+    expect(events).toEqual([]);
+  });
+
+  it('tente son impact seulement à la case visée, sur l’unité qui s’y trouve', () => {
+    const start = mission([ally('ally', 1), hostile('h', 4)], [missileTo(4)]);
+    const { state, events } = progress(start, 2, sureHit(40));
+    expect(unitOf(state, 'ally')!.hp).toBe(100);
+    expect(unitOf(state, 'h')!.hp).toBe(60);
     expect(state.projectiles).toEqual([]);
+    expect(events).toEqual([
+      expect.objectContaining({
+        type: 'PROJECTILE_IMPACT',
+        result: 'hit',
+        victim: { side: 'hostile' },
+      }),
+    ]);
+  });
+
+  it('touche une unité alliée qui occupe la case visée : un tir ami reste possible', () => {
+    const start = mission([ally('ally', 3)], [missileTo(3)]);
+    const { state, events } = progress(start, 2, sureHit(40));
+    expect(unitOf(state, 'ally')!.hp).toBe(60);
     expect(events).toEqual([
       {
         type: 'PROJECTILE_IMPACT',
@@ -107,7 +130,7 @@ describe('progression d’un missile (AB-47)', () => {
   });
 
   it('survole un sous-marin sans le toucher (AB-46) et finit neutralisé', () => {
-    const start = mission([hostile('sub', 1, 4, 'submarine')], [missileTo(4)]);
+    const start = mission([hostile('sub', 4, 4, 'submarine')], [missileTo(4)]);
     const { state, events } = progress(start, 2, sureHit(40));
     expect(unitOf(state, 'sub')!.hp).toBe(80);
     expect(state.projectiles).toEqual([]);
@@ -115,7 +138,7 @@ describe('progression d’un missile (AB-47)', () => {
   });
 
   it('neutralise le missile qui rate son impact, sans annoncer le navire hostile manqué (AB-49)', () => {
-    const start = mission([hostile('h', 1)], [missileTo(8)]);
+    const start = mission([hostile('h', 1)], [missileTo(1)]);
     const { state, events } = progressProjectiles(start, sureMiss());
     expect(state.projectiles).toEqual([]);
     expect(unitOf(state, 'h')!.hp).toBe(100);
@@ -125,7 +148,7 @@ describe('progression d’un missile (AB-47)', () => {
   it('annonce un tir hostile manqué sur une unité alliée', () => {
     const start = mission(
       [ally('ally', 1)],
-      [missileTo(8, { side: 'hostile', launcherId: 'h', detected: true })],
+      [missileTo(1, { side: 'hostile', launcherId: 'h', detected: true })],
     );
     const { events } = progressProjectiles(start, sureMiss());
     expect(events).toContainEqual(
@@ -153,7 +176,7 @@ describe('progression d’un missile (AB-47)', () => {
 
 describe('destruction (G-09-C4, AB-49)', () => {
   it('retire l’unité détruite, la consigne dans les pertes et efface son contact chez le tireur', () => {
-    const base = mission([{ ...hostile('h', 1), hp: 30 }], [missileTo(8)]);
+    const base = mission([{ ...hostile('h', 1), hp: 30 }], [missileTo(1)]);
     const start: MissionState = {
       ...base,
       friendContacts: [identified('C-1', { col: 1, row: 4 }, 'h')],
@@ -180,7 +203,7 @@ describe('destruction (G-09-C4, AB-49)', () => {
   });
 
   it('le contact de l’autre camp sur une unité détruite par tir ami reste (brouillard)', () => {
-    const base = mission([{ ...ally('ally', 1), hp: 10 }], [missileTo(8)]);
+    const base = mission([{ ...ally('ally', 1), hp: 10 }], [missileTo(1)]);
     const start: MissionState = {
       ...base,
       hostileContacts: [identified('C-1', { col: 1, row: 4 }, 'ally')],
@@ -191,7 +214,7 @@ describe('destruction (G-09-C4, AB-49)', () => {
   });
 
   it('aucune annonce quand l’IA détruit ses propres navires', () => {
-    const start = mission([hostile('h', 1)], [missileTo(8, { side: 'hostile' })]);
+    const start = mission([hostile('h', 1)], [missileTo(1, { side: 'hostile' })]);
     const { events, state } = progressProjectiles(start, sureHit(500));
     expect(unitOf(state, 'h')).toBeUndefined();
     expect(events).toEqual([]);
@@ -205,6 +228,20 @@ describe('brouillard de guerre : un tir manqué ne révèle aucune cible inconnu
     expect(withTarget.events).toEqual(empty.events);
     expect(withTarget.events.map((e) => e.type)).toEqual(['PROJECTILE_NEUTRALISED']);
     expect(withTarget.state.projectiles).toEqual(empty.state.projectiles);
+  });
+
+  it('missile : la trajectoire visible est la même avec ou sans unité survolée en chemin', () => {
+    const over = mission([hostile('h', 2)], [missileTo(6)]);
+    const empty = mission([], [missileTo(6)]);
+    for (let i = 1; i <= 3; i++) {
+      const a = progress(over, i, sureHit(40));
+      const b = progress(empty, i, sureHit(40));
+      // Ce que le joueur voit : la projection de son camp, pas l'état interne (`detected`).
+      expect(observedProjectiles(a.state, 'friend', defaultConfig)).toEqual(
+        observedProjectiles(b.state, 'friend', defaultConfig),
+      );
+      expect(a.events).toEqual(b.events);
+    }
   });
 
   it('torpille : un raté sur un navire hostile et une mer vide donnent la même suite d’événements', () => {
@@ -231,6 +268,16 @@ describe('brouillard de guerre : un tir manqué ne révèle aucune cible inconnu
   it('un tir manqué sur une unité alliée reste annoncé : elle est connue du joueur', () => {
     const { events } = progressProjectiles(mission([ally('a', 2)], [missileTo(2)]), sureMiss());
     expect(events).toContainEqual(expect.objectContaining({ result: 'missed' }));
+  });
+});
+
+describe('torpille : première unité compatible rencontrée en chemin (G-09 §2.2)', () => {
+  it('touche l’unité interposée la plus proche, alliée comprise, et non celle plus loin', () => {
+    const start = mission([ally('ally', 1), hostile('h', 2)], [torpedoTo(3)]);
+    const { state } = progressProjectiles(start, sureHit(40));
+    expect(unitOf(state, 'ally')!.hp).toBe(60);
+    expect(unitOf(state, 'h')!.hp).toBe(100);
+    expect(state.projectiles).toEqual([]);
   });
 });
 
@@ -333,8 +380,8 @@ describe('autodirecteur de la torpille (G-09 §2.2, AB-47)', () => {
 
 describe('ordre fixe des projectiles (G-09.10.1, AB-48)', () => {
   it('résout par numéro de lancement, quel que soit l’ordre de la liste et le camp', () => {
-    const first = missileTo(8, { id: 'P-1', launchNumber: 1, side: 'hostile' });
-    const second = missileTo(8, { id: 'P-2', launchNumber: 2, side: 'friend' });
+    const first = missileTo(1, { id: 'P-1', launchNumber: 1, side: 'hostile' });
+    const second = missileTo(1, { id: 'P-2', launchNumber: 2, side: 'friend' });
     const target = { ...ally('ally', 1), hp: 50 };
     const { events, state } = progressProjectiles(mission([target], [second, first]), sureHit(30));
     const impacts = events.flatMap((e) =>
@@ -347,16 +394,19 @@ describe('ordre fixe des projectiles (G-09.10.1, AB-48)', () => {
     expect(unitOf(state, 'ally')).toBeUndefined();
   });
 
-  it('un projectile ne touche pas l’unité qu’un projectile précédent vient de détruire', () => {
-    const first = missileTo(8, { id: 'P-1', launchNumber: 1 });
-    const second = missileTo(8, { id: 'P-2', launchNumber: 2 });
+  it('un projectile n’atteint plus l’unité qu’un projectile précédent vient de détruire', () => {
+    const first = missileTo(1, { id: 'P-1', launchNumber: 1 });
+    const second = missileTo(1, { id: 'P-2', launchNumber: 2 });
     const { state, events } = progressProjectiles(
-      mission([{ ...hostile('h', 1), hp: 20 }, hostile('h2', 2)], [first, second]),
+      mission([{ ...hostile('h', 1), hp: 20 }, hostile('h2', 5)], [first, second]),
       sureHit(40),
     );
     expect(unitOf(state, 'h')).toBeUndefined();
-    expect(unitOf(state, 'h2')!.hp).toBe(60);
-    expect(events).toHaveLength(2);
+    expect(unitOf(state, 'h2')!.hp).toBe(100);
+    expect(events.map((e) => [e.type, 'projectileId' in e ? e.projectileId : null])).toEqual([
+      ['PROJECTILE_IMPACT', 'P-1'],
+      ['PROJECTILE_NEUTRALISED', 'P-2'],
+    ]);
   });
 });
 
@@ -440,7 +490,7 @@ describe('hasard et reproductibilité (AB-24)', () => {
   });
 
   it('consomme des tirages à chaque tentative et se rejoue à l’identique', () => {
-    const start = mission([hostile('h', 1)], [missileTo(8)]);
+    const start = mission([hostile('h', 1)], [missileTo(1)]);
     const first = progressProjectiles(start, defaultConfig);
     expect(first.state.rngState).not.toBe(start.rngState);
     expect(progressProjectiles(start, defaultConfig)).toEqual(first);
@@ -449,7 +499,7 @@ describe('hasard et reproductibilité (AB-24)', () => {
   it('tire les dégâts dans la plage de l’arme (30 à 50 PV pour un missile)', () => {
     const damages = new Set<number>();
     for (let seed = 1; seed <= 400; seed++) {
-      const start = { ...mission([hostile('h', 1)], [missileTo(8)]), rngState: seed };
+      const start = { ...mission([hostile('h', 1)], [missileTo(1)]), rngState: seed };
       const config = { ...defaultConfig, combat: { ...defaultConfig.combat } };
       config.combat.weapons = {
         ...config.combat.weapons,
