@@ -341,6 +341,35 @@ describe('identification d’office des projectiles hostiles (AB-49)', () => {
     expect(progressProjectiles(first.state, defaultConfig).events).toEqual([]);
   });
 
+  it('annonce de nouveau un projectile qui sort de la portée puis y revient', () => {
+    // Un missile hostile qui longe l'unité alliée : proche, loin, puis de nouveau proche.
+    const near = mission(
+      [ally('ally', 6)],
+      [missileTo(14, { side: 'hostile', launcherId: 'h', detected: true })],
+    );
+    const left = progressProjectiles(near, defaultConfig);
+    expect(left.state.projectiles[0]!.position).toEqual({ col: 2, row: 4 });
+    expect(left.state.projectiles[0]!.detected).toBe(false);
+    expect(left.events).toEqual([]);
+    const returned = mission(
+      [ally('ally', 6)],
+      [{ ...left.state.projectiles[0]!, position: { col: 2, row: 4 }, route: rowRoute(4, 2, 14) }],
+    );
+    const back = progressProjectiles(returned, defaultConfig);
+    expect(back.state.projectiles[0]!.detected).toBe(true);
+    expect(back.events.map((e) => e.type)).toEqual(['PROJECTILE_DETECTED']);
+  });
+
+  it('le drapeau suit la proximité : il tombe hors de portée et ne produit aucun événement', () => {
+    const far = mission(
+      [ally('ally', 12)],
+      [missileTo(14, { side: 'hostile', launcherId: 'h', detected: true })],
+    );
+    const { state, events } = progressProjectiles(far, defaultConfig);
+    expect(state.projectiles[0]!.detected).toBe(false);
+    expect(events).toEqual([]);
+  });
+
   it('n’annonce rien tant que le projectile est plus loin que la portée', () => {
     const start = mission(
       [ally('ally', 12)],

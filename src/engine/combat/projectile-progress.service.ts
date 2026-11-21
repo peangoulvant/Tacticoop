@@ -3,8 +3,8 @@ import type { GameEvent, MissionState, Progress } from '../core/game.types';
 import { restoreRng, type Rng } from '../core/rng.service';
 import { removeIdentifiedContactsOf } from '../detection/side-contacts.service';
 import { hexDistance, type Hex } from '../map/hex.service';
-import type { Unit } from '../units/unit.model';
-import { attemptImpact, isCompatible, unitAt, type ImpactResult } from './impact.service';
+import { unitAt, type Unit } from '../units/unit.model';
+import { attemptImpact, isCompatible, type ImpactResult } from './impact.service';
 import type { Projectile } from './projectile.types';
 import { headingOf, isWaterHex, stepAlong, torpedoTrajectory } from './trajectory.service';
 
@@ -14,17 +14,17 @@ import { headingOf, isWaterHex, stepAlong, torpedoTrajectory } from './trajector
  * fixe de leur numéro de lancement, un par un : l'état des unités est mis à jour aussitôt après
  * chaque impact (G-09.10.3) et une unité détruite est retirée sur-le-champ (G-09-C4).
  *
- *   progressProjectiles ──► advanceProjectile (un projectile, `progression` pas)
+ *   progressProjectiles ──► progressProjectile (un projectile, `progression` pas)
  *                               ├─ nextStep : où va-t-il ? (trajectoire de l'arme)
  *                               ├─ detectionUpdate : l'adversaire l'identifie-t-il ? (AB-49)
- *                               └─ enterHex : impact éventuel sur l'unité rencontrée
+ *                               └─ resolveImpactOnArrival : impact éventuel sur l'unité rencontrée
  */
 
-/** État de la mission et événements du journal du joueur, accumulés pendant la progression. */
-interface Accumulator {
-  state: MissionState;
-  events: GameEvent[];
-}
+/*****************************
+ *
+ * PARTIE ÉTAT DES PROJECTILES
+ *
+ *****************************/
 
 /** Remplace (ou retire, si `null`) le projectile du même identifiant. */
 function withProjectile(
@@ -35,6 +35,17 @@ function withProjectile(
   const others = state.projectiles.filter((p) => p.id !== id);
   return { ...state, projectiles: projectile ? [...others, projectile] : others };
 }
+
+/** Retire le projectile de l'état (sa course est finie par un impact). */
+function withoutProjectile(acc: Progress, id: string): Progress {
+  return { ...acc, state: withProjectile(acc.state, id, null) };
+}
+
+/*****************************
+ *
+ * PARTIE TRAJECTOIRE : OÙ VA LE PROJECTILE
+ *
+ *****************************/
 
 /**
  * Acquisition de la cible désignée par l'autodirecteur de la torpille (G-09 §2.2) : sans tirage,
@@ -61,6 +72,12 @@ function torpedoNext(state: MissionState, torpedo: Projectile): { hex: Hex; rest
   return isWaterHex(state.map, hex) ? { hex, rest: [] } : null;
 }
 
+/** Prochaine case d'un missile : la suivante de sa ligne ; `null` si la ligne est épuisée. */
+function missileNext(missile: Projectile): { hex: Hex; rest: Hex[] } | null {
+  const [first, ...rest] = missile.route;
+  return first ? { hex: first, rest } : null;
+}
+
 /**
  * Avance le projectile d'un pas, ou renvoie `null` s'il ne peut plus avancer (obstacle, cap sans
  * issue). Le missile suit sa ligne droite ; la torpille acquiert d'abord sa cible (AB-47).
@@ -82,18 +99,18 @@ function nextStep(
   };
 }
 
-/** Prochaine case d'un missile : la suivante de sa ligne ; `null` si la ligne est épuisée. */
-function missileNext(missile: Projectile): { hex: Hex; rest: Hex[] } | null {
-  const [first, ...rest] = missile.route;
-  return first ? { hex: first, rest } : null;
-}
-
 /** Le projectile a épuisé sa course : missile arrivé à la case visée, torpille sans autonomie (AB-47). */
 function isSpent(projectile: Projectile): boolean {
   return projectile.weapon === 'missile'
     ? projectile.route.length === 0
     : projectile.autonomyLeft === 0;
 }
+
+/*****************************
+ *
+ * PARTIE IDENTIFICATION PAR LE CAMP ADVERSE
+ *
+ *****************************/
 
 /** Une unité de `side` est à `range` hexagones au plus du projectile. */
 function isNearUnitOf(
@@ -110,33 +127,39 @@ function isNearUnitOf(
 /**
  * Identification d'office du projectile par le camp adverse (AB-49) : dès qu'il passe à
  * `projectileDetectionRange` hexagones d'une unité de ce camp, porte-avions compris, sans tirage.
- * L'annonce au journal n'a lieu qu'une fois, et seulement pour un projectile hostile (le joueur
- * est alors l'adversaire).
+ * Le drapeau `detected` suit l'identification **en cours**, comme la projection : il tombe quand
+ * le projectile sort de la portée, et une nouvelle entrée est annoncée de nouveau. L'annonce au
+ * journal ne concerne qu'un projectile hostile (le joueur est alors l'adversaire).
  */
 function detectionUpdate(
   state: MissionState,
   projectile: Projectile,
   config: GameConfig,
 ): { projectile: Projectile; events: GameEvent[] } {
-  if (projectile.detected) return { projectile, events: [] };
   const opposing = projectile.side === 'friend' ? 'hostile' : 'friend';
-  if (!isNearUnitOf(state, projectile, opposing, config.combat.projectileDetectionRange)) {
-    return { projectile, events: [] };
-  }
-  const events: GameEvent[] =
-    projectile.side === 'hostile'
-      ? [
-          {
-            type: 'PROJECTILE_DETECTED',
-            cycle: state.cycle,
-            projectileId: projectile.id,
-            weapon: projectile.weapon,
-            position: projectile.position,
-          },
-        ]
-      : [];
-  return { projectile: { ...projectile, detected: true }, events };
+  const near = isNearUnitOf(state, projectile, opposing, config.combat.projectileDetectionRange);
+  if (near === projectile.detected) return { projectile, events: [] };
+  const updated = { ...projectile, detected: near };
+  const announced = near && projectile.side === 'hostile';
+  return { projectile: updated, events: announced ? [detectedEvent(state, projectile)] : [] };
 }
+
+/** Annonce au journal d'un projectile hostile identifié : son arme et sa position exacte. */
+function detectedEvent(state: MissionState, projectile: Projectile): GameEvent {
+  return {
+    type: 'PROJECTILE_DETECTED',
+    cycle: state.cycle,
+    projectileId: projectile.id,
+    weapon: projectile.weapon,
+    position: projectile.position,
+  };
+}
+
+/*****************************
+ *
+ * PARTIE IMPACT ET DESTRUCTION
+ *
+ *****************************/
 
 /**
  * Événement du journal du joueur pour un impact, ou aucun (AB-49) : toute tentative sur une unité
@@ -189,6 +212,38 @@ function applyImpact(
     : destroyUnit(state, unit, projectile.side);
 }
 
+/**
+ * Le projectile entre sur une case : s'il y rencontre une unité compatible, un impact est tenté
+ * (G-09 §2.2). Une unité incompatible est survolée (un missile au-dessus d'un sous-marin). Un
+ * impact réussi met fin à la course (`null`) ; un impact raté laisse la torpille poursuivre, et
+ * neutralise le missile (sa course est épuisée, AB-47).
+ */
+function resolveImpactOnArrival(
+  acc: Progress,
+  projectile: Projectile,
+  config: GameConfig,
+  rng: Rng,
+): { acc: Progress; projectile: Projectile | null } {
+  const unit = unitAt(acc.state.units, projectile.position);
+  if (!unit || !isCompatible(projectile.weapon, unit, config)) return { acc, projectile };
+  const impact = attemptImpact(projectile, unit, config, rng);
+  const next: Progress = {
+    state: applyImpact(acc.state, projectile, unit, impact.unit),
+    events: [...acc.events, ...impactEvents(acc.state, projectile, unit, impact.result)],
+  };
+  if (impact.result !== 'missed') return { acc: next, projectile: null };
+  return {
+    acc: next,
+    projectile: projectile.weapon === 'missile' ? { ...projectile, route: [] } : projectile,
+  };
+}
+
+/*****************************
+ *
+ * PARTIE FIN DE COURSE SANS IMPACT
+ *
+ *****************************/
+
 /** Événement d'un projectile neutralisé sans impact, connu du joueur s'il est le sien ou identifié. */
 function neutralisedEvents(state: MissionState, projectile: Projectile): GameEvent[] {
   const known = projectile.side === 'friend' || projectile.detected;
@@ -204,51 +259,31 @@ function neutralisedEvents(state: MissionState, projectile: Projectile): GameEve
     : [];
 }
 
-/**
- * Le projectile entre sur une case : s'il y rencontre une unité compatible, un impact est tenté
- * (G-09 §2.2). Une unité incompatible est survolée (un missile au-dessus d'un sous-marin). Un
- * impact réussi met fin à la course (`null`) ; un impact raté laisse la torpille poursuivre, et
- * neutralise le missile (sa course est épuisée, AB-47).
- */
-function enterHex(
-  acc: Accumulator,
-  projectile: Projectile,
-  config: GameConfig,
-  rng: Rng,
-): { acc: Accumulator; projectile: Projectile | null } {
-  const unit = unitAt(acc.state, projectile.position);
-  if (!unit || !isCompatible(projectile.weapon, unit, config)) return { acc, projectile };
-  const impact = attemptImpact(projectile, unit, config, rng);
-  const next: Accumulator = {
-    state: applyImpact(acc.state, projectile, unit, impact.unit),
-    events: [...acc.events, ...impactEvents(acc.state, projectile, unit, impact.result)],
-  };
-  if (impact.result !== 'missed') return { acc: next, projectile: null };
-  return {
-    acc: next,
-    projectile: projectile.weapon === 'missile' ? { ...projectile, route: [] } : projectile,
-  };
-}
-
 /** Termine la course d'un projectile sans impact : il disparaît et sa disparition est annoncée si connue. */
-function neutralise(acc: Accumulator, projectile: Projectile): Accumulator {
+function neutralise(acc: Progress, projectile: Projectile): Progress {
   return {
     state: withProjectile(acc.state, projectile.id, null),
     events: [...acc.events, ...neutralisedEvents(acc.state, projectile)],
   };
 }
 
+/*****************************
+ *
+ * PARTIE PROGRESSION
+ *
+ *****************************/
+
 /** Un pas de projectile ; `null` pour `projectile` quand sa course est terminée. */
 function stepProjectile(
-  acc: Accumulator,
+  acc: Progress,
   projectile: Projectile,
   config: GameConfig,
   rng: Rng,
-): { acc: Accumulator; projectile: Projectile | null } {
+): { acc: Progress; projectile: Projectile | null } {
   const step = nextStep(acc.state, projectile, config);
   if (!step) return { acc: neutralise(acc, projectile), projectile: null };
   const seen = detectionUpdate(acc.state, step, config);
-  const entered = enterHex(
+  const entered = resolveImpactOnArrival(
     { state: acc.state, events: [...acc.events, ...seen.events] },
     seen.projectile,
     config,
@@ -262,22 +297,17 @@ function stepProjectile(
     : entered;
 }
 
-/** Retire le projectile de l'état (sa course est finie par un impact). */
-function withoutProjectile(acc: Accumulator, id: string): Accumulator {
-  return { ...acc, state: withProjectile(acc.state, id, null) };
-}
-
 /**
  * Fait progresser un projectile de `progression` pas, ou jusqu'à la fin de sa course. Le
  * projectile est réécrit dans l'état à son terme, sauf s'il a disparu.
  */
-function advanceProjectile(
-  acc: Accumulator,
+function progressProjectile(
+  acc: Progress,
   projectile: Projectile,
   config: GameConfig,
   rng: Rng,
-): Accumulator {
-  let current: Accumulator = acc;
+): Progress {
+  let current: Progress = acc;
   let moving: Projectile | null = projectile;
   for (let i = 0; i < config.combat.weapons[projectile.weapon].progression && moving; i++) {
     const stepped = stepProjectile(current, moving, config, rng);
@@ -296,7 +326,7 @@ export function progressProjectiles(mission: MissionState, config: GameConfig): 
   if (mission.projectiles.length === 0) return { state: mission, events: [] };
   const rng = restoreRng(mission.rngState);
   const ordered = [...mission.projectiles].sort((a, b) => a.launchNumber - b.launchNumber);
-  let acc: Accumulator = { state: mission, events: [] };
-  for (const projectile of ordered) acc = advanceProjectile(acc, projectile, config, rng);
+  let acc: Progress = { state: mission, events: [] };
+  for (const projectile of ordered) acc = progressProjectile(acc, projectile, config, rng);
   return { state: { ...acc.state, rngState: rng.state() }, events: acc.events };
 }

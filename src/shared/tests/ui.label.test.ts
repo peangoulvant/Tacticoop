@@ -147,29 +147,28 @@ describe('texte du journal de chaque événement (D-11)', () => {
     ).toBe('Une torpille est neutralisée');
   });
 
-  it('décrit un impact : unité alliée avec l’arme, ou navire hostile sans autre détail', () => {
-    const base = {
-      type: 'PROJECTILE_IMPACT',
-      cycle: 1,
-      projectileId: 'P-1',
-      weapon: 'missile',
-    } as const;
+  it('décrit un impact : l’arme en sujet, la cible nommée par sa classe, sans détail hostile', () => {
+    const base = { type: 'PROJECTILE_IMPACT', cycle: 1, projectileId: 'P-1' } as const;
     const friend = { side: 'friend', unitId: 'a', shipClass: 'fremm' } as const;
-    expect(eventLabel({ ...base, result: 'hit', victim: friend })).toBe(
-      'FREMM multimission : impact de missile',
+    const missile = { ...base, weapon: 'missile' } as const;
+    expect(eventLabel({ ...missile, result: 'hit', victim: friend })).toBe(
+      'Un missile a touché la cible FREMM multimission',
     );
-    expect(eventLabel({ ...base, result: 'destroyed', victim: friend })).toBe(
-      'FREMM multimission : impact de missile, navire détruit',
+    expect(eventLabel({ ...missile, result: 'destroyed', victim: friend })).toBe(
+      'Un missile a détruit la cible FREMM multimission',
     );
-    expect(eventLabel({ ...base, result: 'missed', victim: friend })).toBe(
-      'FREMM multimission : un tir de missile a échoué',
+    expect(eventLabel({ ...missile, result: 'missed', victim: friend })).toBe(
+      'Un missile a manqué la cible FREMM multimission',
     );
-    expect(eventLabel({ ...base, result: 'hit', victim: { side: 'hostile' } })).toBe(
-      'Un navire hostile est touché (missile)',
+    expect(eventLabel({ ...base, weapon: 'torpedo', result: 'missed', victim: friend })).toBe(
+      'Une torpille a manqué la cible FREMM multimission',
     );
-    expect(eventLabel({ ...base, result: 'destroyed', victim: { side: 'hostile' } })).toBe(
-      'Un navire hostile est détruit (missile)',
+    expect(eventLabel({ ...missile, result: 'hit', victim: { side: 'hostile' } })).toBe(
+      'Un missile a touché un navire hostile',
     );
+    expect(
+      eventLabel({ ...base, weapon: 'torpedo', result: 'destroyed', victim: { side: 'hostile' } }),
+    ).toBe('Une torpille a détruit un navire hostile');
   });
 
   it('annonce la fin de mission avec sa cause', () => {

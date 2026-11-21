@@ -357,15 +357,22 @@ function shotFiredLabel(event: EventOf<'SHOT_FIRED'>): string {
   return `${shipLabelOf(event.shipClass)} : tir de ${weaponLabel[event.weapon]} sur le contact ${event.contactId}${zone}`;
 }
 
-/** Impact : l'unité alliée visée avec l'arme, ou un navire hostile sans autre détail (AB-49). */
+/** Arme en sujet de phrase, accordée : « Un missile », « Une torpille ». */
+const weaponSubject: Record<engine.WeaponKind, string> = {
+  missile: 'Un missile',
+  torpedo: 'Une torpille',
+};
+
+/**
+ * Impact : l'arme est le sujet, la cible est nommée par sa classe (les identifiants des navires
+ * viendront plus tard), ou « un navire hostile » sans autre détail (AB-49).
+ * Exemple : « Un missile a manqué la cible FREMM multimission ».
+ */
 function impactLabel(event: EventOf<'PROJECTILE_IMPACT'>): string {
-  const weapon = weaponLabel[event.weapon];
-  if (event.victim.side === 'hostile') {
-    return `Un navire hostile est ${event.result === 'destroyed' ? 'détruit' : 'touché'} (${weapon})`;
-  }
-  const ship = shipLabelOf(event.victim.shipClass);
-  if (event.result === 'missed') return `${ship} : un tir de ${weapon} a échoué`;
-  return `${ship} : impact de ${weapon}${event.result === 'destroyed' ? ', navire détruit' : ''}`;
+  const subject = weaponSubject[event.weapon];
+  const verb = { hit: 'a touché', missed: 'a manqué', destroyed: 'a détruit' }[event.result];
+  if (event.victim.side === 'hostile') return `${subject} ${verb} un navire hostile`;
+  return `${subject} ${verb} la cible ${shipLabelOf(event.victim.shipClass)}`;
 }
 
 /** Texte du journal pour n'importe quel événement du moteur. */

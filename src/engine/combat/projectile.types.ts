@@ -41,7 +41,10 @@ export interface Projectile {
   heading: Axial | null;
   /** Hexagones restants avant neutralisation ; `null` pour un missile (il s'arrête à la case visée). */
   autonomyLeft: number | null;
-  /** Le camp adverse du tireur l'a déjà identifié (une seule annonce au journal, AB-49). */
+  /**
+   * Le camp adverse du tireur l'identifie en ce moment (AB-49) : le drapeau tombe quand le
+   * projectile sort de la portée, et une nouvelle entrée est annoncée de nouveau.
+   */
   detected: boolean;
 }
 

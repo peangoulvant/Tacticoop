@@ -1,5 +1,4 @@
 import type { GameConfig, WeaponKind } from '../config/game.config';
-import type { MissionState } from '../core/game.types';
 import type { Rng } from '../core/rng.service';
 import { randomInt } from '../core/rng.service';
 import type { Unit } from '../units/unit.model';
@@ -49,9 +48,4 @@ export function attemptImpact(
   if (rng() >= impactProbability(projectile, config)) return { result: 'missed', unit };
   const hp = unit.hp - drawDamage(projectile.weapon, config, rng);
   return hp > 0 ? { result: 'hit', unit: { ...unit, hp } } : { result: 'destroyed', unit: null };
-}
-
-/** Unité en jeu sur la case donnée (une seule unité navale par hexagone, SF-02). */
-export function unitAt(mission: MissionState, hex: { col: number; row: number }): Unit | undefined {
-  return mission.units.find((u) => u.position.col === hex.col && u.position.row === hex.row);
 }

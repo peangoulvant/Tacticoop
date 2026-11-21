@@ -1,5 +1,5 @@
 import { defaultConfig } from '../../config/game.config';
-import { createUnit } from '../unit.model';
+import { createUnit, unitAt } from '../unit.model';
 
 const position = { col: 0, row: 0 };
 function make(
@@ -33,5 +33,28 @@ describe('createUnit — dotations', () => {
       movementCap: null,
     });
     expect(unit).toMatchObject({ missiles: 1, torpedoes: 4, helicopters: 2 });
+  });
+});
+
+describe('unitAt', () => {
+  const units = [
+    createUnit('a', 'friend', 'fremm', { col: 2, row: 3 }, defaultConfig, {
+      ammoFactor: 1,
+      movementCap: null,
+    }),
+    createUnit('b', 'hostile', 'submarine', { col: 5, row: 1 }, defaultConfig, {
+      ammoFactor: 1,
+      movementCap: null,
+    }),
+  ];
+
+  it('rend l’unité qui occupe la case, de n’importe quel camp', () => {
+    expect(unitAt(units, { col: 2, row: 3 })?.id).toBe('a');
+    expect(unitAt(units, { col: 5, row: 1 })?.id).toBe('b');
+  });
+
+  it('ne rend rien pour une case vide', () => {
+    expect(unitAt(units, { col: 0, row: 0 })).toBeUndefined();
+    expect(unitAt([], { col: 2, row: 3 })).toBeUndefined();
   });
 });
