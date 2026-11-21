@@ -33,11 +33,12 @@ function accepted(result: CommandResult) {
 
 const endActivation: GameCommand = { type: 'END_ACTIVATION', unitId: 'fremm' };
 
-/** Missile hostile en vol de (0,4) vers (8,4), à 6 hexagones de la FREMM alliée en (6,4). */
+/** Missile hostile en vol de (0,4) vers la case (2,4), où se trouve la cible alliée. */
 const hostileMissile = aProjectile({
   side: 'hostile',
   launcherId: 'gone',
-  route: rowRoute(4, 0, 8),
+  route: rowRoute(4, 0, 2),
+  aimedHex: { col: 2, row: 4 },
 });
 
 describe('séquence : activation, réaction, progression des projectiles (G-06.6)', () => {
@@ -115,7 +116,13 @@ describe('fin de mission après une séquence (G-13.1, AB-48)', () => {
       hp: 10,
     };
     const start = mission([fremm, last], {
-      projectiles: [aProjectile({ position: { col: 1, row: 4 }, route: rowRoute(4, 1, 8) })],
+      projectiles: [
+        aProjectile({
+          position: { col: 1, row: 4 },
+          aimedHex: { col: 3, row: 4 },
+          route: rowRoute(4, 1, 3),
+        }),
+      ],
     });
     const { state, events } = accepted(run(start, endActivation, sureHit(40)));
     expect(state.outcome).toBe('victory');
@@ -139,7 +146,14 @@ describe('fin de mission après une séquence (G-13.1, AB-48)', () => {
       aimedHex: { col: 8, row: 0 },
     });
     const start = mission([fremm, last], {
-      projectiles: [aProjectile({ position: { col: 1, row: 4 }, route: rowRoute(4, 1, 8) }), other],
+      projectiles: [
+        aProjectile({
+          position: { col: 1, row: 4 },
+          aimedHex: { col: 3, row: 4 },
+          route: rowRoute(4, 1, 3),
+        }),
+        other,
+      ],
     });
     const { state } = accepted(run(start, endActivation, sureHit(40)));
     expect(state.outcome).toBe('victory');
