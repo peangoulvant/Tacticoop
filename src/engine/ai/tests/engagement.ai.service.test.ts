@@ -141,11 +141,13 @@ describe('arrêt à la portée de l’arme (révise AB-42 3)', () => {
     expect(intentOf(observation, unit, defaultConfig).holdDistance).toBe(8);
   });
 
-  it('s’arrête à la portée de la torpille (3) devant un sous-marin identifié', () => {
+  it('s’arrête à la portée de la torpille devant un sous-marin identifié', () => {
     const m = mission([identified('C-1', { col: 0, row: 4 }, 'f', 'submarine')]);
     const observation = observeHostile(m);
     const unit = observation.units.find((u) => u.id === 'h')!;
-    expect(intentOf(observation, unit, defaultConfig).holdDistance).toBe(3);
+    expect(intentOf(observation, unit, defaultConfig).holdDistance).toBe(
+      defaultConfig.combat.weapons.torpedo.range,
+    );
   });
 
   it('garde la portée de balayage devant une zone, ou sans arme utilisable', () => {

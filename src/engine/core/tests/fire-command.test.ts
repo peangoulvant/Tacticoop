@@ -103,7 +103,7 @@ describe('tir accepté (AB-44, AB-45, AB-47)', () => {
     expect(result.state.projectiles[0]).toMatchObject({
       weapon: 'torpedo',
       targetId: 'hostile-1',
-      autonomyLeft: 5,
+      autonomyLeft: defaultConfig.combat.weapons.torpedo.autonomy,
       tracking: false,
       heading: null,
     });

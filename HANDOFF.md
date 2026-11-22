@@ -105,6 +105,7 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 | Tir de l'IA, précisions (PR 3b-2) | Validé par le propriétaire : pas d'arme de repli (un sous-marin sans missile ne tire pas sur une frégate) ; sans contact, une unité sans munitions balaie en premier pour que l'unité armée tire ; l'IA applique l'avertissement de ligne de tir du joueur. Joueur et IA sont soumis aux mêmes règles (une action spéciale par activation, contact ancien refusé), vérifié par test. Restent `PROPOSÉ` jusqu'à validation en jeu |
 | Statut des projectiles (AB-51) | Demandé par le propriétaire : pastille `targeted` (cible acquise ou missile en route), `searching` / `unknown` (« ? ») ; icône `destroyed.png` reportée (fin de projectile à mémoriser dans l'état, avec `schemaVersion`) |
 | Épave d'un navire détruit (AB-52) | Demandée par le propriétaire : `destroyed_ship.png` en pleine case, jusqu'à la fin de la partie, pour tout allié détruit et tout hostile détruit par le joueur (jamais un hostile détruit par l'IA : brouillard) ; visuelle seulement, sans classe ni effet ; `Loss` garde case et auteur, `schemaVersion` 8 |
+| Torpille : portée 4, autonomie 6 (AB-53) | Réglage du propriétaire (commit `8251618`) : révise la hiérarchie d'AB-43 en veille (3) < torpille (4) < balayage (6) < missile (8) ; tests de configuration et d'IA lus dans `GameConfig`, plus aucune valeur de torpille en dur dans les tests |
 | Nommage de l'IA (AB-17) | `nom.ai.service.ts` pour les fichiers de `engine/ai/` qui ont un homologue côté unités |
 
 ## État du projet

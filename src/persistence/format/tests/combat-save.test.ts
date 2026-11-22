@@ -342,7 +342,10 @@ describe('invariants des projectiles selon leur arme (AB-47)', () => {
   it.each([
     ['sans autonomie (null)', (p: Tampered) => (p.autonomyLeft = null)],
     ['avec une autonomie épuisée (0)', (p: Tampered) => (p.autonomyLeft = 0)],
-    ['avec plus d’autonomie que l’arme (6)', (p: Tampered) => (p.autonomyLeft = 6)],
+    [
+      'avec plus d’autonomie que l’arme',
+      (p: Tampered) => (p.autonomyLeft = engine.defaultConfig.combat.weapons.torpedo.autonomy! + 1),
+    ],
     ['sans trajet ni cap', (p: Tampered) => ((p.route = []), (p.heading = null))],
     ['sur zone suspecte avec une cible désignée', (p: Tampered) => (p.onSuspectZone = true)],
     ['qui suit une cible sans cap', (p: Tampered) => ((p.tracking = true), (p.heading = null))],

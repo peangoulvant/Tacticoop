@@ -82,11 +82,11 @@ describe('defaultConfig', () => {
       acquisitionRange: 0,
     });
     expect(weapons.torpedo).toEqual({
-      range: 3,
+      range: 4,
       progression: 1,
       damage: { min: 40, max: 60 },
       impactProbability: 0.7,
-      autonomy: 5,
+      autonomy: 6,
       acquisitionRange: 2,
     });
     expect(suspectZoneImpactPenalty).toBe(0.25);
@@ -112,20 +112,22 @@ describe('defaultConfig', () => {
   });
 
   /**
-   * Hiérarchie des portées (AB-43) : torpille ≤ veille < balayage < missile. Un missile porte plus
-   * loin que les capteurs du tireur : la cible est désignée par un contact du camp (balayage d'une
-   * autre unité), comme avec un hélicoptère ou une liaison de données.
+   * Hiérarchie des portées : veille < torpille < balayage < missile. AB-43 posait torpille ≤ veille ;
+   * le propriétaire a porté la torpille à 4 (veille 3), la torpille dépasse donc désormais la veille
+   * mais reste en deçà du balayage. Un missile porte plus loin que les capteurs du tireur : la cible
+   * est désignée par un contact du camp (balayage d'une autre unité), comme avec un hélicoptère ou
+   * une liaison de données.
    */
   it.each(['fremm', 'frigate_da', 'frigate_asm', 'submarine'] as const)(
-    'ordonne les portées de %s : torpille ≤ veille < balayage < missile (AB-43)',
+    'ordonne les portées de %s : veille < torpille < balayage < missile (AB-43 révisé)',
     (shipClass) => {
       const detection = defaultConfig.ships[shipClass].detection!;
       const { missile, torpedo } = {
         missile: defaultConfig.combat.weapons.missile.range,
         torpedo: defaultConfig.combat.weapons.torpedo.range,
       };
-      expect(torpedo).toBeLessThanOrEqual(detection.watchRange);
-      expect(detection.watchRange).toBeLessThan(detection.sweepRange);
+      expect(detection.watchRange).toBeLessThan(torpedo);
+      expect(torpedo).toBeLessThan(detection.sweepRange);
       expect(detection.sweepRange).toBeLessThan(missile);
     },
   );

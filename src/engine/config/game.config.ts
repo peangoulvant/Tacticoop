@@ -236,7 +236,7 @@ const HOSTILE_FORCE: HostileForceSpec = {
  * Portées et probabilités initiales de la frégate et du sous-marin, identiques (G-08.4, AB-43).
  * Échelle de référence : 1 hexagone ≈ 20 km. Veille 3 = 60 km (horizon radar de 40-50 km, plus
  * l'écoute des émissions ennemies) ; balayage 6 = 120 km (radar actif et hélicoptère). Hiérarchie
- * : torpille ≤ veille < balayage < missile, vérifiée par `game.config.test.ts`.
+ * : veille < torpille < balayage < missile (torpille 4, AB-53), vérifiée par `game.config.test.ts`.
  */
 const DETECTOR: DetectorSpec = {
   watchRange: 3,
