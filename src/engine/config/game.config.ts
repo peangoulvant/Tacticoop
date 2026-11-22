@@ -289,11 +289,11 @@ export const defaultConfig: GameConfig = {
         acquisitionRange: 0,
       },
       torpedo: {
-        range: 3,
+        range: 4,
         progression: 1,
         damage: { min: 40, max: 60 },
         impactProbability: 0.7,
-        autonomy: 5,
+        autonomy: 6,
         acquisitionRange: 2,
       },
     },
