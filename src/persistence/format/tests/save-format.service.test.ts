@@ -127,10 +127,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 8;
+      save.schemaVersion = 9;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 8/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 9/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -467,8 +467,8 @@ describe('contacts et état du hasard (version 2)', () => {
     );
   });
 
-  it.each([1, 2])(
-    'refuse une sauvegarde de version %i, sans migration (AB-08, AB-24, AB-30)',
+  it.each([1, 2, 7])(
+    'refuse une sauvegarde de version %i, sans migration (AB-08, AB-24, AB-30, AB-52)',
     (version) => {
       const result = parseTampered('escort', (s) => {
         s.schemaVersion = version;
@@ -527,7 +527,7 @@ describe('balayage (version 3) et délai de récupération (version 4)', () => {
   it("aller-retour d'une mission où un balayage a eu lieu", () => {
     const { state, events } = searchedMission();
     const result = parseSave(serializeSave(state, events, SAVED_AT));
-    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 7 } });
+    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 8 } });
     expect(result.ok && result.save.state).toEqual(state);
     expect(events.some((e) => e.type === 'SWEEP_PERFORMED')).toBe(true);
     expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);

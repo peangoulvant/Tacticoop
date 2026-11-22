@@ -16,6 +16,7 @@ import { FireOverlay } from './fire-overlay.component';
 import { MoveOverlay } from './move-overlay.component';
 import { ProjectileOverlay, ProjectileRouteOverlay } from './projectile-overlay.component';
 import { SweepOverlay } from './sweep-overlay.component';
+import { WreckOverlay } from './wreck-overlay.component';
 import {
   currentSelectable,
   nextSelectable,
@@ -43,7 +44,7 @@ export function TacticalMap({
 }) {
   // La carte n'affiche que ce que le joueur connaît : jamais une unité hostile non détectée.
   const observation = useMemo(() => engine.observeFriend(mission), [mission]);
-  const { map, units, start, goal, contacts, projectiles } = observation;
+  const { map, units, start, goal, contacts, projectiles, wrecks } = observation;
   const {
     selectedUnitId,
     selectedProjectileId,
@@ -123,6 +124,7 @@ export function TacticalMap({
           {view && (
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
               <TerrainLayer map={map} />
+              <WreckOverlay wrecks={wrecks} />
               <ContactOverlay contacts={contacts} />
               <SweepOverlay sweep={sweep} />
               <FireOverlay fire={fire} />
@@ -157,6 +159,7 @@ export function TacticalMap({
         unit={units.find((u) => selectedHex && engine.sameHex(u.position, selectedHex))}
         contacts={contacts}
         projectiles={projectiles}
+        wrecks={wrecks}
       />
     </Box>
   );

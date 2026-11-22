@@ -295,6 +295,11 @@ export const fireResultLabel: Record<engine.WeaponKind, string> = {
   torpedo: 'Torpille lancée',
 };
 
+/** Légende d'une case portant une épave (AB-52) : le camp du navire détruit, jamais sa classe. */
+export function wreckCaption(side: engine.Side): string {
+  return side === 'friend' ? 'épave d’un navire allié' : 'épave d’un navire hostile';
+}
+
 /** Statut d'un projectile, en toutes lettres (AB-51). */
 export const projectileStatusLabel: Record<engine.ProjectileStatus, string> = {
   targeted: 'en route vers sa cible',

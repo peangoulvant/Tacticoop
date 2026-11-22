@@ -66,12 +66,19 @@ export type FireRefusal =
   | 'OUT_OF_RANGE'
   | 'NO_MARITIME_PATH';
 
-/** Navire détruit, conservé pour le futur bilan (G-13.3) : l'unité elle-même est retirée (G-09-C4). */
+/**
+ * Navire détruit, conservé pour le futur bilan (G-13.3) et pour l'épave affichée (AB-52) : l'unité
+ * elle-même est retirée (G-09-C4). `position` est la case où il a été détruit, `destroyedBy` le
+ * camp du tireur : le joueur ne connaît la destruction d'un navire hostile que si c'est lui qui l'a
+ * causée (un navire que l'IA détruit elle-même reste ignoré, brouillard de guerre, AB-49).
+ */
 export interface Loss {
   unitId: string;
   side: Side;
   shipClass: ShipClass;
   cycle: number;
+  position: Hex;
+  destroyedBy: Side;
 }
 
 /**

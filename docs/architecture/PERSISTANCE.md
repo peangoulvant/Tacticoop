@@ -32,7 +32,7 @@ Décidé avec le propriétaire en novembre 2026 (AB-08) ; les interprétations n
 
 ## Format et module `src/persistence/`
 
-Contenu stocké dans IndexedDB, sérialisé en JSON : `{ schemaVersion: 7, savedAt, state, events }`, avec `state` une `MissionState` et `events` le journal. Aucun hasard n'est conservé : la carte est dans l'état, et les graines ne servent qu'au lancement.
+Contenu stocké dans IndexedDB, sérialisé en JSON : `{ schemaVersion: 8, savedAt, state, events }`, avec `state` une `MissionState` et `events` le journal. Aucun hasard n'est conservé : la carte est dans l'état, et les graines ne servent qu'au lancement.
 
 La validation est écrite à la main et refuse la sauvegarde au premier problème : JSON illisible, version inconnue, valeurs inconnues (terrains, classes de bâtiment, états d'activation, types d'événement, ordres du porte-avions), tableau de terrains de taille inattendue, cases hors carte, identifiants ou cases en double, porte-avions absent en escorte ou présent hors escorte, navigation du porte-avions incohérente, activation en cours. Elle ne vérifie ni l'équilibrage (PV, stocks) ni la navigabilité des cases, qui dépendent de valeurs provisoires.
 

@@ -36,6 +36,7 @@ export type {
   ShotTarget,
 } from './combat/projectile.types';
 export { PROJECTILE_STATUSES } from './combat/projectile.types';
+export type { ObservedWreck } from './combat/wreck-observation.service';
 export { SHOT_WARNINGS, previewShot, shotCandidates } from './combat/shot-preview.service';
 export type {
   ShotCandidate,

@@ -46,7 +46,16 @@ function combatMission(): engine.MissionState {
     ...current,
     projectiles: [projectile],
     nextLaunchNumber: 4,
-    losses: [{ unitId: 'detruit-1', side: 'hostile', shipClass: 'frigate_da', cycle: 1 }],
+    losses: [
+      {
+        unitId: 'detruit-1',
+        side: 'hostile',
+        shipClass: 'frigate_da',
+        cycle: 1,
+        position: { col: 3, row: 2 },
+        destroyedBy: 'friend',
+      },
+    ],
   };
 }
 
@@ -68,6 +77,14 @@ describe('aller-retour du combat', () => {
     const state = combatMission();
     const result = parseSave(serializeSave(state, [], SAVED_AT));
     expect(result.ok && result.save.state).toEqual(state);
+  });
+
+  it('retrouve les épaves après une reprise (AB-52)', () => {
+    const state = combatMission();
+    const result = parseSave(serializeSave(state, [], SAVED_AT));
+    expect(result.ok && engine.observeFriend(result.save.state).wrecks).toEqual([
+      { position: { col: 3, row: 2 }, side: 'hostile' },
+    ]);
   });
 
   it('relit une mission perdue avec sa cause', () => {
@@ -183,6 +200,13 @@ describe('refus d’un combat incohérent', () => {
     ],
     ['un compteur nul', (s: Tampered) => (s.state.nextLaunchNumber = 0), /compteur/],
     ['des projectiles illisibles', (s: Tampered) => (s.state.projectiles = {}), /projectiles/],
+    ['une perte sans case', (s: Tampered) => (s.state.losses[0].position = null), /perte/],
+    [
+      'une perte hors de la carte',
+      (s: Tampered) => (s.state.losses[0].position = { col: 999, row: 0 }),
+      /perte/,
+    ],
+    ['une perte sans auteur', (s: Tampered) => (s.state.losses[0].destroyedBy = 'autre'), /perte/],
     ['une perte illisible', (s: Tampered) => (s.state.losses = [{ unitId: 4 }]), /perte/],
     [
       'une perte en double',

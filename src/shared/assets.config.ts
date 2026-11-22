@@ -3,6 +3,7 @@ import carrier from '../assets/units/porte-avions.png';
 import frigate from '../assets/units/fregate.png';
 import helicopter from '../assets/units/helicoptere.png';
 import missile from '../assets/units/missile.png';
+import destroyedShip from '../assets/states/destroyed_ship.png';
 import statusTargeted from '../assets/states/targeted.png';
 import statusWaiting from '../assets/states/waiting.png';
 import submarine from '../assets/units/sna.png';
@@ -35,6 +36,9 @@ export const contactTargetIcon: Record<engine.ContactTargetType, string> = {
 };
 
 export const weaponIcon = { missile, torpedo, helicopter };
+
+/** Épave d'un navire détruit, affichée en pleine case jusqu'à la fin de la partie (AB-52). */
+export const destroyedShipIcon = destroyedShip;
 
 /** Pictogrammes de statut d'un projectile (AB-51) : « cible » pour `targeted`, « ? » sinon. `destroyed.png` est en réserve. */
 export const projectileStatusIcon: Record<engine.ProjectileStatus, string> = {
