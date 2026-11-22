@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 import * as engine from '../../../engine';
 import { useCarrierOrderDraftStore } from '../../../store/carrier-order-draft.store';
@@ -21,6 +21,7 @@ import {
   nextSelectable,
   selectablesAt,
 } from '../services/cell-selection.service';
+import { nextHeadings, type HeadingMemory } from '../services/projectile-heading.service';
 import { useMapView } from '../services/use-map-view';
 
 /**
@@ -52,6 +53,20 @@ export function TacticalMap({
     selectHex,
   } = useSelectionStore();
   const content = mapViewBox(map);
+
+  // Sens de marche observé des projectiles : dérivé pendant le rendu d'après la liste précédente.
+  const [seen, setSeen] = useState<{
+    source: typeof projectiles | null;
+    headings: Map<string, HeadingMemory>;
+  }>({ source: null, headings: new Map() });
+  if (seen.source !== projectiles) {
+    setSeen({ source: projectiles, headings: nextHeadings(seen.headings, projectiles) });
+  }
+  // Cases où un projectile ne se centre pas : unités alliées et navires hostiles identifiés.
+  const occupiedHexes = [
+    ...units.map((u) => u.position),
+    ...contacts.flatMap((c) => (c.kind === 'identified' ? [c.position] : [])),
+  ];
 
   const previewDestination = useMoveDraftStore((s) => s.previewDestination);
   const previewWaypoint = useCarrierOrderDraftStore((s) => s.previewWaypoint);
@@ -127,7 +142,8 @@ export function TacticalMap({
               />
               <ProjectileOverlay
                 projectiles={projectiles}
-                units={units}
+                occupiedHexes={occupiedHexes}
+                headings={seen.headings}
                 selectedId={selectedProjectileId}
               />
             </g>

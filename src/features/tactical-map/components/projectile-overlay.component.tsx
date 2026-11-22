@@ -3,6 +3,7 @@ import { palette } from '../../../app/theme.config';
 import * as assets from '../../../shared/assets.config';
 import * as labels from '../../../shared/ui.label';
 import { hexCenter, pathPoints } from '../services/hex-geometry.service';
+import type { HeadingMemory } from '../services/projectile-heading.service';
 
 /*
  * Projectiles sur la carte (AB-49) : les siens, et ceux des hostiles identifiés d'office. Chacun
@@ -37,15 +38,6 @@ function slotOf(
   };
 }
 
-/** Angle (degrés) du prochain pas du projectile, ou 0 (vers la droite) si sa marche n'est pas connue. */
-function headingDegrees(projectile: engine.ObservedProjectile): number {
-  const next = projectile.route[0];
-  if (!next) return 0;
-  const from = hexCenter(projectile.position);
-  const to = hexCenter(next);
-  return (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI;
-}
-
 /** Dimensions de l'icône et de la pastille qui la porte, dans l'espace du viewBox. */
 const ICON = { width: 8, height: { missile: 1.8, torpedo: 1.4 } };
 const BADGE = { width: 10, height: 4.6 };
@@ -54,11 +46,14 @@ function ProjectileToken({
   projectile,
   all,
   occupied,
+  degrees,
   selected,
 }: {
   projectile: engine.ObservedProjectile;
   all: readonly engine.ObservedProjectile[];
   occupied: boolean;
+  /** Sens de marche observé, en degrés ; `null` si inconnu (icône vers la droite). */
+  degrees: number | null;
   selected: boolean;
 }) {
   const center = hexCenter(projectile.position);
@@ -75,10 +70,7 @@ function ProjectileToken({
       data-side={projectile.side}
     >
       <title>{labels.projectileCaption(projectile)}</title>
-      <g
-        transform={`rotate(${headingDegrees(projectile).toFixed(1)})`}
-        opacity={submerged ? 0.8 : 1}
-      >
+      <g transform={`rotate(${(degrees ?? 0).toFixed(1)})`} opacity={submerged ? 0.8 : 1}>
         <rect
           x={-BADGE.width / 2}
           y={-BADGE.height / 2}
@@ -107,11 +99,14 @@ function ProjectileToken({
 /** Tous les projectiles connus du joueur, au-dessus des unités ; le projectile sélectionné est cerclé. */
 export function ProjectileOverlay({
   projectiles,
-  units,
+  occupiedHexes,
+  headings,
   selectedId,
 }: {
   projectiles: readonly engine.ObservedProjectile[];
-  units: readonly engine.Unit[];
+  /** Cases déjà occupées par une unité ou un navire identifié : le projectile n'y est pas centré. */
+  occupiedHexes: readonly engine.Hex[];
+  headings: ReadonlyMap<string, HeadingMemory>;
   selectedId: string | null;
 }) {
   return (
@@ -121,7 +116,8 @@ export function ProjectileOverlay({
           key={projectile.id}
           projectile={projectile}
           all={projectiles}
-          occupied={units.some((u) => engine.sameHex(u.position, projectile.position))}
+          occupied={occupiedHexes.some((hex) => engine.sameHex(hex, projectile.position))}
+          degrees={headings.get(projectile.id)?.degrees ?? null}
           selected={projectile.id === selectedId}
         />
       ))}
