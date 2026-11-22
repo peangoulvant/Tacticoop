@@ -21,6 +21,8 @@ export interface FireDraft {
   hex: engine.Hex | null;
   /** Aperçu du tir choisi ; `null` tant que la cible n'est pas complète. */
   preview: engine.ShotPreview | null;
+  /** Cible complète (contact, et hexagone pour une zone) ; le moteur peut encore refuser le tir (`preview`). */
+  target: engine.ShotTarget | null;
 }
 
 /** La cible du brouillon est complète : un contact identifié, ou une zone avec son hexagone. */
@@ -57,6 +59,9 @@ export function useFireDraft(mission: engine.MissionState): FireDraft | null {
     if (!unit || !weapon || !possible) return null;
     const candidates = engine.shotCandidates(mission, unit, weapon, engine.defaultConfig);
     const target = targetOf(candidates, contactId, hex);
+    const preview = target
+      ? engine.previewShot(mission, unit, weapon, target, engine.defaultConfig)
+      : null;
     return {
       unit,
       weapon,
@@ -65,14 +70,8 @@ export function useFireDraft(mission: engine.MissionState): FireDraft | null {
       contacts: observation.contacts,
       contactId,
       hex,
-      preview: target
-        ? engine.previewShot(mission, unit, weapon, target, engine.defaultConfig)
-        : null,
+      preview,
+      target,
     };
   }, [mission, observation, unit, weapon, possible, contactId, hex]);
-}
-
-/** Cible complète du brouillon, à confier à la commande `FIRE`, ou `null` si elle n'est pas prête. */
-export function shotTargetOf(fire: FireDraft): engine.ShotTarget | null {
-  return fire.preview?.ok ? targetOf(fire.candidates, fire.contactId, fire.hex) : null;
 }

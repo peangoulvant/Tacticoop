@@ -14,20 +14,22 @@ import { planShot, type ShotPlanAccepted } from './shot-plan.service';
  */
 
 /** Avertissements de ligne de tir (AB-45) : un tir ami est possible, mais le tireur doit le savoir. */
-export const SHOT_WARNINGS = ['FRIENDLY_ON_AIMED_HEX', 'FRIENDLY_ON_ROUTE'] as const;
-export type ShotWarning = (typeof SHOT_WARNINGS)[number];
+export type ShotWarning = 'FRIENDLY_ON_AIMED_HEX' | 'FRIENDLY_ON_ROUTE';
 
-/** Tir envisageable : où il va, par où, et ce dont il faut prévenir le tireur. */
-export interface ShotPreviewAccepted {
-  ok: true;
-  aimedHex: Hex;
-  /** Cases jusqu'à la case visée, sans la case du tireur. */
-  route: Hex[];
-  onSuspectZone: boolean;
-  warnings: ShotWarning[];
-}
-
-export type ShotPreview = ShotPreviewAccepted | { ok: false; reason: FireRefusal };
+/**
+ * Aperçu d'un tir : si le tir est envisageable, où il va, par où, et ce dont il faut prévenir le
+ * tireur ; sinon le motif du refus.
+ */
+export type ShotPreview =
+  | {
+      ok: true;
+      aimedHex: Hex;
+      /** Cases jusqu'à la case visée, sans la case du tireur. */
+      route: Hex[];
+      onSuspectZone: boolean;
+      warnings: ShotWarning[];
+    }
+  | { ok: false; reason: FireRefusal };
 
 /** Une autre unité du camp du tireur occupe cette case. */
 function friendlyAt(mission: MissionState, shooter: Unit, hex: Hex): boolean {

@@ -5,7 +5,7 @@ import * as labelEngine from '../../../shared/engine.label';
 import * as labels from '../../../shared/ui.label';
 import { useFireDraftStore } from '../../../store/fire-draft.store';
 import { confirmFire } from '../services/command-actions.service';
-import { shotTargetOf, type FireDraft } from '../services/use-fire-draft';
+import type { FireDraft } from '../services/use-fire-draft';
 
 /** Liste des cibles visables : contacts identifiés et zones suspectes à portée (AB-46). */
 function TargetSelect({ fire }: { fire: FireDraft }) {
@@ -49,8 +49,7 @@ function shotNotices(fire: FireDraft): string[] {
 export function FireBar({ fire }: { fire: FireDraft | null }) {
   const cancelDraft = useFireDraftStore((s) => s.cancelDraft);
   if (!fire) return null;
-  const { unit, weapon, stock, candidates } = fire;
-  const target = shotTargetOf(fire);
+  const { unit, weapon, stock, candidates, target } = fire;
   const label = engine.defaultConfig.ships[unit.shipClass].label;
   const candidate = candidates.find((c) => c.contactId === fire.contactId);
   const contact = fire.contacts.find((c) => c.id === fire.contactId);
@@ -78,7 +77,7 @@ export function FireBar({ fire }: { fire: FireDraft | null }) {
         size="small"
         variant="contained"
         sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-        disabled={target === null}
+        disabled={!target || !fire.preview?.ok}
         onClick={() => target && confirmFire(unit.id, weapon, target)}
       >
         {labels.fireText.confirm}

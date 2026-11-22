@@ -24,28 +24,20 @@ export function selectablesAt(
   ];
 }
 
-/** Élément actuellement sélectionné d'après les deux identifiants du store, ou `null`. */
-export function currentSelectable(
-  unitId: string | null,
-  projectileId: string | null,
-): Selectable | null {
-  if (projectileId) return { kind: 'projectile', id: projectileId };
-  return unitId ? { kind: 'unit', id: unitId } : null;
-}
-
 /**
- * Élément choisi par ce clic : le premier de la case, ou celui qui suit l'élément déjà
- * sélectionné s'il y est (avec retour au premier). `null` pour une case sans rien de sélectionnable.
+ * Élément choisi par ce clic : le premier de la case, ou celui qui suit l'élément déjà sélectionné
+ * (l'unité ou le projectile dont le store garde l'identifiant) s'il est sur la case (avec retour au premier). `null` pour une case sans rien de sélectionnable.
  * Exemple : une unité et un missile sur la case ; unité sélectionnée, un clic choisit le missile,
  * un second clic revient à l'unité.
  */
 export function nextSelectable(
   selectables: readonly Selectable[],
-  current: Selectable | null,
+  selectedUnitId: string | null,
+  selectedProjectileId: string | null,
 ): Selectable | null {
   if (selectables.length === 0) return null;
   const index = selectables.findIndex(
-    (s) => current && s.kind === current.kind && s.id === current.id,
+    (s) => s.id === (s.kind === 'unit' ? selectedUnitId : selectedProjectileId),
   );
   return selectables[(index + 1) % selectables.length] as Selectable;
 }
