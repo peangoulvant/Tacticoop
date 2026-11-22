@@ -35,6 +35,15 @@ Wargame naval tactique web, frontend autonome (React, TypeScript, Material UI, Z
 
 **Décisions fréquentes.** Quand un choix lui revient, lui poser la question avec une recommandation, plutôt que de trancher.
 
+**Maîtrise technique et maintenabilité.** Le projet est maintenu par un développeur expérimenté qui veut comprendre et maîtriser toute l'architecture. L'objectif n'est pas de produire le maximum de code, mais un code qu'un humain peut comprendre, modifier et maintenir.
+- Privilégier la simplicité, la lisibilité et la réutilisation de l'existant.
+- Pas de nouvelle abstraction, interface, type ou service sans justification technique concrète.
+- Éviter les fonctions intermédiaires qui compliquent la lecture du chemin d'exécution.
+- Noms explicites, cohérents avec les conventions existantes.
+- Une PR = une responsabilité fonctionnelle ou technique cohérente ; aucune refactorisation opportuniste hors périmètre (la signaler, ne pas la faire).
+- **Avant toute implémentation significative**, présenter une **mini-conception technique** et attendre sa validation avant de coder : (1) fichiers à créer ou à modifier ; (2) chemin d'exécution principal ; (3) fonctions et types existants réutilisables ; (4) justification des nouvelles abstractions éventuelles.
+- **À la livraison**, une synthèse technique concise : ce qui a été développé ; le chemin d'exécution principal, avec les noms de fonctions ; les décisions techniques importantes ; les points sensibles à vérifier en revue ; les tests qui valident les règles métier.
+
 ## Conventions de code (rappel des exigences exprimées en revue)
 
 - Complexité cyclomatique par fonction : **5 conseillé, 10 maximum**, partout, composants React compris (ESLint `complexity` à 10, vérifié à 5 à la main).
