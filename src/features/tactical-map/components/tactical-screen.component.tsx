@@ -4,12 +4,14 @@ import * as engine from '../../../engine';
 import * as labels from '../../../shared/ui.label';
 import { useGameStore } from '../../../store/game.store';
 import {
+  ActionResultToast,
   EndCycleButton,
+  FireBar,
   MissionResultBanner,
   MoveBar,
   NewGameButton,
   SweepBar,
-  SweepResultToast,
+  useFireDraft,
   useMoveDraft,
   useSweepDraft,
 } from '../../commands';
@@ -110,6 +112,7 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
   const clearError = useGameStore((s) => s.clearError);
   const move = useMoveDraft(mission);
   const sweep = useSweepDraft(mission);
+  const fire = useFireDraft(mission);
   const carrierDraft = useCarrierOrderDraft(mission);
   const carrierRoute = useCarrierRouteView(mission, carrierDraft);
   const sideRef = useRef<HTMLDivElement>(null);
@@ -137,9 +140,16 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
         <TopBar mission={mission} />
       </Box>
       <Paper sx={{ position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-        <TacticalMap mission={mission} move={move} sweep={sweep} carrierRoute={carrierRoute} />
+        <TacticalMap
+          mission={mission}
+          move={move}
+          sweep={sweep}
+          fire={fire}
+          carrierRoute={carrierRoute}
+        />
         <MoveBar move={move} />
         <SweepBar sweep={sweep} />
+        <FireBar fire={fire} />
         <CarrierOrderBar mission={mission} draft={carrierDraft} />
         <MissionResultBanner mission={mission} />
       </Paper>
@@ -158,7 +168,7 @@ export function TacticalScreen({ mission }: { mission: engine.MissionState }) {
         <LogbookPanel events={events} />
       </Box>
       <FleetPanel units={engine.observeFriend(mission).units} />
-      <SweepResultToast />
+      <ActionResultToast />
       <Snackbar open={lastError !== null} autoHideDuration={4000} onClose={clearError}>
         <Alert severity="warning" onClose={clearError}>
           {lastError?.message}

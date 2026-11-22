@@ -195,7 +195,14 @@ function destroyUnit(state: MissionState, unit: Unit, shooter: Unit['side']): Mi
     units: state.units.filter((u) => u.id !== unit.id),
     losses: [
       ...state.losses,
-      { unitId: unit.id, side: unit.side, shipClass: unit.shipClass, cycle: state.cycle },
+      {
+        unitId: unit.id,
+        side: unit.side,
+        shipClass: unit.shipClass,
+        cycle: state.cycle,
+        position: unit.position,
+        destroyedBy: shooter,
+      },
     ],
   };
   return removeIdentifiedContactsOf(without, shooter, unit.id);

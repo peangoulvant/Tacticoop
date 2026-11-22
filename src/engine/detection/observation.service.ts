@@ -1,4 +1,5 @@
 import { observedProjectiles } from '../combat/projectile-observation.service';
+import { observedWrecks } from '../combat/wreck-observation.service';
 import { defaultConfig, type GameConfig } from '../config/game.config';
 import type { MissionState } from '../core/game.types';
 import type { Unit } from '../units/unit.model';
@@ -54,6 +55,7 @@ export function observeFriend(
     units: mission.units.filter(isKnownToFriend),
     contacts: mission.friendContacts.map((contact) => toObservedContact(contact, mission.cycle)),
     projectiles: observedProjectiles(mission, 'friend', config),
+    wrecks: observedWrecks(mission, 'friend'),
   };
 }
 

@@ -1,4 +1,5 @@
 import type { ObservedProjectile } from '../combat/projectile.types';
+import type { ObservedWreck } from '../combat/wreck-observation.service';
 import type { ObservedContact } from './contact.types';
 import type { GameMap } from '../map/game-map.service';
 import type { Hex } from '../map/hex.service';
@@ -30,6 +31,8 @@ export interface FriendObservation {
   contacts: ObservedContact[];
   /** Projectiles connus : les siens, et ceux des hostiles identifiés d'office (AB-49). */
   projectiles: ObservedProjectile[];
+  /** Épaves connues : navires alliés détruits et navires hostiles détruits par le joueur (AB-52). */
+  wrecks: ObservedWreck[];
 }
 
 /**

@@ -39,11 +39,15 @@ export function HexCaption({
   hex,
   unit,
   contacts,
+  projectiles,
+  wrecks,
 }: {
   map: engine.GameMap;
   hex: engine.Hex | null;
   unit?: engine.Unit;
   contacts: readonly engine.ObservedContact[];
+  projectiles: readonly engine.ObservedProjectile[];
+  wrecks: readonly engine.ObservedWreck[];
 }) {
   const text = hex
     ? `(${hex.col}, ${hex.row}) — ${labels.terrainLabel[engine.terrainAt(map, hex)]}`
@@ -53,9 +57,17 @@ export function HexCaption({
     ? contacts.filter((c) => engine.contactHexes(c).some((h) => engine.sameHex(h, hex)))
     : [];
   const suspects = covering.map((contact) => ` — ${labels.contactCaption(contact)}`).join('');
+  const shots = hex
+    ? projectiles
+        .filter((p) => engine.sameHex(p.position, hex))
+        .map((p) => ` — ${labels.projectileCaption(p)}`)
+        .join('')
+    : '';
+  const wreck = wrecks.find((w) => hex && engine.sameHex(w.position, hex));
+  const remains = wreck ? ` — ${labels.wreckCaption(wreck.side)}` : '';
   return (
     <Typography variant="caption" sx={{ ...overlay, left: 8, bottom: 8, px: 1, py: 0.25 }}>
-      {`${text}${ship}${suspects} · ${map.width}×${map.height}`}
+      {`${text}${ship}${suspects}${shots}${remains} · ${map.width}×${map.height}`}
     </Typography>
   );
 }

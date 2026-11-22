@@ -6,7 +6,7 @@ import { useGameStore } from '../../store/game.store';
 import { useMoveDraftStore } from '../../store/move-draft.store';
 import { useSelectionStore } from '../../store/selection.store';
 import { useSweepDraftStore } from '../../store/sweep-draft.store';
-import { useSweepResultStore } from '../../store/sweep-result.store';
+import { useActionResultStore } from '../../store/action-result.store';
 import { App } from '../App';
 
 /*
@@ -90,7 +90,7 @@ beforeEach(() => {
   useGameStore.getState().reset();
   useMoveDraftStore.getState().cancelDraft();
   useSweepDraftStore.getState().cancelDraft();
-  useSweepResultStore.getState().clear();
+  useActionResultStore.getState().clear();
   useSelectionStore.getState().selectUnit(null);
   useSelectionStore.getState().selectHex(null);
 });

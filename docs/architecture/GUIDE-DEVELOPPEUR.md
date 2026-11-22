@@ -14,7 +14,7 @@ src/
 │  ├─ map/          hexagones, carte, génération du relief
 │  ├─ units/        unités, déplacement, porte-avions, force ennemie, actions spéciales
 │  ├─ detection/    veille, balayage, contacts, projections des camps (observeFriend, observeHostile)
-│  ├─ combat/       tirs, projectiles (trajectoires, progression, impact), visibilité des projectiles
+│  ├─ combat/       tirs, aperçu d'un tir (previewShot), projectiles (trajectoires, progression, impact), visibilité des projectiles
 │  ├─ ai/           IA ennemie : objectif, déplacement, choix de l'unité, balayage, tour (nom.ai.service.ts)
 │  └─ missions/     préparation, lancement, activations, cycles
 ├─ persistence/   Sauvegarde : format JSON versionné, validation, stockage IndexedDB
@@ -59,7 +59,7 @@ Si le moteur refuse (`ok: false`), l'état ne change pas et l'interface affiche 
 ### Ajouter une action spéciale (réparation, leurre…)
 1. Ajouter sa valeur à `SPECIAL_ACTION_KINDS` et son `cooldownCycles` à `GameConfig.specialActions`.
 2. Réutiliser `specialActionBlocker` (préconditions ; le matériel exigé se règle dans `equipmentBlocker`) et `recordSpecialAction` (délai de récupération) : le mécanisme est commun. Modèle : `fire()` dans `core/unit-commands.service.ts` (tir, partagé avec l'IA). Attention : `recordSpecialAction` renvoie une copie complète de l'unité, tout champ modifié (un stock) s'écrit **après** elle.
-3. Ajouter son store de brouillon, puis l'ajouter à `store/cancel-drafts.service.ts` (seul endroit qui connaît la liste).
+3. Ajouter son store de brouillon, puis l'ajouter à `store/cancel-drafts.service.ts` (seul endroit qui connaît la liste). Modèle d'interface : le tir (`store/fire-draft.store.ts`, `features/commands/services/use-fire-draft.ts`, `fire-bar.component.tsx`) ; l'aperçu, les cibles et les avertissements viennent du moteur (`previewShot`, `shotCandidates`), l'interface n'en calcule aucun.
 
 ### Ajouter une valeur au jeu
 La déclarer dans l'interface de `GameConfig`, lui donner sa valeur dans `defaultConfig`, la commenter avec un exemple chiffré, ajouter une assertion à `config/tests/game.config.test.ts`.
@@ -73,6 +73,7 @@ La déclarer dans l'interface de `GameConfig`, lui donner sa valeur dans `defaul
 - L'IA lit **uniquement** `observeHostile(mission)` (carte, mission, point B en escorte, ses unités, ses contacts) et agit par les **mêmes fonctions** que le joueur (`unit-commands.service.ts`) avec `actor = 'hostile'` : mêmes refus, mêmes limites, mêmes délais. Ces commandes ne produisent **aucun événement** pour le camp hostile.
 - Un tour d'IA (`ai/turn.ai.service.ts`) : balayer si la politique le veut, se déplacer vers l'ancre (`objective.ai.service.ts`, `unit-movement.ai.service.ts`), terminer l'activation. `endActivation` du joueur déclenche **une** réaction ; la clôture (`resolveCycleEnd`) fait jouer les restantes avant le porte-avions.
 - Une unité n'obéit qu'à son camp : le joueur reçoit « introuvable » pour toute unité hostile. L'interface n'a jamais à lire `mission.units` pour compter ou afficher (`observeFriend(mission).units`).
+- L'IA tire par `engagement.ai.service.ts` (`chooseShot`) : elle choisit le contact et l'arme dans `observeHostile`, vérifie la ligne de tir avec `previewShot` (mêmes avertissements que le joueur) puis passe par `fire()`.
 - Ajouter une décision à l'IA : un fichier `nom.ai.service.ts` pur (observation en entrée, intention ou commande en sortie), un test dans `ai/tests/` avec la fixture `mission-fixture.model.ts`, et un test de non-divulgation si la décision lit un état.
 
 ## 5. Glossaire

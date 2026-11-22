@@ -185,7 +185,14 @@ describe('destruction (G-09-C4, AB-49)', () => {
     const { state, events } = progressProjectiles(start, sureHit(40));
     expect(unitOf(state, 'h')).toBeUndefined();
     expect(state.losses).toEqual([
-      { unitId: 'h', side: 'hostile', shipClass: 'frigate_da', cycle: 1 },
+      {
+        unitId: 'h',
+        side: 'hostile',
+        shipClass: 'frigate_da',
+        cycle: 1,
+        position: unitOf(start, 'h')!.position,
+        destroyedBy: 'friend',
+      },
     ]);
     expect(state.friendContacts).toEqual([]);
     expect(state.hostileContacts).toHaveLength(1);

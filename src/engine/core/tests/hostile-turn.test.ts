@@ -185,3 +185,44 @@ describe.each<MissionKind>(['naval_combat', 'escort'])('IA ennemie en partie (%s
     expect(closer).toBeGreaterThan(SEEDS.length * 0.75);
   });
 });
+
+describe("tirs de l'IA en partie (AB-50)", () => {
+  /** Joue jusqu'à `cycles` cycles, les alliés restant en place ; s'arrête à la fin de la mission. */
+  function playUntil(start: MissionState, cycles: number) {
+    let state = start;
+    let launches = 0;
+    let ended = false;
+    for (let i = 0; i < cycles && !ended; i++) {
+      const result = run(state, { type: 'END_CYCLE_EARLY' });
+      if (!result.ok) throw new Error('commande refusée');
+      if (result.state.status !== 'in_progress') {
+        ended = true;
+      } else {
+        state = result.state;
+        launches = state.nextLaunchNumber - 1;
+      }
+    }
+    return { state, launches };
+  }
+
+  /** Graine où les alliés, immobiles, croisent les ennemis : l'IA tire vers le cycle 13 (mesuré). */
+  const FIRING_SEED = 2;
+
+  it('tire sur un contact identifié, et ne montre au joueur que ce que le brouillard autorise', () => {
+    const { state, launches } = playUntil(launched('naval_combat', FIRING_SEED), 20);
+    expect(launches).toBeGreaterThan(0);
+    expect(state.projectiles.length).toBeGreaterThan(0);
+    // Tir hostile : jamais sur une zone suspecte, jamais d'événement « tir » pour le joueur.
+    expect(state.projectiles.every((p) => p.side === 'hostile' && !p.onSuspectZone)).toBe(true);
+    const seen = observeFriend(state).projectiles;
+    expect(JSON.stringify(seen)).not.toContain('targetId');
+    expect(seen.every((p) => p.route.length === 0)).toBe(true);
+  });
+
+  it('est reproductible : même graine, mêmes tirs', () => {
+    const first = playUntil(launched('naval_combat', FIRING_SEED), 20);
+    const second = playUntil(launched('naval_combat', FIRING_SEED), 20);
+    expect(second.state.projectiles).toEqual(first.state.projectiles);
+    expect(second.launches).toBe(first.launches);
+  });
+});

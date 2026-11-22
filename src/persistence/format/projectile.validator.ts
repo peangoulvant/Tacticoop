@@ -117,7 +117,7 @@ function checkProjectile(projectile: unknown, map: engine.GameMap): Problem {
 }
 
 /** Pertes : un navire détruit n'est plus une unité, et n'est consigné qu'une fois. */
-function checkLosses(state: Json): Problem {
+function checkLosses(state: Json, map: engine.GameMap): Problem {
   const { losses, units } = state;
   if (!Array.isArray(losses)) return 'pertes illisibles';
   const live = new Set((units as engine.Unit[]).map((u) => u.id));
@@ -128,7 +128,9 @@ function checkLosses(state: Json): Problem {
       !live.has(l.unitId) &&
       isOneOf(engine.SIDES, l.side) &&
       isShipClass(l.shipClass) &&
-      isPositive(l.cycle),
+      isPositive(l.cycle) &&
+      isHexOn(map, l.position) &&
+      isOneOf(engine.SIDES, l.destroyedBy),
   );
   if (!valid) return 'perte invalide';
   return new Set(losses.map((l: Json) => l.unitId)).size === losses.length
@@ -150,5 +152,5 @@ function checkProjectiles(state: Json, map: engine.GameMap): Problem {
 
 /** Projectiles en vol et pertes. */
 export function checkCombat(state: Json, map: engine.GameMap): Problem {
-  return checkProjectiles(state, map) ?? checkLosses(state);
+  return checkProjectiles(state, map) ?? checkLosses(state, map);
 }

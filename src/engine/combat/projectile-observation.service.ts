@@ -1,8 +1,9 @@
 import type { GameConfig } from '../config/game.config';
 import type { MissionState } from '../core/game.types';
-import { hexDistance } from '../map/hex.service';
+import { hexDistance, type Hex } from '../map/hex.service';
 import type { Side } from '../units/unit.model';
-import type { ObservedProjectile, Projectile } from './projectile.types';
+import type { ObservedProjectile, Projectile, ProjectileStatus } from './projectile.types';
+import { torpedoTrajectory } from './trajectory.service';
 
 /*
  * Ce qu'un camp sait des projectiles (AB-49). Les siens sont toujours connus, avec leur tracé
@@ -26,14 +27,37 @@ function isIdentifiedBy(
   );
 }
 
+/**
+ * Tracé restant d'un projectile du camp, jusqu'à la case visée (AB-49 4). Une torpille qui suit sa
+ * cible (`tracking`) a pour route interne le chemin vers la position **réelle** de la cible : le
+ * montrer révélerait un navire non identifié. Le tracé reste alors celui qui mène à la case visée,
+ * la dernière position connue ; il est vide si la torpille l'a dépassée ou ne la rejoint pas.
+ */
+function knownRoute(mission: MissionState, projectile: Projectile): Hex[] {
+  if (!projectile.tracking) return projectile.route;
+  return torpedoTrajectory(mission.map, projectile.position, projectile.aimedHex) ?? [];
+}
+
+/**
+ * Statut d'un projectile pour `side` (AB-51). Un projectile adverse est `unknown` : on n'en connaît
+ * que l'arme et la position. Pour les siens, un missile va vers sa case visée ; une torpille est
+ * `targeted` tant que son autodirecteur suit sa cible désignée, `searching` sinon.
+ */
+function statusOf(projectile: Projectile, side: Side): ProjectileStatus {
+  if (projectile.side !== side) return 'unknown';
+  if (projectile.weapon === 'missile') return 'targeted';
+  return projectile.tracking ? 'targeted' : 'searching';
+}
+
 /** Projectile tel que `side` le connaît : le tracé restant seulement pour ses propres projectiles. */
-function toObserved(projectile: Projectile, side: Side): ObservedProjectile {
+function toObserved(mission: MissionState, projectile: Projectile, side: Side): ObservedProjectile {
   return {
     id: projectile.id,
     weapon: projectile.weapon,
     side: projectile.side,
     position: projectile.position,
-    route: projectile.side === side ? projectile.route : [],
+    route: projectile.side === side ? knownRoute(mission, projectile) : [],
+    status: statusOf(projectile, side),
   };
 }
 
@@ -46,5 +70,5 @@ export function observedProjectiles(
   return [...mission.projectiles]
     .sort((a, b) => a.launchNumber - b.launchNumber)
     .filter((p) => p.side === side || isIdentifiedBy(mission, p, side, config))
-    .map((p) => toObserved(p, side));
+    .map((p) => toObserved(mission, p, side));
 }

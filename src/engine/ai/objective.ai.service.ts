@@ -4,6 +4,7 @@
  * carte, son objectif de mission, ses unités et ses propres contacts, jamais l'état réel.
  */
 import type { GameConfig } from '../config/game.config';
+import { plannedWeapon } from './engagement.ai.service';
 import { contactHexes, type ObservedContact } from '../detection/contact.types';
 import type { HostileObservation } from '../detection/observation.types';
 import { nearestNavigableHex } from '../map/game-map.service';
@@ -34,17 +35,20 @@ function nearestHexOfContact(unit: Unit, contact: ObservedContact): { hex: Hex; 
 }
 
 /**
- * Point du contact exploitable le plus proche de l'unité, ou `null` s'il n'y en a aucun.
- * Exemple : une zone de 7 cases dont la plus proche est à 6 hexagones de l'unité : cette case.
+ * Contact exploitable le plus proche de l'unité et sa case la plus proche, ou `null` s'il n'y en a
+ * aucun. Exemple : une zone de 7 cases dont la plus proche est à 6 hexagones de l'unité : cette case.
  */
-function contactAnchor(observation: HostileObservation, unit: Unit): Hex | null {
+function nearestContact(
+  observation: HostileObservation,
+  unit: Unit,
+): { contact: ObservedContact; hex: Hex } | null {
   const nearest = exploitableContacts(observation)
-    .map((contact) => nearestHexOfContact(unit, contact))
-    .reduce<{ hex: Hex; distance: number } | null>(
+    .map((contact) => ({ contact, ...nearestHexOfContact(unit, contact) }))
+    .reduce<{ contact: ObservedContact; hex: Hex; distance: number } | null>(
       (best, candidate) => (best && best.distance <= candidate.distance ? best : candidate),
       null,
     );
-  return nearest && nearest.hex;
+  return nearest && { contact: nearest.contact, hex: nearest.hex };
 }
 
 /**
@@ -87,16 +91,31 @@ function objectiveAnchor(observation: HostileObservation, unit: Unit, config: Ga
 }
 
 /**
- * Intention d'une unité (AB-38) : un contact exploitable d'abord, qu'elle approche jusqu'à sa
- * portée de balayage ; sinon l'objectif de la mission, qu'elle approche jusqu'à sa portée de
- * veille (elle y tient position). Les portées sont celles de l'unité : l'IA n'a pas de distance
- * d'arrêt propre.
+ * Distance d'arrêt devant un contact : la portée de l'arme que l'unité compte employer contre lui
+ * (AB-50, qui révise AB-42 3), sinon sa portée de balayage (zone, contact sans arme utilisable).
+ * Exemple : une frégate avec des missiles face à une frégate identifiée : 8 ; face à un
+ * sous-marin identifié avec des torpilles : 3 ; face à une zone : sa portée de balayage (6).
+ */
+function contactHoldDistance(unit: Unit, contact: ObservedContact, config: GameConfig): number {
+  const weapon = plannedWeapon(unit, contact);
+  if (weapon) return config.combat.weapons[weapon].range;
+  return config.ships[unit.shipClass].detection?.sweepRange ?? 0;
+}
+
+/**
+ * Intention d'une unité (AB-38) : un contact exploitable d'abord, qu'elle approche jusqu'à la
+ * portée de l'arme qu'elle compte employer (AB-50) ou, à défaut, de son balayage ; sinon
+ * l'objectif de la mission, qu'elle approche jusqu'à sa portée de veille (elle y tient position).
  */
 export function intentOf(observation: HostileObservation, unit: Unit, config: GameConfig): Intent {
   const detection = config.ships[unit.shipClass].detection;
-  const contact = contactAnchor(observation, unit);
-  if (contact) {
-    return { source: 'contact', anchor: contact, holdDistance: detection?.sweepRange ?? 0 };
+  const nearest = nearestContact(observation, unit);
+  if (nearest) {
+    return {
+      source: 'contact',
+      anchor: nearest.hex,
+      holdDistance: contactHoldDistance(unit, nearest.contact, config),
+    };
   }
   return {
     source: 'objective',

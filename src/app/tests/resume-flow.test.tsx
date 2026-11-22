@@ -35,7 +35,7 @@ beforeEach(() => {
   useSaveStore.setState({ found: null, writeFailed: false, lastSavedAt: null });
   act(() =>
     useSaveStore.getState().setFound({
-      schemaVersion: 7,
+      schemaVersion: 8,
       savedAt: '2026-11-06T12:30:00.000Z',
       state: savedMission(),
       events: [
