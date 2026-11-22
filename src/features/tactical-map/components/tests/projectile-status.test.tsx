@@ -30,7 +30,7 @@ describe('statut affiché sur chaque projectile', () => {
             shot('P-3', 'missile', 'hostile', 'unknown', 5),
           ]}
           occupiedHexes={[]}
-          headings={new Map()}
+          orientations={new Map()}
           selectedId={null}
         />
       </svg>,

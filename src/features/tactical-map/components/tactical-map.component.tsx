@@ -18,7 +18,7 @@ import { ProjectileOverlay, ProjectileRouteOverlay } from './projectile-overlay.
 import { SweepOverlay } from './sweep-overlay.component';
 import { WreckOverlay } from './wreck-overlay.component';
 import { nextSelectable, selectablesAt } from '../services/cell-selection.service';
-import { useProjectileHeadings } from '../services/use-projectile-headings';
+import { useProjectileOrientations } from '../services/use-projectile-orientations';
 import { useMapView } from '../services/use-map-view';
 
 /**
@@ -51,7 +51,7 @@ export function TacticalMap({
   } = useSelectionStore();
   const content = mapViewBox(map);
 
-  const headings = useProjectileHeadings(projectiles);
+  const orientations = useProjectileOrientations(projectiles);
   // Cases où un projectile ne se centre pas : unités alliées et navires hostiles identifiés.
   const occupiedHexes = [
     ...units.map((u) => u.position),
@@ -137,7 +137,7 @@ export function TacticalMap({
               <ProjectileOverlay
                 projectiles={projectiles}
                 occupiedHexes={occupiedHexes}
-                headings={headings}
+                orientations={orientations}
                 selectedId={selectedProjectileId}
               />
             </g>

@@ -3,7 +3,7 @@ import { palette } from '../../../app/theme.config';
 import * as assets from '../../../shared/assets.config';
 import * as labels from '../../../shared/ui.label';
 import { hexCenter, pathPoints } from '../services/hex-geometry.service';
-import type { HeadingMemory } from '../services/projectile-heading.service';
+import type { OrientationMemory } from '../services/projectile-orientation.service';
 
 /*
  * Projectiles sur la carte (AB-49) : les siens, et ceux des hostiles identifiés d'office. Chacun
@@ -123,13 +123,13 @@ function ProjectileToken({
 export function ProjectileOverlay({
   projectiles,
   occupiedHexes,
-  headings,
+  orientations,
   selectedId,
 }: {
   projectiles: readonly engine.ObservedProjectile[];
   /** Cases déjà occupées par une unité ou un navire identifié : le projectile n'y est pas centré. */
   occupiedHexes: readonly engine.Hex[];
-  headings: ReadonlyMap<string, HeadingMemory>;
+  orientations: ReadonlyMap<string, OrientationMemory>;
   selectedId: string | null;
 }) {
   return (
@@ -140,7 +140,7 @@ export function ProjectileOverlay({
           projectile={projectile}
           all={projectiles}
           occupied={occupiedHexes.some((hex) => engine.sameHex(hex, projectile.position))}
-          degrees={headings.get(projectile.id)?.degrees ?? null}
+          degrees={orientations.get(projectile.id)?.degrees ?? null}
           selected={projectile.id === selectedId}
         />
       ))}
