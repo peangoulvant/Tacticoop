@@ -10,7 +10,7 @@ import { hexCenter } from './hex-geometry.service';
  */
 
 /** Ce que l'on retient d'un projectile entre deux affichages : où il était, et son sens de marche. */
-export interface HeadingMemory {
+export interface OrientationMemory {
   position: engine.Hex;
   /** Degrés, 0 = vers la droite de l'écran ; `null` tant qu'aucun sens n'est connu. */
   degrees: number | null;
@@ -24,8 +24,8 @@ function angleBetween(from: engine.Hex, to: engine.Hex): number {
 }
 
 /** Sens de marche d'un projectile : son déplacement depuis `before`, sinon le sens retenu, sinon son tracé. */
-function headingOf(
-  before: HeadingMemory | undefined,
+function orientationOf(
+  before: OrientationMemory | undefined,
   projectile: engine.ObservedProjectile,
 ): number | null {
   if (before && !engine.sameHex(before.position, projectile.position)) {
@@ -44,16 +44,16 @@ function headingOf(
  *
  * Exemple : un missile hostile vu en (5, 3) puis en (3, 3) : il va vers la gauche (180°).
  */
-export function nextHeadings(
-  previous: ReadonlyMap<string, HeadingMemory>,
+export function nextOrientations(
+  previous: ReadonlyMap<string, OrientationMemory>,
   projectiles: readonly engine.ObservedProjectile[],
-): Map<string, HeadingMemory> {
+): Map<string, OrientationMemory> {
   return new Map(
     projectiles.map((projectile) => [
       projectile.id,
       {
         position: projectile.position,
-        degrees: headingOf(previous.get(projectile.id), projectile),
+        degrees: orientationOf(previous.get(projectile.id), projectile),
       },
     ]),
   );

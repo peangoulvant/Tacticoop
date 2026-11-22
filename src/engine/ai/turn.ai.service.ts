@@ -62,8 +62,9 @@ function moveTowardIntent(mission: MissionState, unitId: string, config: GameCon
  * (AB-50, `PROPOSÉ`). La portée se mesure depuis la position courante, comme pour le joueur.
  */
 function fireIfPossible(mission: MissionState, unitId: string, config: GameConfig): MissionState {
-  const unit = observeHostile(mission).units.find((u) => u.id === unitId);
-  const shot = unit && chooseShot(mission, observeHostile(mission), unit, config);
+  const observation = observeHostile(mission);
+  const unit = observation.units.find((u) => u.id === unitId);
+  const shot = unit && chooseShot(mission, observation, unit, config);
   return shot
     ? stateAfter(fire(mission, { unitId, ...shot }, config, 'hostile'), mission)
     : mission;

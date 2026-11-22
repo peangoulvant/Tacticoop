@@ -4,6 +4,7 @@ import type { MissionState } from '../../core/game.types';
 import { fire, sweep } from '../../core/unit-commands.service';
 import { observeHostile } from '../../detection/observation.service';
 import { identified, suspectZone } from '../../combat/tests/combat-fixture.model';
+import type { ObservedContact } from '../../detection/contact.types';
 import { chooseShot, isOutOfAmmo, plannedWeapon } from '../engagement.ai.service';
 import { intentOf } from '../objective.ai.service';
 import { reactToFriendActivation } from '../turn.ai.service';
@@ -36,27 +37,38 @@ function shotOf(m: MissionState) {
 }
 
 describe('arme voulue contre un contact (AB-50)', () => {
-  const frigate = { ...identified('C-1', { col: 4, row: 4 }, 'f'), stale: false };
-  const submarine = { ...identified('C-2', { col: 4, row: 4 }, 'f', 'submarine'), stale: false };
+  const frigate: Extract<ObservedContact, { kind: 'identified' }> = {
+    kind: 'identified',
+    id: 'C-1',
+    cycle: 1,
+    targetType: 'frigate',
+    position: { col: 4, row: 4 },
+    stale: false,
+  };
+  const submarine: ObservedContact = { ...frigate, id: 'C-2', targetType: 'submarine' };
   const fremm = makeUnit('h', 'hostile', 'fremm', { col: 10, row: 4 });
 
   it('missile contre un navire de surface, torpille contre un sous-marin', () => {
-    expect(plannedWeapon(fremm, frigate as never)).toBe('missile');
-    expect(plannedWeapon(fremm, submarine as never)).toBe('torpedo');
+    expect(plannedWeapon(fremm, frigate)).toBe('missile');
+    expect(plannedWeapon(fremm, submarine)).toBe('torpedo');
   });
 
   it('aucune arme de repli : un sous-marin sans missile ne tire pas sur une frégate', () => {
     const sub = makeUnit('h', 'hostile', 'submarine', { col: 10, row: 4 });
-    expect(plannedWeapon(sub, frigate as never)).toBeNull();
+    expect(plannedWeapon(sub, frigate)).toBeNull();
     expect(isOutOfAmmo(sub)).toBe(false);
     expect(isOutOfAmmo({ ...sub, torpedoes: 0 })).toBe(true);
   });
 
   it('jamais sur une zone ni sur un contact ancien', () => {
-    const zone = { kind: 'suspect', id: 'C-3', cycle: 1, zone: [{ col: 4, row: 4 }] };
-    const stale = { ...frigate, stale: true };
-    expect(plannedWeapon(fremm, zone as never)).toBeNull();
-    expect(plannedWeapon(fremm, stale as never)).toBeNull();
+    const zone: ObservedContact = {
+      kind: 'suspect',
+      id: 'C-3',
+      cycle: 1,
+      zone: [frigate.position],
+    };
+    expect(plannedWeapon(fremm, zone)).toBeNull();
+    expect(plannedWeapon(fremm, { ...frigate, stale: true })).toBeNull();
   });
 });
 

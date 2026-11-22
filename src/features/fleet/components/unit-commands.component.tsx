@@ -17,16 +17,17 @@ function unavailabilityReason(mission: engine.MissionState, unit: engine.Unit): 
   return `${prefix} : ${engine.BLOCKER_MESSAGES[blocker]}`;
 }
 
-/** Motif empêchant le balayage maintenant, ou `null` s'il est possible (G-07.7, AB-34). */
-function sweepBlocker(
+/** Motif empêchant l'action spéciale `kind` (balayage ou tir) maintenant, ou `null` si elle est possible (G-07.7, AB-34, AB-45). */
+function actionBlocker(
   mission: engine.MissionState,
   unit: engine.Unit,
+  kind: engine.SpecialActionKind,
 ): engine.SpecialActionBlocker | null {
   const observation = engine.observeFriend(mission);
   return engine.specialActionBlocker(
     observation.units,
     unit,
-    'sweep',
+    kind,
     observation.cycle,
     engine.defaultConfig,
   );
@@ -38,25 +39,9 @@ function sweepBlocker(
  * elle, se lit sur le bouton (icône et compte à rebours, `CooldownBadge`).
  */
 function sweepOwnReason(mission: engine.MissionState, unit: engine.Unit): string | null {
-  const blocker = sweepBlocker(mission, unit);
+  const blocker = actionBlocker(mission, unit, 'sweep');
   if (blocker !== 'SPECIAL_ACTION_USED' && blocker !== 'NO_SENSORS') return null;
   return `${labels.sweepText.unavailable} : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]}`;
-}
-
-/** Motif empêchant le tir de `weapon` maintenant, ou `null` s'il est possible (AB-45). */
-function fireBlocker(
-  mission: engine.MissionState,
-  unit: engine.Unit,
-  weapon: engine.WeaponKind,
-): engine.SpecialActionBlocker | null {
-  const observation = engine.observeFriend(mission);
-  return engine.specialActionBlocker(
-    observation.units,
-    unit,
-    engine.FIRE_ACTION[weapon],
-    observation.cycle,
-    engine.defaultConfig,
-  );
 }
 
 /**
@@ -69,7 +54,7 @@ function fireOwnReason(
   unit: engine.Unit,
   weapon: engine.WeaponKind,
 ): string | null {
-  if (fireBlocker(mission, unit, weapon) !== 'NO_AMMO') return null;
+  if (actionBlocker(mission, unit, engine.FIRE_ACTION[weapon]) !== 'NO_AMMO') return null;
   return `${labels.fireButtonLabel[weapon]} : ${engine.SPECIAL_ACTION_BLOCKER_MESSAGES.NO_AMMO}`;
 }
 
@@ -86,8 +71,8 @@ function FireButton({
   unit: engine.Unit;
   weapon: engine.WeaponKind;
 }) {
-  const disabled = mission.outcome !== null || fireBlocker(mission, unit, weapon) !== null;
-  const blocker = fireBlocker(mission, unit, weapon);
+  const blocker = actionBlocker(mission, unit, engine.FIRE_ACTION[weapon]);
+  const disabled = mission.outcome !== null || blocker !== null;
   const reason =
     blocker === 'SPECIAL_ACTION_USED' || blocker === 'NO_AMMO'
       ? engine.SPECIAL_ACTION_BLOCKER_MESSAGES[blocker]
@@ -129,7 +114,7 @@ function CooldownBadge({ cycles }: { cycles: number }) {
  */
 function SweepButton({ mission, unit }: { mission: engine.MissionState; unit: engine.Unit }) {
   const observation = engine.observeFriend(mission);
-  const blocker = sweepBlocker(mission, unit);
+  const blocker = actionBlocker(mission, unit, 'sweep');
   const disabled = mission.outcome !== null || blocker !== null;
   const cooling = blocker === 'ON_COOLDOWN';
   const remaining = engine.cooldownRemaining(
