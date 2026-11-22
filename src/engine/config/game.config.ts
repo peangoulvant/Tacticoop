@@ -111,7 +111,7 @@ export const FIRE_ACTION: Record<WeaponKind, SpecialActionKind> = {
  *
  * Échelle de référence : 1 hexagone ≈ 20 km et 1 cycle ≈ 1 heure (un mouvement de 3 hexagones fait
  * environ 32 nœuds). Missile 8 = 160 km (Exocet MM40 bloc 3, NSM : environ 180 km) ; torpille
- * 3 = 60 km (torpilles lourdes : environ 50 km). Un missile porte plus loin que les capteurs du
+ * 4 = 80 km (torpilles lourdes : environ 50 km ; valeur réglée par le propriétaire, AB-53). Un missile porte plus loin que les capteurs du
  * tireur : la cible est désignée par un contact du camp, comme avec un hélicoptère.
  */
 export interface WeaponSpec {

@@ -94,7 +94,7 @@ function objectiveAnchor(observation: HostileObservation, unit: Unit, config: Ga
  * Distance d'arrêt devant un contact : la portée de l'arme que l'unité compte employer contre lui
  * (AB-50, qui révise AB-42 3), sinon sa portée de balayage (zone, contact sans arme utilisable).
  * Exemple : une frégate avec des missiles face à une frégate identifiée : 8 ; face à un
- * sous-marin identifié avec des torpilles : 3 ; face à une zone : sa portée de balayage (6).
+ * sous-marin identifié avec des torpilles : 4 ; face à une zone : sa portée de balayage (6).
  */
 function contactHoldDistance(unit: Unit, contact: ObservedContact, config: GameConfig): number {
   const weapon = plannedWeapon(unit, contact);
