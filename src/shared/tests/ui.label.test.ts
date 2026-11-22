@@ -178,6 +178,21 @@ describe('texte du journal de chaque événement (D-11)', () => {
     ).toBe('Une torpille a détruit un navire hostile');
   });
 
+  it('ajoute le composant mis hors service d’une unité alliée touchée (AB-54)', () => {
+    const friend = { side: 'friend', unitId: 'a', shipClass: 'fremm' } as const;
+    expect(
+      eventLabel({
+        type: 'PROJECTILE_IMPACT',
+        cycle: 1,
+        projectileId: 'P-1',
+        weapon: 'torpedo',
+        result: 'hit',
+        victim: friend,
+        componentDisabled: 'propulsion',
+      }),
+    ).toBe('Une torpille a touché la cible FREMM multimission : propulsion hors service');
+  });
+
   it('annonce la fin de mission avec sa cause', () => {
     expect(eventLabel({ type: 'MISSION_WON', cycle: 2, cause: 'hostile_fleet_destroyed' })).toBe(
       'Mission réussie : La flotte ennemie est détruite.',

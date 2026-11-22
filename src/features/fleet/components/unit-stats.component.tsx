@@ -2,6 +2,7 @@ import { Box, LinearProgress, Stack, Typography } from '@mui/material';
 import * as engine from '../../../engine';
 import { palette } from '../../../app/theme.config';
 import * as assets from '../../../shared/assets.config';
+import * as labels from '../../../shared/ui.label';
 
 /** Barre de PV : lit l'état de l'unité, sans le copier. */
 export function HpBar({ unit }: { unit: engine.Unit }) {
@@ -30,7 +31,37 @@ export function HpBar({ unit }: { unit: engine.Unit }) {
   );
 }
 
-/** Stocks actuels ; les capteurs, la propulsion et la coque de la maquette ne sont pas encore modélisés. */
+/**
+ * État des quatre composants d'une unité alliée (SF-03.6, SF-05 §5) : en service ou hors service,
+ * jamais montré pour un navire hostile. Lit `Unit.disabledComponents`, sans rien calculer.
+ */
+export function ComponentLine({ unit }: { unit: engine.Unit }) {
+  return (
+    <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+      {engine.COMPONENT_KINDS.map((kind) => {
+        const disabled = engine.isDisabled(unit, kind);
+        const name = labels.componentLabel[kind];
+        return (
+          <Typography
+            key={kind}
+            variant="caption"
+            aria-label={`${name} ${disabled ? 'hors service' : 'en service'}`}
+            title={disabled ? `${name} hors service` : `${name} en service`}
+            sx={{
+              color: disabled ? palette.enemy : palette.good,
+              fontWeight: disabled ? 700 : 400,
+              textDecoration: disabled ? 'line-through' : 'none',
+            }}
+          >
+            {name}
+          </Typography>
+        );
+      })}
+    </Box>
+  );
+}
+
+/** Stocks actuels (missiles, torpilles, hélicoptères). */
 export function StockLine({ unit }: { unit: engine.Unit }) {
   const stocks = [
     { label: 'Missiles', icon: assets.weaponIcon.missile, value: unit.missiles },

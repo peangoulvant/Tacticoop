@@ -14,6 +14,7 @@ import {
   openSea,
   rowRoute,
   sureHit,
+  sureHitWithFailure,
   sureMiss,
 } from './combat-fixture.model';
 
@@ -285,6 +286,48 @@ describe('torpille : première unité compatible rencontrée en chemin (G-09 §2
     expect(unitOf(state, 'ally')!.hp).toBe(60);
     expect(unitOf(state, 'h')!.hp).toBe(100);
     expect(state.projectiles).toEqual([]);
+  });
+});
+
+describe('pannes de composant (G-09 §3.2, AB-54)', () => {
+  it('une unité alliée touchée perd un composant, annoncé au journal', () => {
+    const start = mission([ally('ally', 3)], [missileTo(3)]);
+    const { state, events } = progress(start, 2, sureHitWithFailure(40));
+    const damaged = unitOf(state, 'ally')!;
+    expect(damaged.hp).toBe(60);
+    expect(damaged.disabledComponents).toHaveLength(1);
+    expect(events).toEqual([
+      expect.objectContaining({
+        result: 'hit',
+        componentDisabled: damaged.disabledComponents[0],
+      }),
+    ]);
+  });
+
+  it('un navire hostile touché perd un composant, sans que le journal le dise (SF-05 §5)', () => {
+    const start = mission([hostile('h', 2)], [missileTo(2)]);
+    const { state, events } = progressProjectiles(start, sureHitWithFailure(40));
+    expect(unitOf(state, 'h')!.disabledComponents).toHaveLength(1);
+    expect(events).toEqual([expect.objectContaining({ victim: { side: 'hostile' } })]);
+    expect(events[0]).not.toHaveProperty('componentDisabled');
+  });
+
+  it('les impacts successifs sur la même unité mettent des composants différents hors service', () => {
+    const start = mission(
+      [ally('ally', 3)],
+      [missileTo(3), missileTo(3, { id: 'P-2', launchNumber: 2 })],
+    );
+    const { state } = progress(start, 2, sureHitWithFailure(10));
+    const components = unitOf(state, 'ally')!.disabledComponents;
+    expect(components).toHaveLength(2);
+    expect(new Set(components).size).toBe(2);
+  });
+
+  it('une unité détruite est retirée sans traitement de composant', () => {
+    const start = mission([ally('ally', 3)], [missileTo(3)]);
+    const { state, events } = progress(start, 2, sureHitWithFailure(500));
+    expect(unitOf(state, 'ally')).toBeUndefined();
+    expect(events[0]).not.toHaveProperty('componentDisabled');
   });
 });
 

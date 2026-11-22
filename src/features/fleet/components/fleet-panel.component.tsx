@@ -5,7 +5,7 @@ import { useSelectionStore } from '../../../store/selection.store';
 import * as assets from '../../../shared/assets.config';
 import * as labels from '../../../shared/ui.label';
 import { ActivationBadge } from './activation-badge.component';
-import { HpBar, StockLine } from './unit-stats.component';
+import { ComponentLine, HpBar, StockLine } from './unit-stats.component';
 
 /** Largeur minimale d'une carte : assez large pour que le nom et l'état tiennent sur une ligne. */
 const CARD_WIDTH = 270;
@@ -91,6 +91,7 @@ export function FleetPanel({ units }: { units: engine.Unit[] }) {
                 sx={{ display: 'block', width: '100%', height: 36, objectFit: 'contain', my: 0.5 }}
               />
               <HpBar unit={unit} />
+              <ComponentLine unit={unit} />
               <StockLine unit={unit} />
             </Paper>
           );

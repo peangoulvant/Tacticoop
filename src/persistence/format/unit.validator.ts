@@ -35,6 +35,16 @@ function checkSpecialActionCycles(unit: Json): Problem {
   return valid ? null : `usages d’actions spéciales invalides pour l’unité ${String(unit.id)}`;
 }
 
+/** Composants hors service : une liste de composants connus, sans doublon (AB-54). */
+function checkDisabledComponents(unit: Json): Problem {
+  const list = unit.disabledComponents;
+  const valid =
+    Array.isArray(list) &&
+    list.every((kind) => isOneOf(engine.COMPONENT_KINDS, kind)) &&
+    new Set(list).size === list.length;
+  return valid ? null : `composants hors service invalides pour l’unité ${String(unit.id)}`;
+}
+
 /** État d'activation et drapeaux : activation connue, déplacement et action spéciale booléens. */
 function checkActivationFlags(unit: Json): Problem {
   if (!isOneOf(engine.ACTIVATION_STATUSES, unit.activation)) return 'état d’activation inconnu';
@@ -47,7 +57,9 @@ function checkUnitState(unit: Json, map: engine.GameMap): Problem {
   if (!UNIT_COUNTERS.every((key) => isCount(unit[key]))) {
     return `valeurs numériques invalides pour l’unité ${String(unit.id)}`;
   }
-  return checkActivationFlags(unit) ?? checkSpecialActionCycles(unit);
+  return (
+    checkActivationFlags(unit) ?? checkSpecialActionCycles(unit) ?? checkDisabledComponents(unit)
+  );
 }
 
 function checkUnit(unit: unknown, map: engine.GameMap): Problem {

@@ -54,6 +54,13 @@ export interface SpecialActionSpec {
   cooldownCycles: number;
 }
 
+/**
+ * Composants suivis de chaque navire (G-09 §3.1, SF-05 §5) : propulsion, capteurs, armement et
+ * coque. L'état d'un composant est binaire : fonctionnel ou hors service.
+ */
+export const COMPONENT_KINDS = ['propulsion', 'sensors', 'armament', 'hull'] as const;
+export type ComponentKind = (typeof COMPONENT_KINDS)[number];
+
 /** Classes de frégate que l'ennemi peut aligner (AB-11). */
 export type HostileFrigateClass = Extract<ShipClass, 'fremm' | 'frigate_da' | 'frigate_asm'>;
 
@@ -123,6 +130,11 @@ export interface WeaponSpec {
   damage: { min: number; max: number };
   /** Probabilité d'impact sur une unité compatible rencontrée. */
   impactProbability: number;
+  /**
+   * Probabilité qu'un impact réussi mette hors service un composant encore fonctionnel (G-09 §3.2,
+   * AB-54). Un seul tirage par impact : au plus un composant tombe en panne.
+   */
+  componentFailureProbability: number;
   /** Hexagones que le projectile peut parcourir avant d'être neutralisé ; `null` : jusqu'à la case visée. */
   autonomy: number | null;
   /**
@@ -285,6 +297,7 @@ export const defaultConfig: GameConfig = {
         progression: 2,
         damage: { min: 30, max: 50 },
         impactProbability: 0.75,
+        componentFailureProbability: 0.5,
         autonomy: null,
         acquisitionRange: 0,
       },
@@ -293,6 +306,7 @@ export const defaultConfig: GameConfig = {
         progression: 1,
         damage: { min: 40, max: 60 },
         impactProbability: 0.7,
+        componentFailureProbability: 0.5,
         autonomy: 6,
         acquisitionRange: 2,
       },

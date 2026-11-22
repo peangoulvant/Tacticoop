@@ -71,13 +71,14 @@ describe('defaultConfig', () => {
     expect(bypassRowRatios.every((ratio) => ratio > 0 && ratio < 1)).toBe(true);
   });
 
-  it("reprend les paramètres d'armes du lot 1 (D-05, AB-47)", () => {
+  it("reprend les paramètres d'armes (D-05, AB-47, AB-54)", () => {
     const { weapons, suspectZoneImpactPenalty, projectileDetectionRange } = defaultConfig.combat;
     expect(weapons.missile).toEqual({
       range: 8,
       progression: 2,
       damage: { min: 30, max: 50 },
       impactProbability: 0.75,
+      componentFailureProbability: 0.5,
       autonomy: null,
       acquisitionRange: 0,
     });
@@ -86,6 +87,7 @@ describe('defaultConfig', () => {
       progression: 1,
       damage: { min: 40, max: 60 },
       impactProbability: 0.7,
+      componentFailureProbability: 0.5,
       autonomy: 6,
       acquisitionRange: 2,
     });

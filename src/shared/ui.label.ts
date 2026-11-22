@@ -410,6 +410,14 @@ const eventDescribers: { [T in engine.GameEvent['type']]: (event: EventOf<T>) =>
  *
  *****************************/
 
+/** Nom des quatre composants d'un navire (G-09 §3.1), pour la fiche d'unité et le journal. */
+export const componentLabel: Record<engine.ComponentKind, string> = {
+  propulsion: 'Propulsion',
+  sensors: 'Capteurs',
+  armament: 'Armement',
+  hull: 'Coque',
+};
+
 /** Arme tirée, au masculin ou au féminin selon l'usage du journal. */
 const weaponLabel: Record<engine.WeaponKind, string> = {
   missile: 'missile',
@@ -468,7 +476,10 @@ function impactLabel(event: EventOf<'PROJECTILE_IMPACT'>): string {
   const subject = weaponSubject[event.weapon];
   const verb = { hit: 'a touché', missed: 'a manqué', destroyed: 'a détruit' }[event.result];
   if (event.victim.side === 'hostile') return `${subject} ${verb} un navire hostile`;
-  return `${subject} ${verb} la cible ${shipLabelOf(event.victim.shipClass)}`;
+  const text = `${subject} ${verb} la cible ${shipLabelOf(event.victim.shipClass)}`;
+  return event.componentDisabled
+    ? `${text} : ${componentLabel[event.componentDisabled].toLowerCase()} hors service`
+    : text;
 }
 
 /** Texte du journal pour n'importe quel événement du moteur. */

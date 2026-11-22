@@ -11,7 +11,7 @@ import { checkMissionState } from './save.validator';
  * activables par l'IA (AB-39) ; la version 7 ajoute les projectiles et les pertes (AB-44 à AB-49) ; la version 8 ajoute la case et l'auteur de chaque perte, pour l'épave (AB-52). Une autre version, les versions 1 à 7 comprises, est refusée : aucune migration n'existe en V1
  * (AB-08).
  */
-export const SAVE_SCHEMA_VERSION = 8;
+export const SAVE_SCHEMA_VERSION = 9;
 
 /** Pourquoi une sauvegarde est refusée (diagnostic ; aucun message n'est affiché au joueur, voir AB-08). */
 export const SaveErrorCode = {

@@ -14,7 +14,12 @@
  * accepté produit un état où la FREMM est en (4, 2) et l'événement UNIT_MOVED.
  */
 
-import type { PurchasableShipClass, ShipClass, WeaponKind } from '../config/game.config';
+import type {
+  ComponentKind,
+  PurchasableShipClass,
+  ShipClass,
+  WeaponKind,
+} from '../config/game.config';
 import type { FireRefusal, Loss, Projectile, ShotTarget } from '../combat/projectile.types';
 import type { Contact, Identification } from '../detection/contact.types';
 import type { GameMap } from '../map/game-map.service';
@@ -161,6 +166,8 @@ export type GameEvent =
       weapon: WeaponKind;
       result: 'hit' | 'missed' | 'destroyed';
       victim: { side: 'friend'; unitId: string; shipClass: ShipClass } | { side: 'hostile' };
+      /** Composant mis hors service par l'impact : seulement pour une unité alliée (AB-54). */
+      componentDisabled?: ComponentKind;
     }
   /**
    * Projectile resté sans effet (fin de portée, obstacle, case visée atteinte, tir manqué), annoncé

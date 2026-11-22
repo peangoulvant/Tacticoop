@@ -30,9 +30,23 @@ export function withWeapons(patch: Partial<Record<WeaponKind, Partial<WeaponSpec
   };
 }
 
-/** Tout impact réussit, et inflige exactement `damage` PV. */
+/** Tout impact réussit et inflige exactement `damage` PV, sans jamais mettre de composant en panne. */
 export function sureHit(damage = 40): GameConfig {
-  const fixed = { impactProbability: 1, damage: { min: damage, max: damage } };
+  const fixed = {
+    impactProbability: 1,
+    componentFailureProbability: 0,
+    damage: { min: damage, max: damage },
+  };
+  return withWeapons({ missile: fixed, torpedo: fixed });
+}
+
+/** Tout impact réussit, inflige exactement `damage` PV et met toujours un composant en panne. */
+export function sureHitWithFailure(damage = 40): GameConfig {
+  const fixed = {
+    impactProbability: 1,
+    componentFailureProbability: 1,
+    damage: { min: damage, max: damage },
+  };
   return withWeapons({ missile: fixed, torpedo: fixed });
 }
 

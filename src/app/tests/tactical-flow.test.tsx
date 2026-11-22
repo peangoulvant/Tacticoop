@@ -108,6 +108,26 @@ async function startAndSelectFrigate(state: engine.MissionState) {
   return user;
 }
 
+describe('état des composants (SF-03.6, AB-54)', () => {
+  it('montre sur la fiche les quatre composants, ceux hors service signalés', async () => {
+    const base = mission(HOSTILE_FAR, 1);
+    const damaged: engine.MissionState = {
+      ...base,
+      units: base.units.map((u) =>
+        u.id === 'friend-frigate_da-1' ? { ...u, disabledComponents: ['sensors', 'hull'] } : u,
+      ),
+    };
+    await startAndSelectFrigate(damaged);
+    // La fiche d'unité et la carte de la frégate affichent chacune l'état ; le sous-marin intact
+    // (carte seule) ajoute un composant en service.
+    expect(screen.getAllByLabelText('Capteurs hors service')).toHaveLength(2);
+    expect(screen.getAllByLabelText('Coque hors service')).toHaveLength(2);
+    expect(screen.getAllByLabelText('Propulsion en service')).toHaveLength(3);
+    expect(screen.getAllByLabelText('Armement en service')).toHaveLength(3);
+    expect(screen.queryByLabelText('Armement hors service')).not.toBeInTheDocument();
+  });
+});
+
 describe('commandes et déplacement', () => {
   it('annule un déplacement sans rien consommer, puis le confirme et engage l’activation', async () => {
     const user = await startAndSelectFrigate(mission(HOSTILE_FAR, 1));

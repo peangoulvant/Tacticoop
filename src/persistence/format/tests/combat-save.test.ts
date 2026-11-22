@@ -242,6 +242,34 @@ describe('refus d’un combat incohérent', () => {
     );
   });
 
+  it('accepte le composant hors service d’une unité alliée touchée, et le refuse ailleurs (AB-54)', () => {
+    const friend: engine.GameEvent = {
+      type: 'PROJECTILE_IMPACT',
+      cycle: 1,
+      projectileId: 'P-1',
+      weapon: 'missile',
+      result: 'hit',
+      victim: { side: 'friend', unitId: 'a', shipClass: 'fremm' },
+      componentDisabled: 'sensors',
+    };
+    const roundTrip = parseSave(serializeSave(combatMission(), [friend], SAVED_AT));
+    expect(roundTrip.ok && roundTrip.save.events).toEqual([friend]);
+    const tamper = (mutate: (e: Tampered) => void) =>
+      parseTampered((s) => mutate(s.events[0]), [structuredClone(friend)]);
+    expectInvalid(
+      tamper((e) => (e.componentDisabled = 'radar')),
+      /événement/,
+    );
+    expectInvalid(
+      tamper((e) => (e.victim = { side: 'hostile' })),
+      /événement/,
+    );
+    expectInvalid(
+      tamper((e) => (e.result = 'missed')),
+      /événement/,
+    );
+  });
+
   it('refuse un événement de combat altéré', () => {
     const bad: engine.GameEvent = {
       type: 'PROJECTILE_IMPACT',

@@ -1,4 +1,4 @@
-import type { GameConfig } from '../config/game.config';
+import type { ComponentKind, GameConfig } from '../config/game.config';
 import type { GameEvent, MissionState, Progress } from '../core/game.types';
 import { restoreRng, type Rng } from '../core/rng.service';
 import { removeIdentifiedContactsOf } from '../detection/side-contacts.service';
@@ -164,14 +164,16 @@ function detectedEvent(state: MissionState, projectile: Projectile): GameEvent {
 
 /**
  * Événement du journal du joueur pour un impact, ou aucun (AB-49) : toute tentative sur une unité
- * alliée ; seulement un impact réussi ou une destruction sur un navire hostile, annoncé sans type
- * ni classe ; jamais ce que fait l'IA à ses propres navires.
+ * alliée, avec le composant mis hors service s'il y en a un ; seulement un impact réussi ou une
+ * destruction sur un navire hostile, annoncé sans type ni classe ni composant (SF-05 §5) ; jamais
+ * ce que fait l'IA à ses propres navires.
  */
 function impactEvents(
   state: MissionState,
   projectile: Projectile,
   unit: Unit,
   result: ImpactResult,
+  disabled: ComponentKind | null,
 ): GameEvent[] {
   const base = {
     type: 'PROJECTILE_IMPACT' as const,
@@ -181,7 +183,8 @@ function impactEvents(
     result,
   };
   if (unit.side === 'friend') {
-    return [{ ...base, victim: { side: 'friend', unitId: unit.id, shipClass: unit.shipClass } }];
+    const victim = { side: 'friend' as const, unitId: unit.id, shipClass: unit.shipClass };
+    return [{ ...base, victim, ...(disabled && { componentDisabled: disabled }) }];
   }
   return projectile.side === 'friend' && result !== 'missed'
     ? [{ ...base, victim: { side: 'hostile' } }]
@@ -240,7 +243,10 @@ function resolveImpactOnArrival(
   const impact = attemptImpact(projectile, unit, config, rng);
   const next: Progress = {
     state: applyImpact(acc.state, projectile, unit, impact.unit),
-    events: [...acc.events, ...impactEvents(acc.state, projectile, unit, impact.result)],
+    events: [
+      ...acc.events,
+      ...impactEvents(acc.state, projectile, unit, impact.result, impact.disabled),
+    ],
   };
   return { acc: next, projectile: impact.result === 'missed' ? projectile : null };
 }

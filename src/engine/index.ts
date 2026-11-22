@@ -22,11 +22,12 @@ export type {
 export {
   defaultConfig,
   FIRE_ACTION,
+  COMPONENT_KINDS,
   PURCHASABLE_CLASSES,
   SPECIAL_ACTION_KINDS,
   WEAPON_KINDS,
 } from './config/game.config';
-export type { WeaponKind } from './config/game.config';
+export type { ComponentKind, WeaponKind } from './config/game.config';
 export type {
   FireRefusal,
   Loss,
@@ -72,7 +73,7 @@ export type { Hex } from './map/hex.service';
 export { AXIAL_DIRECTIONS, hexDistance, sameHex } from './map/hex.service';
 export { TERRAINS } from './map/terrain.model';
 export type { Terrain } from './map/terrain.model';
-export { ACTIVATION_STATUSES, SIDES } from './units/unit.model';
+export { ACTIVATION_STATUSES, SIDES, isDisabled } from './units/unit.model';
 export type { ActivationStatus, Side, Unit } from './units/unit.model';
 export { MOVE_REFUSAL_MESSAGES, planMove, reachableHexes } from './units/unit-movement.service';
 export {

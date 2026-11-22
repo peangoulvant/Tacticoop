@@ -127,10 +127,10 @@ describe('refus du contenu illisible ou de version inconnue', () => {
 
   it('refuse une version inconnue, avec son numéro', () => {
     const result = parseTampered('escort', (save) => {
-      save.schemaVersion = 9;
+      save.schemaVersion = 10;
     });
     expect(result).toMatchObject({ ok: false, code: SaveErrorCode.UNSUPPORTED_VERSION });
-    expect(result.ok ? '' : result.detail).toMatch(/version 9/);
+    expect(result.ok ? '' : result.detail).toMatch(/version 10/);
   });
 
   it('refuse une sauvegarde sans version', () => {
@@ -251,6 +251,25 @@ describe("refus d'un état incohérent", () => {
       parseTampered('escort', (s) => (s.state.units[1].hasMoved = 'oui')),
       /déplacement/,
     );
+  });
+
+  it('refuse des composants hors service inconnus, en double ou mal formés (AB-54)', () => {
+    for (const value of [['radar'], ['hull', 'hull'], 'hull', undefined]) {
+      expectInvalidData(
+        parseTampered('escort', (s) => (s.state.units[1].disabledComponents = value)),
+        /composants hors service/,
+      );
+    }
+  });
+
+  it('fait l’aller-retour des composants hors service d’une unité', () => {
+    const result = parseTampered('escort', (s) => {
+      s.state.units[1].disabledComponents = ['propulsion', 'hull'];
+    });
+    expect(result.ok && result.save.state.units[1]?.disabledComponents).toEqual([
+      'propulsion',
+      'hull',
+    ]);
   });
 
   it('refuse des identifiants ou des cases en double', () => {
@@ -467,8 +486,8 @@ describe('contacts et état du hasard (version 2)', () => {
     );
   });
 
-  it.each([1, 2, 7])(
-    'refuse une sauvegarde de version %i, sans migration (AB-08, AB-24, AB-30, AB-52)',
+  it.each([1, 2, 7, 8])(
+    'refuse une sauvegarde de version %i, sans migration (AB-08, AB-24, AB-30, AB-52, AB-54)',
     (version) => {
       const result = parseTampered('escort', (s) => {
         s.schemaVersion = version;
@@ -527,7 +546,7 @@ describe('balayage (version 3) et délai de récupération (version 4)', () => {
   it("aller-retour d'une mission où un balayage a eu lieu", () => {
     const { state, events } = searchedMission();
     const result = parseSave(serializeSave(state, events, SAVED_AT));
-    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 8 } });
+    expect(result).toMatchObject({ ok: true, save: { schemaVersion: 9 } });
     expect(result.ok && result.save.state).toEqual(state);
     expect(events.some((e) => e.type === 'SWEEP_PERFORMED')).toBe(true);
     expect(state.friendContacts.some((c) => c.kind === 'identified')).toBe(true);

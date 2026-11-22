@@ -1,4 +1,9 @@
-import type { GameConfig, ShipClass, SpecialActionKind } from '../config/game.config';
+import type {
+  ComponentKind,
+  GameConfig,
+  ShipClass,
+  SpecialActionKind,
+} from '../config/game.config';
 import { sameHex, type Hex } from '../map/hex.service';
 import type { NavalCategory } from '../map/terrain.model';
 
@@ -37,6 +42,11 @@ export interface Unit {
   /** Hélicoptères embarqués (un seul utilisable à la fois : règle de D-03, non gérée ici). */
   helicopters: number;
   activation: ActivationStatus;
+  /**
+   * Composants hors service (G-09 §3.1, AB-54), sans doublon ; vide pour une unité intacte. Un
+   * composant absent de la liste est fonctionnel.
+   */
+  disabledComponents: ComponentKind[];
   /** Un déplacement a déjà été exécuté pendant l'activation en cours (un seul par activation). */
   hasMoved: boolean;
   /** L'action spéciale de l'activation en cours est consommée (une par activation, G-07.1). */
@@ -95,11 +105,17 @@ export function createUnit(
     missiles: Math.floor(spec.missiles * modifiers.ammoFactor),
     torpedoes: Math.floor(spec.torpedoes * modifiers.ammoFactor),
     helicopters: spec.helicopters,
+    disabledComponents: [],
     activation: initialActivation(side, spec.category),
     hasMoved: false,
     specialActionUsed: false,
     lastSpecialActionCycle: {},
   };
+}
+
+/** Le composant de l'unité est hors service. Exemple : après une panne de propulsion, `true`. */
+export function isDisabled(unit: Unit, component: ComponentKind): boolean {
+  return unit.disabledComponents.includes(component);
 }
 
 /**

@@ -89,6 +89,25 @@ function isVictim(victim: unknown): boolean {
   );
 }
 
+/**
+ * Impact : résultat, victime, et composant hors service seulement pour une unité alliée touchée
+ * (AB-54) ; jamais pour un navire hostile, dont les dégâts internes restent inconnus (SF-05 §5).
+ */
+function isImpact(e: Json): boolean {
+  const componentOk =
+    e.componentDisabled === undefined ||
+    (isOneOf(engine.COMPONENT_KINDS, e.componentDisabled) &&
+      e.result === 'hit' &&
+      isRecord(e.victim) &&
+      e.victim.side === 'friend');
+  return (
+    isProjectileEvent(e) &&
+    isOneOf(['hit', 'missed', 'destroyed'] as const, e.result) &&
+    isVictim(e.victim) &&
+    componentOk
+  );
+}
+
 /** Tir du camp ami : tireur, arme, contact désigné et, pour une zone, l'hexagone choisi (AB-46). */
 function isShot(e: Json): boolean {
   return (
@@ -116,10 +135,7 @@ const EVENT_CHECKS: Record<engine.GameEvent['type'], (event: Json) => boolean> =
   SWEEP_PERFORMED: isSweep,
   SHOT_FIRED: isShot,
   PROJECTILE_DETECTED: (e) => isProjectileEvent(e) && isHex(e.position),
-  PROJECTILE_IMPACT: (e) =>
-    isProjectileEvent(e) &&
-    isOneOf(['hit', 'missed', 'destroyed'] as const, e.result) &&
-    isVictim(e.victim),
+  PROJECTILE_IMPACT: isImpact,
   PROJECTILE_NEUTRALISED: isProjectileEvent,
   MISSION_WON: (e) => isPositive(e.cycle) && isOneOf(engine.VICTORY_CAUSES, e.cause),
   MISSION_LOST: (e) => isPositive(e.cycle) && isOneOf(engine.DEFEAT_CAUSES, e.cause),

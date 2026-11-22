@@ -6,7 +6,7 @@ import { useSelectionStore } from '../../../store/selection.store';
 import { ActivationBadge } from './activation-badge.component';
 import { CarrierPanel } from './carrier-panel.component';
 import { UnitCommands } from './unit-commands.component';
-import { HpBar, StockLine } from './unit-stats.component';
+import { ComponentLine, HpBar, StockLine } from './unit-stats.component';
 
 function UnitHeader({ unit }: { unit: engine.Unit }) {
   const selectUnit = useSelectionStore((s) => s.selectUnit);
@@ -52,6 +52,7 @@ export function UnitPanel({ mission }: { mission: engine.MissionState }) {
         <Stack spacing={1.5}>
           <UnitHeader unit={unit} />
           <HpBar unit={unit} />
+          <ComponentLine unit={unit} />
           <StockLine unit={unit} />
           <Typography variant="body2">
             Déplacement maximal : {unit.movement} hexagone{unit.movement > 1 ? 's' : ''} — position
