@@ -41,21 +41,16 @@ describe('défilement par clics répétés', () => {
   const list = selectablesAt([unit], [shot('P-1', 'friend')], HERE);
 
   it('choisit le premier, puis le suivant, puis revient au premier', () => {
-    const first = nextSelectable(list, null);
-    expect(first).toEqual({ kind: 'unit', id: 'u' });
-    const second = nextSelectable(list, first);
-    expect(second).toEqual({ kind: 'projectile', id: 'P-1' });
-    expect(nextSelectable(list, second)).toEqual(first);
+    expect(nextSelectable(list, null, null)).toEqual({ kind: 'unit', id: 'u' });
+    expect(nextSelectable(list, 'u', null)).toEqual({ kind: 'projectile', id: 'P-1' });
+    expect(nextSelectable(list, null, 'P-1')).toEqual({ kind: 'unit', id: 'u' });
   });
 
   it('repart du premier si la sélection courante n’est pas sur la case', () => {
-    expect(nextSelectable(list, { kind: 'unit', id: 'ailleurs' })).toEqual({
-      kind: 'unit',
-      id: 'u',
-    });
+    expect(nextSelectable(list, 'ailleurs', null)).toEqual({ kind: 'unit', id: 'u' });
   });
 
   it('ne choisit rien sur une case sans unité ni projectile allié', () => {
-    expect(nextSelectable([], null)).toBeNull();
+    expect(nextSelectable([], null, null)).toBeNull();
   });
 });

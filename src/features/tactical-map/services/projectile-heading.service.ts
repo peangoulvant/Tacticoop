@@ -23,6 +23,19 @@ function angleBetween(from: engine.Hex, to: engine.Hex): number {
   return (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
 }
 
+/** Sens de marche d'un projectile : son déplacement depuis `before`, sinon le sens retenu, sinon son tracé. */
+function headingOf(
+  before: HeadingMemory | undefined,
+  projectile: engine.ObservedProjectile,
+): number | null {
+  if (before && !engine.sameHex(before.position, projectile.position)) {
+    return angleBetween(before.position, projectile.position);
+  }
+  if (before) return before.degrees;
+  const nextStep = projectile.route[0];
+  return nextStep ? angleBetween(projectile.position, nextStep) : null;
+}
+
 /**
  * Sens de marche de chaque projectile connu, après l'affichage précédent : déplacé depuis, le
  * sens du déplacement ; immobile, le sens retenu ; vu pour la première fois, le sens de son tracé
@@ -35,17 +48,13 @@ export function nextHeadings(
   previous: ReadonlyMap<string, HeadingMemory>,
   projectiles: readonly engine.ObservedProjectile[],
 ): Map<string, HeadingMemory> {
-  const next = new Map<string, HeadingMemory>();
-  for (const projectile of projectiles) {
-    const before = previous.get(projectile.id);
-    const nextStep = projectile.route[0];
-    let degrees: number | null = before?.degrees ?? null;
-    if (before && !engine.sameHex(before.position, projectile.position)) {
-      degrees = angleBetween(before.position, projectile.position);
-    } else if (!before && nextStep) {
-      degrees = angleBetween(projectile.position, nextStep);
-    }
-    next.set(projectile.id, { position: projectile.position, degrees });
-  }
-  return next;
+  return new Map(
+    projectiles.map((projectile) => [
+      projectile.id,
+      {
+        position: projectile.position,
+        degrees: headingOf(previous.get(projectile.id), projectile),
+      },
+    ]),
+  );
 }

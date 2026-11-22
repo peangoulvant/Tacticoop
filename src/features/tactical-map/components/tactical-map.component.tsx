@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Box } from '@mui/material';
 import * as engine from '../../../engine';
 import { useCarrierOrderDraftStore } from '../../../store/carrier-order-draft.store';
@@ -17,12 +17,8 @@ import { MoveOverlay } from './move-overlay.component';
 import { ProjectileOverlay, ProjectileRouteOverlay } from './projectile-overlay.component';
 import { SweepOverlay } from './sweep-overlay.component';
 import { WreckOverlay } from './wreck-overlay.component';
-import {
-  currentSelectable,
-  nextSelectable,
-  selectablesAt,
-} from '../services/cell-selection.service';
-import { nextHeadings, type HeadingMemory } from '../services/projectile-heading.service';
+import { nextSelectable, selectablesAt } from '../services/cell-selection.service';
+import { useProjectileHeadings } from '../services/use-projectile-headings';
 import { useMapView } from '../services/use-map-view';
 
 /**
@@ -55,14 +51,7 @@ export function TacticalMap({
   } = useSelectionStore();
   const content = mapViewBox(map);
 
-  // Sens de marche observé des projectiles : dérivé pendant le rendu d'après la liste précédente.
-  const [seen, setSeen] = useState<{
-    source: typeof projectiles | null;
-    headings: Map<string, HeadingMemory>;
-  }>({ source: null, headings: new Map() });
-  if (seen.source !== projectiles) {
-    setSeen({ source: projectiles, headings: nextHeadings(seen.headings, projectiles) });
-  }
+  const headings = useProjectileHeadings(projectiles);
   // Cases où un projectile ne se centre pas : unités alliées et navires hostiles identifiés.
   const occupiedHexes = [
     ...units.map((u) => u.position),
@@ -78,8 +67,11 @@ export function TacticalMap({
   // destination du déplacement ou le point de passage en préparation ; sans rien en préparation,
   // elle désélectionne.
   const selectAt = (hex: engine.Hex) => {
-    const current = currentSelectable(selectedUnitId, selectedProjectileId);
-    const chosen = nextSelectable(selectablesAt(units, projectiles, hex), current);
+    const chosen = nextSelectable(
+      selectablesAt(units, projectiles, hex),
+      selectedUnitId,
+      selectedProjectileId,
+    );
     if (chosen?.kind === 'unit') selectUnit(chosen.id);
     else if (chosen) selectProjectile(chosen.id);
     else if (move) previewDestination(hex);
@@ -145,7 +137,7 @@ export function TacticalMap({
               <ProjectileOverlay
                 projectiles={projectiles}
                 occupiedHexes={occupiedHexes}
-                headings={seen.headings}
+                headings={headings}
                 selectedId={selectedProjectileId}
               />
             </g>

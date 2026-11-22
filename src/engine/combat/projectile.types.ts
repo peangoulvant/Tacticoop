@@ -87,8 +87,7 @@ export interface Loss {
  * une torpille en recherche de cible (avant l'acquisition, cible perdue, ou tir sur zone) ;
  * `unknown`, un projectile adverse dont on ignore tout de la visée.
  */
-export const PROJECTILE_STATUSES = ['targeted', 'searching', 'unknown'] as const;
-export type ProjectileStatus = (typeof PROJECTILE_STATUSES)[number];
+export type ProjectileStatus = 'targeted' | 'searching' | 'unknown';
 
 /**
  * Projectile tel qu'un camp le connaît (AB-49) : jamais sa cible désignée. Pour les siens, le
