@@ -75,6 +75,15 @@ export interface Loss {
 }
 
 /**
+ * Statut d'un projectile tel que son camp le voit (AB-51) : `targeted`, il va vers sa cible (un
+ * missile vers sa case visée, une torpille dont l'autodirecteur a acquis sa cible) ; `searching`,
+ * une torpille en recherche de cible (avant l'acquisition, cible perdue, ou tir sur zone) ;
+ * `unknown`, un projectile adverse dont on ignore tout de la visée.
+ */
+export const PROJECTILE_STATUSES = ['targeted', 'searching', 'unknown'] as const;
+export type ProjectileStatus = (typeof PROJECTILE_STATUSES)[number];
+
+/**
  * Projectile tel qu'un camp le connaît (AB-49) : jamais sa cible désignée. Pour les siens, le
  * tracé restant jusqu'à la case visée (AB-49 4) ; pour un projectile adverse identifié d'office,
  * seulement l'arme et la position exacte.
@@ -87,4 +96,6 @@ export interface ObservedProjectile {
   position: Hex;
   /** Tracé restant jusqu'à la case visée : renseigné pour les projectiles du camp, vide sinon. */
   route: Hex[];
+  /** Où en est le projectile : `unknown` pour un projectile adverse (AB-51). */
+  status: ProjectileStatus;
 }

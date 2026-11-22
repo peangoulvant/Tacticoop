@@ -243,7 +243,8 @@ describe('textes du tir (AB-45)', () => {
       side: 'hostile',
       position: { col: 2, row: 4 },
       route: [],
+      status: 'unknown',
     };
-    expect(projectileCaption(shot)).toBe('torpille hostile P-2');
+    expect(projectileCaption(shot)).toBe('torpille hostile P-2 — cible inconnue');
   });
 });

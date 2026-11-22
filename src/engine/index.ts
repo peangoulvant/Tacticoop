@@ -32,8 +32,10 @@ export type {
   Loss,
   ObservedProjectile,
   Projectile,
+  ProjectileStatus,
   ShotTarget,
 } from './combat/projectile.types';
+export { PROJECTILE_STATUSES } from './combat/projectile.types';
 export { SHOT_WARNINGS, previewShot, shotCandidates } from './combat/shot-preview.service';
 export type {
   ShotCandidate,

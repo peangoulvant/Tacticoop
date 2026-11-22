@@ -3,6 +3,8 @@ import carrier from '../assets/units/porte-avions.png';
 import frigate from '../assets/units/fregate.png';
 import helicopter from '../assets/units/helicoptere.png';
 import missile from '../assets/units/missile.png';
+import statusTargeted from '../assets/states/targeted.png';
+import statusWaiting from '../assets/states/waiting.png';
 import submarine from '../assets/units/sna.png';
 import torpedo from '../assets/units/torpille.png';
 import finishFlag from '../assets/map/drapeau.png';
@@ -33,6 +35,13 @@ export const contactTargetIcon: Record<engine.ContactTargetType, string> = {
 };
 
 export const weaponIcon = { missile, torpedo, helicopter };
+
+/** Pictogrammes de statut d'un projectile (AB-51) : « cible » pour `targeted`, « ? » sinon. `destroyed.png` est en réserve. */
+export const projectileStatusIcon: Record<engine.ProjectileStatus, string> = {
+  targeted: statusTargeted,
+  searching: statusWaiting,
+  unknown: statusWaiting,
+};
 
 export const terrainIcon: Record<engine.Terrain, string> = {
   deep_sea: deepSea,

@@ -6,7 +6,14 @@ const HERE = { col: 4, row: 4 };
 
 const unit = { id: 'u', position: HERE } as engine.Unit;
 function shot(id: string, side: engine.Side, position = HERE) {
-  return { id, weapon: 'missile', side, position, route: [] } as engine.ObservedProjectile;
+  return {
+    id,
+    weapon: 'missile',
+    side,
+    position,
+    route: [],
+    status: 'targeted',
+  } as engine.ObservedProjectile;
 }
 
 describe('éléments sélectionnables d’une case', () => {

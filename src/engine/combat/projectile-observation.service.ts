@@ -2,7 +2,7 @@ import type { GameConfig } from '../config/game.config';
 import type { MissionState } from '../core/game.types';
 import { hexDistance, type Hex } from '../map/hex.service';
 import type { Side } from '../units/unit.model';
-import type { ObservedProjectile, Projectile } from './projectile.types';
+import type { ObservedProjectile, Projectile, ProjectileStatus } from './projectile.types';
 import { torpedoTrajectory } from './trajectory.service';
 
 /*
@@ -38,6 +38,17 @@ function knownRoute(mission: MissionState, projectile: Projectile): Hex[] {
   return torpedoTrajectory(mission.map, projectile.position, projectile.aimedHex) ?? [];
 }
 
+/**
+ * Statut d'un projectile pour `side` (AB-51). Un projectile adverse est `unknown` : on n'en connaît
+ * que l'arme et la position. Pour les siens, un missile va vers sa case visée ; une torpille est
+ * `targeted` tant que son autodirecteur suit sa cible désignée, `searching` sinon.
+ */
+function statusOf(projectile: Projectile, side: Side): ProjectileStatus {
+  if (projectile.side !== side) return 'unknown';
+  if (projectile.weapon === 'missile') return 'targeted';
+  return projectile.tracking ? 'targeted' : 'searching';
+}
+
 /** Projectile tel que `side` le connaît : le tracé restant seulement pour ses propres projectiles. */
 function toObserved(mission: MissionState, projectile: Projectile, side: Side): ObservedProjectile {
   return {
@@ -46,6 +57,7 @@ function toObserved(mission: MissionState, projectile: Projectile, side: Side): 
     side: projectile.side,
     position: projectile.position,
     route: projectile.side === side ? knownRoute(mission, projectile) : [],
+    status: statusOf(projectile, side),
   };
 }
 

@@ -38,6 +38,28 @@ function slotOf(
   };
 }
 
+/**
+ * Pastille de statut au coin de l'icône (AB-51) : une cible ambre si le projectile va vers sa
+ * cible, un point d'interrogation gris-bleu s'il la cherche ou si sa visée est inconnue. Elle ne
+ * tourne pas avec l'icône : elle reste droite et lisible.
+ */
+function StatusBadge({ status }: { status: engine.ProjectileStatus }) {
+  const color = status === 'targeted' ? palette.projectileTargeted : palette.projectileSearching;
+  return (
+    <g transform="translate(4.6 -3.8)" data-testid="projectile-status" data-status={status}>
+      <circle r="2.7" fill="#0a1a33" fillOpacity={0.92} stroke={color} strokeWidth="0.7" />
+      <image
+        href={assets.projectileStatusIcon[status]}
+        x="-1.8"
+        y="-1.8"
+        width="3.6"
+        height="3.6"
+        preserveAspectRatio="xMidYMid meet"
+      />
+    </g>
+  );
+}
+
 /** Dimensions de l'icône et de la pastille qui la porte, dans l'espace du viewBox. */
 const ICON = { width: 8, height: { missile: 1.8, torpedo: 1.4 } };
 const BADGE = { width: 10, height: 4.6 };
@@ -92,6 +114,7 @@ function ProjectileToken({
           preserveAspectRatio="xMidYMid meet"
         />
       </g>
+      <StatusBadge status={projectile.status} />
     </g>
   );
 }

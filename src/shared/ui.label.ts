@@ -295,10 +295,17 @@ export const fireResultLabel: Record<engine.WeaponKind, string> = {
   torpedo: 'Torpille lancée',
 };
 
-/** Légende d'un projectile sur la case sélectionnée : « missile allié P-2 ». */
+/** Statut d'un projectile, en toutes lettres (AB-51). */
+export const projectileStatusLabel: Record<engine.ProjectileStatus, string> = {
+  targeted: 'en route vers sa cible',
+  searching: 'recherche sa cible',
+  unknown: 'cible inconnue',
+};
+
+/** Légende d'un projectile (info-bulle, case sélectionnée) : « missile allié P-2 — en route vers sa cible ». */
 export function projectileCaption(projectile: engine.ObservedProjectile): string {
   const camp = projectile.side === 'friend' ? 'allié' : 'hostile';
-  return `${weaponLabel[projectile.weapon]} ${camp} ${projectile.id}`;
+  return `${weaponLabel[projectile.weapon]} ${camp} ${projectile.id} — ${projectileStatusLabel[projectile.status]}`;
 }
 
 /*****************************

@@ -54,6 +54,7 @@ describe('projectiles connus du camp ami (AB-49)', () => {
         side: 'friend',
         position: { col: 10, row: 4 },
         route: rowRoute(4, 10, 14),
+        status: 'targeted',
       },
     ]);
   });
@@ -64,7 +65,14 @@ describe('projectiles connus du camp ami (AB-49)', () => {
       [hostileMissile(8)],
     );
     expect(observeFriend(state).projectiles).toEqual([
-      { id: 'P-2', weapon: 'missile', side: 'hostile', position: { col: 8, row: 4 }, route: [] },
+      {
+        id: 'P-2',
+        weapon: 'missile',
+        side: 'hostile',
+        position: { col: 8, row: 4 },
+        route: [],
+        status: 'unknown',
+      },
     ]);
   });
 
@@ -168,5 +176,41 @@ describe('tracé d’une torpille qui suit sa cible (AB-49 4)', () => {
     const [observed] = observedProjectiles(mission, 'friend', defaultConfig);
     expect(observed?.route.at(-1)).toEqual({ col: 7, row: 4 });
     expect(observed?.route).not.toContainEqual(hiddenTarget);
+  });
+});
+
+describe('statut d’un projectile (AB-51)', () => {
+  const friend = makeUnit('f', 'friend', 'fremm', { col: 2, row: 4 });
+  const statusIn = (projectile: Projectile, side: 'friend' | 'hostile' = 'friend') =>
+    observedProjectiles(
+      { ...missionOf({ map: openSea(20, 9), units: [friend] }), projectiles: [projectile] },
+      side,
+      defaultConfig,
+    )[0]?.status;
+
+  it('un missile du camp va vers sa case visée', () => {
+    expect(statusIn(aProjectile({ weapon: 'missile' }))).toBe('targeted');
+  });
+
+  it('une torpille est « targeted » quand elle suit sa cible, « searching » sinon', () => {
+    const torpedo = aProjectile({ weapon: 'torpedo', autonomyLeft: 4 });
+    expect(statusIn({ ...torpedo, tracking: true })).toBe('targeted');
+    expect(statusIn({ ...torpedo, tracking: false })).toBe('searching');
+  });
+
+  it('un tir sur zone n’acquiert aucune cible : jamais « targeted »', () => {
+    const onZone = aProjectile({ weapon: 'torpedo', onSuspectZone: true, autonomyLeft: 4 });
+    expect(statusIn(onZone)).toBe('searching');
+  });
+
+  it('un projectile adverse est toujours « unknown », qu’il suive ou non sa cible', () => {
+    const near = aProjectile({
+      side: 'hostile',
+      weapon: 'torpedo',
+      position: { col: 3, row: 4 },
+      tracking: true,
+      autonomyLeft: 4,
+    });
+    expect(statusIn(near)).toBe('unknown');
   });
 });

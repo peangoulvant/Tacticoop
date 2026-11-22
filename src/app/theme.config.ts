@@ -19,6 +19,9 @@ export const palette = {
   /** Projectiles : alliés (bleu clair) et hostiles identifiés (rouge clair). */
   projectileAlly: '#5fd3ff',
   projectileHostile: '#ff6b6b',
+  /** Pastille de statut d'un projectile : cible acquise (ambre) ou inconnue / en recherche (gris-bleu). */
+  projectileTargeted: '#ffb02e',
+  projectileSearching: '#8ba3c4',
   good: '#4caf50',
   warn: '#d9b84a',
 };
